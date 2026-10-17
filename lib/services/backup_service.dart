@@ -54,8 +54,18 @@ class BackupService {
       if (!await file.exists()) {
         return const BackupContents(error: 'الملف غير موجود');
       }
+      return parse(await file.readAsString());
+    } catch (e) {
+      debugPrint('تعذّرت قراءة النسخة الاحتياطية: $e');
+      return BackupContents(error: 'تعذّرت قراءة الملف: $e');
+    }
+  }
 
-      final root = jsonDecode(await file.readAsString());
+  /// قراءة نسخة احتياطية من نصها مباشرة — ملف مختار من خارج التطبيق يصل
+  /// أحياناً كرابط محتوى بلا مسار قرص، فنقرأ نصه بدل فتحه كملف.
+  static BackupContents parse(String json) {
+    try {
+      final root = jsonDecode(json);
       if (root is! Map) {
         return const BackupContents(error: 'الملف ليس نسخة احتياطية صالحة');
       }

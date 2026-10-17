@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../services/app_settings.dart';
 import '../services/auth_service.dart';
+import '../services/backup_actions.dart';
 import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../state/medicine_store.dart';
@@ -181,8 +182,8 @@ class _SettingsSheet extends StatelessWidget {
       ),
       const SizedBox(height: 6),
       const Text(
-        'ملف على جهازك يحفظ كل المواد. اصنعه قبل أي إلغاء تثبيت — إلغاء '
-        'التثبيت يمسح البيانات المحلية ويغيّر هوية المزامنة.',
+        'ملف يحفظ كل المواد. عند الحفظ أرسله إلى واتساب أو Drive أو التنزيلات '
+        '— إلغاء التثبيت يمسح ما بداخل التطبيق ويغيّر هوية المزامنة.',
         style: TextStyle(
           fontSize: 12,
           color: AppColors.textSecondary,
@@ -256,41 +257,54 @@ class _SettingsSheet extends StatelessWidget {
 
   Future<void> _export(BuildContext context) async {
     try {
-      final path = await BackupService.export();
+      final path = await BackupActions.export();
       if (!context.mounted) return;
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.bgCard,
-          title: const Text('✅ حُفظت النسخة'),
-          content: SelectableText(
-            'المسار:\n$path\n\nانسخ هذا الملف إلى مكان آمن (بطاقة ذاكرة أو '
-            'حاسوب) قبل أي إلغاء تثبيت.',
-            style: const TextStyle(fontSize: 12, height: 1.6),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('حسناً'),
-            ),
-          ],
-        ),
-      );
+      // الملف في مجلد التطبيق الخاص: لا يراه تطبيق «الملفات» ويُمسح مع
+      // إلغاء التثبيت. المشاركة هي الطريق الوحيد لإخراجه إلى مكان آمن.
+      _toast(context, 'اختر أين تحفظ النسخة: واتساب، Drive، أو التنزيلات');
+      await BackupActions.share(path);
     } catch (e) {
       if (context.mounted) _toast(context, 'تعذّر الحفظ: $e');
     }
   }
 
   Future<void> _import(BuildContext context) async {
-    final file = await BackupService.latest();
+    final local = await BackupActions.latestLocal();
     if (!context.mounted) return;
 
-    if (file == null) {
-      _toast(context, 'لا توجد نسخة احتياطية على هذا الجهاز');
-      return;
+    // نسخة محلية موجودة (بعد تحديث عادي) ⇒ نخيّر بينها وبين ملف خارجي.
+    // بلا نسخة محلية (بعد إعادة تثبيت) ⇒ اختيار ملف مباشرة.
+    var useLocal = false;
+    if (local != null) {
+      final choice = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          title: const Text('استرجاع من أين؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('اختيار ملف…'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('آخر نسخة على هذا الجهاز'),
+            ),
+          ],
+        ),
+      );
+      if (choice == null || !context.mounted) return;
+      useLocal = choice;
     }
 
-    final contents = await BackupService.read(file.path);
+    final BackupContents contents;
+    if (useLocal) {
+      contents = await BackupService.read(local!.path);
+    } else {
+      final text = await BackupActions.pickJson();
+      if (text == null) return;
+      contents = BackupService.parse(text);
+    }
     if (!context.mounted) return;
 
     if (!contents.ok) {

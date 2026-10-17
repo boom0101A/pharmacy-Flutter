@@ -57,6 +57,8 @@ dependencies:
   # يوفّر TZDateTime، وflutter_timezone يقرأ منطقة الجهاز عند التهيئة.
   timezone: ^0.11.1
   flutter_timezone: ^4.1.1
+  share_plus: ^13.3.1
+  file_picker: ^13.1.0
 
 dev_dependencies:
   flutter_test:
