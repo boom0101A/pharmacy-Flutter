@@ -1,0 +1,170 @@
+rules_version = '2';
+
+// =====================================================================
+//  قواعد أمان Firestore لتطبيق «صيدليتي»
+//
+//  الحالة قبل هذه القواعد: أي شخص يملك مفتاح الواجهة (وهو مستخرَج من ملف
+//  APK بأمر واحد) كان يقرأ ويعدّل ويحذف كل سجلات المخزون بأسعارها وكمياتها.
+//
+//  المبدأ هنا:
+//    • medicines/tombstones → لأعضاء صيدلية واحدة فقط (نظام pharmacies/pairing
+//                   أدناه)، مع بقاء مسار «ownerUid» القديم مؤقتاً أثناء هجرة
+//                   الأجهزة القائمة (مرحلة انتقالية — راجع التعليق تحت).
+//    • pharmacies → قائمة أعضاء كل صيدلية؛ فقط عضو حالي يضيف عضواً جديداً.
+//    • pairing    → رموز اقتران مؤقتة (صلاحية 10-15 دقيقة) تربط جهازاً جديداً
+//                   بصيدلية قائمة بموافقة صريحة من عضو فيها فعلاً.
+//    • barcodes   → القاموس المشترك: يُقرأ للجميع (هذه وظيفته)، ولا يُكتب
+//                   إلا من مستخدم مُصادَق، وبحقول محدّدة لا تشمل أي سعر.
+//
+//  **مرحلة انتقالية:** فروع `ownsExisting()`/`ownsIncoming()` في medicines/
+//  tombstones تبقى فقط حتى تُهاجَر كل الأجهزة القائمة إلى نظام pharmacyId
+//  (يحدث تلقائياً وبصمت عند أول فتح للتطبيق بعد الترقية). بعد التأكد من ذلك،
+//  تُحذف هذه الفروع في نشرة لاحقة (لا حاجة لعجلة، ولا خطر من تركها مؤقتاً).
+//
+//  النشر: Firebase Console ← Firestore Database ← Rules ← الصق ← Publish
+//  أو:    firebase deploy --only firestore:rules
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ---------- نظام الملكية الفردية القديم (مؤقت أثناء الهجرة) ----------
+    function ownsExisting() {
+      return signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+    function ownsIncoming() {
+      return signedIn() && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ---------- نظام الصيدلية المشتركة ----------
+    // عضوية صيدلية تُتحقَّق فعلياً من مستند pharmacies، وليس من افتراض محلي.
+    // pid قد يكون null (مستند لم يُهاجَر بعد) — الشرط الأول يمنع get(null).
+    function isMemberOfPharmacy(pid) {
+      return pid != null
+        && signedIn()
+        && exists(/databases/$(database)/documents/pharmacies/$(pid))
+        && request.auth.uid in
+             get(/databases/$(database)/documents/pharmacies/$(pid)).data.memberUids;
+    }
+
+    // ---------------- الصيدليات (قوائم الأعضاء) ----------------
+    match /pharmacies/{pid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+
+      // الإنشاء: فقط تهيئة أولى لصيدلية عضوها الوحيد هو منشئها
+      allow create: if signedIn()
+        && request.resource.data.memberUids == [request.auth.uid]
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // التحديث: فقط عضو حالي يضيف عضواً واحداً جديداً — لا حذف، لا استبدال.
+      // هذا ما يمنع الانضمام بلا موافقة: الجهاز الجديد ليس عضواً فلا يستطيع
+      // كتابة هذا المستند بنفسه أصلاً.
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.memberUids
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
+        && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
+        && request.resource.data.memberUids.hasAll(resource.data.memberUids);
+
+      allow delete: if false;
+    }
+
+    // ---------------- رموز الإقران (مؤقتة، بحد صلاحية) ----------------
+    match /pairing/{code} {
+      // get بالرمز الدقيق مسموح، لكن لا سرد/تعداد لكل الرموز
+      allow get: if signedIn();
+      allow list: if false;
+
+      // إصدار رمز جديد: فقط لصيدلية أنا عضو فيها فعلاً
+      allow create: if signedIn()
+        && isMemberOfPharmacy(request.resource.data.pharmacyId)
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'open'
+        && !('joinerUid' in request.resource.data)
+        && request.resource.data.expiresAt is number
+        && request.resource.data.expiresAt > request.time.toMillis()
+        && request.resource.data.expiresAt <= request.time.toMillis() + 900000; // 15 دقيقة كسقف
+
+      allow update: if signedIn() && (
+            // حالة أ: جهاز آخر يطلب الانضمام — يشترط أن الرمز ما زال صالحاً ومفتوحاً
+            (resource.data.status == 'open'
+              && request.time.toMillis() < resource.data.expiresAt
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'joinerUid'])
+              && request.resource.data.status == 'requested'
+              && request.resource.data.joinerUid == request.auth.uid)
+            ||
+            // حالة ب: صاحب الرمز يقفل الطلب (موافقة/رفض/إلغاء)
+            (resource.data.ownerUid == request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+              && request.resource.data.status in ['joined', 'declined', 'cancelled'])
+          );
+
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ---------------- مخزون الصيدلية (نظامان معاً أثناء الهجرة) ----------------
+    // بيانات تجارية خاصة: الأسعار والكميات لا تخرج من أعضاء الصيدلية.
+    match /medicines/{docId} {
+      allow read: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
+
+      allow create: if isMemberOfPharmacy(request.resource.data.pharmacyId)
+                    || ownsIncoming();
+
+      // بند تبنّي pharmacyId: أول وسم لمستند لم يُهاجَر بعد
+      allow update: if
+          (isMemberOfPharmacy(request.resource.data.pharmacyId)
+            && (isMemberOfPharmacy(resource.data.pharmacyId)
+                || !('pharmacyId' in resource.data)))
+          ||
+          (ownsIncoming() && (ownsExisting() || !('ownerUid' in resource.data)));
+
+      allow delete: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
+    }
+
+    // ---------------- شواهد الحذف (نفس منطق medicines) ----------------
+    // تمنع عودة السجل المحذوف من جهاز آخر لم يزامن بعد.
+    match /tombstones/{docId} {
+      allow read: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
+      allow create, update: if
+          (isMemberOfPharmacy(request.resource.data.pharmacyId)
+            && (isMemberOfPharmacy(resource.data.pharmacyId)
+                || !('pharmacyId' in resource.data)))
+          ||
+          (ownsIncoming() && (ownsExisting() || !('ownerUid' in resource.data)));
+      allow delete: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
+    }
+
+    // ---------------- القاموس المشترك ----------------
+    // اسم الدواء وصورته المصغّرة فقط. القراءة مفتوحة عمداً: الفائدة كلها في
+    // أن تجد أي صيدلية الاسم جاهزاً. الكتابة تتطلب مصادقة، ونتحقق من الحقول
+    // حقلاً حقلاً حتى لا يُهرَّب سعر أو كمية أو موقع إلى مستند «عام».
+    match /barcodes/{barcode} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['barcode', 'name', 'thumb', 'confirmations',
+              'createdAt', 'alternateNames'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 200;
+
+      // التحديث مسموح للعدّاد والصورة والأسماء البديلة فقط —
+      // لا يجوز لأحد أن يستبدل اسماً ساهم به غيره.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['thumb', 'confirmations', 'alternateNames'])
+        && request.resource.data.name == resource.data.name;
+
+      allow delete: if false;
+    }
+
+    // كل ما عدا ذلك مرفوض
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
