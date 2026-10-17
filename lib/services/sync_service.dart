@@ -267,7 +267,9 @@ class SyncService extends ChangeNotifier {
         }
       }
 
-      // نزول: ما هو في السحابة وأحدث (أو غير موجود محلياً)
+      // نزول: ما هو في السحابة وأحدث (أو غير موجود محلياً). يُجمَع ثم يُكتب
+      // دفعة واحدة تحسم تعارض الباركود بين الأجهزة بدل حذف صامت.
+      final downloads = <Medicine>[];
       for (final remote in remoteById.values) {
         if (deletedIds.contains(remote.id)) continue;
         final mine = localById[remote.id];
@@ -279,7 +281,7 @@ class SyncService extends ChangeNotifier {
           // التالية رفعه — وأسوأ: تدهس تعديلاً أحدث من الجهاز الآخر لأنه
           // «أقدم» بالمقارنة المزوَّرة. الختم يجب أن يبقى ختم المصدر.
           final imageFile = await _saveLegacyImage(legacyImages[remote.id]);
-          await MedicineDb.instance.upsert(
+          downloads.add(
             imageFile == null
                 ? remote
                 : remote.copyWith(
@@ -287,18 +289,24 @@ class SyncService extends ChangeNotifier {
                     updatedAt: remote.updatedAt,
                   ),
           );
-          localChanged = true;
         } else if (remote.updatedAt > mine.updatedAt) {
           // نحافظ على صورة الجهاز المحلية إن وُجدت — وعلى ختم السحابة كما هو
-          await MedicineDb.instance.upsert(
+          downloads.add(
             remote.copyWith(
               imagePath: mine.imagePath,
               clearImage: mine.imagePath == null,
               updatedAt: remote.updatedAt,
             ),
           );
-          localChanged = true;
         }
+      }
+      if (downloads.isNotEmpty) {
+        // الخاسرون صاروا في طابور الحذف؛ نضمّهم هنا كي لا تعيد حلقة الصعود
+        // رفع خاسر محلي في نفس الدورة
+        deletedIds.addAll(
+          await MedicineDb.instance.upsertAllResolvingBarcodes(downloads),
+        );
+        localChanged = true;
       }
 
       // صعود: ما هو محلي وأحدث (أو غير موجود في السحابة) وليس محذوفاً

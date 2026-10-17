@@ -302,12 +302,16 @@ class MedicineStore extends ChangeNotifier {
     List<Medicine> incoming,
   ) async {
     final byId = {for (final m in _all) m.id: m};
+    // مادة حُذفت ولم يُرفع حذفها بعد لا تُحيا من نسخة قديمة
+    final deleted = (await _db.peekPendingDeletes()).toSet();
     final toWrite = <Medicine>[];
     var added = 0, updated = 0, skipped = 0;
 
     for (final item in incoming) {
       final mine = byId[item.id];
-      if (mine == null) {
+      if (deleted.contains(item.id)) {
+        skipped++;
+      } else if (mine == null) {
         toWrite.add(item);
         added++;
       } else if (item.updatedAt > mine.updatedAt) {
@@ -319,10 +323,21 @@ class MedicineStore extends ChangeNotifier {
     }
 
     if (toWrite.isNotEmpty) {
-      await _db.upsertAll(toWrite);
+      final losers = (await _db.upsertAllResolvingBarcodes(toWrite)).toSet();
+      for (final item in toWrite) {
+        if (!losers.contains(item.id)) continue;
+        // وارد خسر أمام باركود محلي أحدث — لم يُكتب
+        if (byId.containsKey(item.id)) {
+          updated--;
+        } else {
+          added--;
+        }
+        skipped++;
+      }
       _all = await _db.getAll();
       notifyListeners();
       for (final item in toWrite) {
+        if (losers.contains(item.id)) continue;
         unawaited(SyncService.instance.pushMedicine(item));
       }
     }
