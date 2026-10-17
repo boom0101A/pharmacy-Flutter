@@ -786,4 +786,46 @@ void main() {
       expect(store.saved.length, 1);
     });
   });
+
+  group('أرقام عربية في السعر والكمية', () {
+    testWidgets('سعر بأرقام عربية-هندية يُحفظ بقيمته لا صفراً', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(host(MedicineFormScreen(store: store)));
+      await tester.pump();
+
+      await tester.enterText(nameField(), 'باراسيتامول');
+      await tester.enterText(priceField(), '١٥٠٠');
+      await tester.enterText(quantityField(), '٣');
+      await tester.pump();
+      await tapSave(tester);
+
+      expect(store.saved.single.price, 1500);
+      expect(store.saved.single.quantity, 3);
+    });
+
+    testWidgets('سعر غير صالح عند التعديل لا يدهس السعر القديم', (tester) async {
+      useTallSurface(tester);
+      const existing = Medicine(
+        id: 'm1',
+        barcode: '',
+        name: 'أموكسيسيلين',
+        price: 900,
+        quantity: 4,
+        createdAt: 1,
+        updatedAt: 1,
+      );
+      store.saved.add(existing);
+      await tester.pumpWidget(
+        host(MedicineFormScreen(store: store, existing: existing)),
+      );
+      await tester.pump();
+
+      await tester.enterText(priceField(), 'abc');
+      await tester.pump();
+      await tapSave(tester);
+
+      expect(find.text('السعر غير صالح — اكتب أرقاماً فقط'), findsOneWidget);
+      expect(store.saved.single.price, 900);
+    });
+  });
 }

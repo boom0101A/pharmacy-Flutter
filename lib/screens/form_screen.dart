@@ -12,6 +12,7 @@ import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
+import '../util/number_parse.dart';
 import 'scanner_screen.dart';
 
 /// شاشة إضافة/تعديل دواء.
@@ -242,7 +243,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           decoration: const InputDecoration(
             hintText: 'العدد الوارد في الفاتورة',
           ),
-          onSubmitted: (v) => Navigator.pop(ctx, int.tryParse(v.trim())),
+          onSubmitted: (v) => Navigator.pop(ctx, parseLocalizedInt(v)),
         ),
         actions: [
           TextButton(
@@ -251,7 +252,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           ),
           FilledButton(
             onPressed: () =>
-                Navigator.pop(ctx, int.tryParse(controller.text.trim())),
+                Navigator.pop(ctx, parseLocalizedInt(controller.text)),
             child: const Text('إضافة'),
           ),
         ],
@@ -260,7 +261,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     controller.dispose();
     if (added == null || added <= 0 || !mounted) return;
 
-    final current = int.tryParse(_quantity.text.trim()) ?? 0;
+    final current = parseLocalizedInt(_quantity.text) ?? 0;
     setState(() => _quantity.text = (current + added).toString());
     _toast('أُضيف $added — الرصيد الآن ${current + added}');
   }
@@ -286,6 +287,19 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     // منفصلتان بنفس البيانات تماماً بلا أي رسالة خطأ.
     if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
+
+    // نص غير قابل للقراءة كرقم يُرفض صراحةً — حفظه صفراً كان يدهس السعر
+    // الحقيقي لمادة موجودة بلا أي تنبيه. الحقل الفارغ يبقى صفراً كما كان.
+    final parsedPrice = parseLocalizedNumber(_price.text);
+    final parsedQty = parseLocalizedInt(_quantity.text);
+    if (_price.text.trim().isNotEmpty && parsedPrice == null) {
+      _toast('السعر غير صالح — اكتب أرقاماً فقط', color: AppColors.danger);
+      return;
+    }
+    if (_quantity.text.trim().isNotEmpty && parsedQty == null) {
+      _toast('الكمية غير صالحة — اكتب عدداً صحيحاً', color: AppColors.danger);
+      return;
+    }
 
     final typedBarcode = _barcode.text.trim();
 
@@ -326,11 +340,11 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     setState(() => _saving = true);
     final now = DateTime.now().millisecondsSinceEpoch;
     // سالب مرفوض هنا أيضاً — لا شيء يمنع كتابته يدوياً في الحقل
-    final enteredPrice = (double.tryParse(_price.text.trim()) ?? 0).clamp(
+    final enteredPrice = (parsedPrice ?? 0).clamp(
       0,
       double.infinity,
     );
-    final enteredQty = (int.tryParse(_quantity.text.trim()) ?? 0).clamp(
+    final enteredQty = (parsedQty ?? 0).clamp(
       0,
       1 << 31,
     );

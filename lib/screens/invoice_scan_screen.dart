@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/medicine.dart';
 import '../services/gemini_vision.dart';
 import '../state/medicine_store.dart';
+import '../util/number_parse.dart';
 import '../theme.dart';
 
 /// قراءة فاتورة مجهّز بالذكاء الاصطناعي (Gemini) → مراجعة الأسطر مع تحرير
@@ -123,8 +124,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
           InvoiceLineDraft(
             name: line.name.text.trim(),
             type: line.type,
-            price: double.tryParse(line.price.text.trim()) ?? 0,
-            quantity: int.tryParse(line.quantity.text.trim()) ?? 0,
+            price: parseLocalizedNumber(line.price.text) ?? 0,
+            quantity: parseLocalizedInt(line.quantity.text) ?? 0,
             barcode: line.barcode.text.trim(),
             category: _orNull(line.category.text),
           ),
