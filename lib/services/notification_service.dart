@@ -1,0 +1,303 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
+import '../models/medicine.dart';
+
+/// تنبيه صلاحية ومخزون مجدول يومياً عند الساعة 9 صباحاً — يظهر حتى والتطبيق
+/// مغلق، بمحتوى مُحسَب سلفاً من آخر بيانات حصلنا عليها (`zonedSchedule` لا
+/// يشغّل شيفرة Dart في وقت الظهور، فنُعيد الجدولة بعد كل تعديل بيانات لتبقى
+/// قريبة الحداثة).
+///
+/// **لا إشعار فوري عند فتح التطبيق:** كان يوجد سابقاً، فصار يكرّر نفس النص
+/// مرتين في اليوم نفسه بعد تفعيل الجدولة الحقيقية — ولا معنى لإشعار يخبرك
+/// بما تراه أمامك وأنت داخل التطبيق أصلاً.
+///
+/// النقر على الإشعار يفتح التطبيق ويحمل `payload` نصياً بالصيغة
+/// `"type:medicine|filter:expiringSoon"` — HomeScreen يستهلكه ويطبّق التبويب
+/// والفلتر مباشرة، فيرى المستخدم الأدوية القريبة من الانتهاء فوراً.
+class NotificationService extends ChangeNotifier {
+  NotificationService._();
+  static final NotificationService instance = NotificationService._();
+
+  static const _channelId = 'stock_alerts';
+  static const _channelName = 'تنبيهات المخزون';
+  static const _channelDesc = 'الصلاحية والمخزون المنخفض';
+
+  /// إشعار الجدولة اليومية.
+  static const _dailyId = 1002;
+
+  /// الوقت الافتراضي للإشعار اليومي — 9 صباحاً وقت الجهاز.
+  static const _dailyHour = 9;
+  static const _dailyMinute = 0;
+
+  static final _plugin = FlutterLocalNotificationsPlugin();
+  static bool _tzInitialized = false;
+
+  /// آخر حمولة (payload) وصلت من نقر إشعار — HomeScreen يستهلكها ويمسحها.
+  /// null إن لم يُنقر إشعار، أو بعد الاستهلاك.
+  String? _pendingPayload;
+  String? get pendingPayload => _pendingPayload;
+
+  /// تُستدعى من HomeScreen بعد تطبيق الحمولة — تمنع تكرار تطبيق نفس الفلتر
+  /// عند إعادة بناء الواجهة أو الخروج والعودة.
+  void consumePendingPayload() {
+    if (_pendingPayload == null) return;
+    _pendingPayload = null;
+    notifyListeners();
+  }
+
+  /// هل قُرئت حمولة الإطلاق؟ — علَم مستقل عن نجاح بقية التهيئة.
+  ///
+  /// `getNotificationAppLaunchDetails()` يعيد **نفس** حمولة الإطلاق طوال عمر
+  /// العملية. لو أُعيدت قراءتها بعد أن استهلكها HomeScreen، دهست حمولة نقرة
+  /// أحدث وطُبِّق فلتر خاطئ. تُقرأ مرة واحدة فقط بحكم هذا العلَم.
+  static bool _launchPayloadRead = false;
+
+  /// دورة التهيئة الجارية — تُخزَّن كـFuture لا كبولياني.
+  ///
+  /// البولياني السابق كان يُضبط في نهاية `try` فقط، فأي رمية في الأثناء تجعل
+  /// كل استدعاء لاحق يعيد التهيئة كاملة (إعادة إنشاء القناة، إعادة طلب
+  /// الأذونات، وإعادة قراءة حمولة الإطلاق القديمة). وبما أن `init()` تُستدعى
+  /// من عدة مسارات متوازية (`load` → `scheduleDailyDigest`، والإعدادات)،
+  /// كان استدعاءان متزامنان يتصادمان داخل الإضافة عند طلب الإذن.
+  static Future<void>? _initFuture;
+
+  /// تهيئة القناة والمنطقة الزمنية — لا ترمي استثناءً أبداً.
+  ///
+  /// **لا تطلب أذونات النظام هنا:** طلب إذن الإنذارات الدقيقة يفتح شاشة
+  /// إعدادات النظام ولا يكتمل حتى يعود المستخدم منها. استدعاؤها قبل
+  /// `runApp()` كان يترك التطبيق بلا أي واجهة (شاشة سوداء) على أندرويد 12
+  /// حيث `USE_EXACT_ALARM` غير موجود أصلاً. الأذونات تُطلب في
+  /// [requestPermissions] من مسار لا يحجب الإقلاع.
+  Future<void> init() => _initFuture ??= _doInit();
+
+  Future<void> _doInit() async {
+    try {
+      // 1) المنطقة الزمنية — لازمة لـzonedSchedule (بلاها كل جدولة تفشل صامتة)
+      if (!_tzInitialized) {
+        tz.initializeTimeZones();
+        try {
+          final name = await FlutterTimezone.getLocalTimezone();
+          tz.setLocalLocation(tz.getLocation(name));
+        } catch (e) {
+          // اسم منطقة غير معروف على بعض أجهزة OEM. الارتداد إلى UTC يُبقي
+          // الجدولة تعمل (بفارق ساعات) بدل موتها الصامت للأبد — وهو ما كان
+          // يحدث: علَم ثابت يبقى false فيتخطّى كل جدولة لاحقة بلا أي إشارة.
+          debugPrint('تعذّرت قراءة منطقة الجهاز الزمنية — ارتداد إلى UTC: $e');
+          tz.setLocalLocation(tz.getLocation('UTC'));
+        }
+        _tzInitialized = true;
+      }
+
+      // 2) قناة الإشعارات + معالج النقر
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      await _plugin.initialize(
+        settings: const InitializationSettings(android: androidInit),
+        onDidReceiveNotificationResponse: _onTap,
+      );
+
+      await _android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _channelId,
+          _channelName,
+          description: _channelDesc,
+          importance: Importance.defaultImportance,
+        ),
+      );
+
+      // 3) هل فُتح التطبيق أصلاً بضغطة على إشعار كان مجدولاً؟ — مرة واحدة
+      if (!_launchPayloadRead) {
+        _launchPayloadRead = true;
+        final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+        if (launchDetails?.didNotificationLaunchApp == true) {
+          final payload = launchDetails?.notificationResponse?.payload;
+          if (payload != null && payload.isNotEmpty) {
+            _pendingPayload = payload;
+            // التهيئة صارت غير حاجبة للإقلاع، فقد يكون HomeScreen بُني قبل
+            // وصولنا هنا — الإخطار يضمن أن يلتقطها مستمعه.
+            notifyListeners();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('تعذّرت تهيئة التنبيهات المحلية: $e');
+    }
+  }
+
+  AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+
+  /// طلب أذونات النظام — يُستدعى بعد بناء الواجهة لا قبلها.
+  ///
+  /// إذن الإنذارات الدقيقة يفتح شاشة إعدادات النظام على أندرويد 12+، ولا
+  /// يُطلب إلا إن لم يكن ممنوحاً أصلاً (على أندرويد 13+ يمنحه
+  /// `USE_EXACT_ALARM` في manifest تلقائياً فلا تظهر شاشة).
+  Future<void> requestPermissions() async {
+    await init();
+    try {
+      await _android?.requestNotificationsPermission();
+      final canExact = await _android?.canScheduleExactNotifications();
+      if (canExact == false) {
+        await _android?.requestExactAlarmsPermission();
+      }
+    } catch (e) {
+      debugPrint('تعذّر طلب أذونات الإشعارات: $e');
+    }
+  }
+
+  /// callback ثابت (لا يمسك حالة) — flutter_local_notifications يشترط ذلك
+  /// لبقاء المعالج صحيحاً عبر عزلات الخلفية.
+  static void _onTap(NotificationResponse response) {
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    instance._pendingPayload = payload;
+    instance.notifyListeners();
+  }
+
+  /// يبني نص الملخّص من قائمة كل المواد (القسمين معاً)، أو null إن لم يكن
+  /// هناك ما يستدعي تنبيهاً. دالة صِرفة قابلة للاختبار بلا لمس أي شيء خارجي.
+  @visibleForTesting
+  static String? buildSummary(List<Medicine> all) {
+    final expired = all.where((m) => m.isExpired).length;
+    // isExpiringSoon تُحسب بغضّ النظر عن انتهاء الصلاحية فعلياً — نستثني
+    // المنتهي هنا حتى لا يُحسب في العدّين معاً
+    final expiringSoon = all
+        .where((m) => !m.isExpired && m.isExpiringSoon)
+        .length;
+    final outOfStock = all.where((m) => m.isOutOfStock).length;
+    final lowStock = all.where((m) => m.isLowStock).length;
+
+    final parts = <String>[
+      if (expired > 0) '$expired منتهية الصلاحية',
+      if (expiringSoon > 0) '$expiringSoon تقترب من الانتهاء',
+      if (outOfStock > 0) '$outOfStock نفدت من المخزون',
+      if (lowStock > 0) '$lowStock منخفضة المخزون',
+    ];
+
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// يحدّد الحمولة (payload) التي تُنقل عند نقر الإشعار — بأولوية:
+  ///   1. صلاحية دواء (منتهي/قارب) → قسم الأدوية بفلتر «قاربة الانتهاء»
+  ///   2. صلاحية مستلزم → قسم المستلزمات بفلتر «قاربة الانتهاء»
+  ///   3. نافد من الأدوية → قسم الأدوية بفلتر «نفد»
+  ///   4. نافد من المستلزمات → قسم المستلزمات بفلتر «نفد»
+  ///   5. منخفض أدوية/مستلزمات → فلتر «منخفض»
+  ///   6. بلا مشاكل → null (لا حمولة، الإشعار لن يُجدول أصلاً)
+  ///
+  /// الأولوية تخدم مطلب المستخدم: «خصوصاً للأدوية بحيث يفتح على القارب من
+  /// الانتهاء أو المنتهي» — فما دام في الأدوية عنصر صلاحية، يُقصَد إليه أولاً.
+  @visibleForTesting
+  static String? computePayload(List<Medicine> all) {
+    bool hasExpiryIssue(Medicine m) => m.isExpired || m.isExpiringSoon;
+
+    final medicines = all.where((m) => m.type == ItemType.medicine);
+    final supplies = all.where((m) => m.type == ItemType.supply);
+
+    if (medicines.any(hasExpiryIssue)) {
+      return 'type:medicine|filter:expiringSoon';
+    }
+    if (supplies.any(hasExpiryIssue)) {
+      return 'type:supply|filter:expiringSoon';
+    }
+    if (medicines.any((m) => m.isOutOfStock)) {
+      return 'type:medicine|filter:outOfStock';
+    }
+    if (supplies.any((m) => m.isOutOfStock)) {
+      return 'type:supply|filter:outOfStock';
+    }
+    if (medicines.any((m) => m.isLowStock)) {
+      return 'type:medicine|filter:lowStock';
+    }
+    if (supplies.any((m) => m.isLowStock)) {
+      return 'type:supply|filter:lowStock';
+    }
+    return null;
+  }
+
+  /// يجدول (أو يُلغي) إشعار اليوميّة عند الساعة 9 صباحاً.
+  ///
+  /// - إن كان الملخّص فارغاً: يُلغي أي إشعار مجدول (لا نُزعج بلا سبب).
+  /// - وإلا: يُعيد جدولة الإشعار بمحتواه الحالي — تُستدعى بعد كل تغيير بيانات
+  ///   ليبقى ما يظهر غداً صباحاً أقرب ما يمكن للحقيقة.
+  ///
+  /// `matchDateTimeComponents: DateTimeComponents.time` يجعل الإشعار يتكرّر
+  /// يومياً في نفس الوقت حتى نلغيه — فلا نحتاج إعادة جدولة يوم بيوم.
+  Future<void> scheduleDailyDigest(List<Medicine> all) async {
+    await init();
+
+    final summary = buildSummary(all);
+    final payload = computePayload(all);
+
+    // بلا داعٍ للتنبيه — ألغِ الجدولة السابقة إن وُجدت
+    if (summary == null || payload == null) {
+      try {
+        await _plugin.cancel(id: _dailyId);
+      } catch (e) {
+        debugPrint('تعذّر إلغاء الإشعار اليومي: $e');
+      }
+      return;
+    }
+
+    if (!_tzInitialized) {
+      // بلا منطقة زمنية لا يمكن استعمال zonedSchedule بأمان — نتخطّى صامتاً
+      debugPrint('لا منطقة زمنية مهيّأة — تُخُطّي الجدولة اليومية');
+      return;
+    }
+
+    try {
+      final scheduled = _nextInstanceOf(_dailyHour, _dailyMinute);
+      await _plugin.zonedSchedule(
+        id: _dailyId,
+        title: '🔔 صيدليتي — يحتاج مراجعة',
+        body: summary,
+        scheduledDate: scheduled,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            channelDescription: _channelDesc,
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+          ),
+        ),
+        payload: payload,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      debugPrint('تعذّرت جدولة الإشعار اليومي: $e');
+    }
+  }
+
+  /// يُلغي الإشعار المجدول — يُستدعى عند تعطيل مفتاح التنبيهات في الإعدادات.
+  Future<void> cancelDailyDigest() async {
+    try {
+      await _plugin.cancel(id: _dailyId);
+    } catch (e) {
+      debugPrint('تعذّر إلغاء الإشعار اليومي: $e');
+    }
+  }
+
+  /// يحسب موعد التشغيل التالي: إن مضت الساعة اليوم، جدولها للغد.
+  static tz.TZDateTime _nextInstanceOf(int hour, int minute) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    if (!scheduled.isAfter(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return scheduled;
+  }
+}

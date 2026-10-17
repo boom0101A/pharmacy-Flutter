@@ -1,0 +1,121 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import '../db/medicine_db.dart';
+import '../models/medicine.dart';
+
+/// نسخة احتياطية إلى ملف على الجهاز — مستقلة تماماً عن الحساب والسحابة.
+///
+/// **لماذا هذا ضروري:** هوية المزامنة مجهولة ومربوطة بالتثبيت. إلغاء تثبيت
+/// التطبيق (وهو مطلوب مرة واحدة عند تغيير مفتاح التوقيع) يمسح قاعدة SQLite
+/// **ويولّد هوية جديدة**، فتبقى سجلات السحابة مملوكة للهوية القديمة ولا يراها
+/// الجهاز. ملف النسخة الاحتياطية هو ما يعيد كل شيء في تلك الحالة.
+class BackupService {
+  BackupService._();
+
+  /// صيغة الملف — لو تغيّر الشكل مستقبلاً نعرف كيف نقرأ القديم.
+  static const _formatVersion = 1;
+
+  /// كتابة كل المواد إلى ملف JSON. يعيد مسار الملف.
+  ///
+  /// الصور لا تُضمَّن (قد تبلغ مئات الميغابايت) — تُذكر أسماؤها فقط.
+  static Future<String> export() async {
+    final items = await MedicineDb.instance.getAll();
+    final payload = {
+      'format': _formatVersion,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'count': items.length,
+      'items': items.map((m) => m.toMap()).toList(),
+    };
+
+    final dir = await getApplicationDocumentsDirectory();
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .split('.')
+        .first;
+    final file = File(p.join(dir.path, 'saydaliyati-backup-$stamp.json'));
+    await file.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(payload),
+    );
+    return file.path;
+  }
+
+  /// قراءة ملف نسخة احتياطية وإرجاع المواد التي فيه.
+  ///
+  /// لا يكتب شيئاً في القاعدة — القرار للمستدعي بعد عرض العدد على المستخدم.
+  static Future<BackupContents> read(String path) async {
+    try {
+      final file = File(path);
+      if (!await file.exists()) {
+        return const BackupContents(error: 'الملف غير موجود');
+      }
+
+      final root = jsonDecode(await file.readAsString());
+      if (root is! Map) {
+        return const BackupContents(error: 'الملف ليس نسخة احتياطية صالحة');
+      }
+
+      final rawItems = root['items'];
+      if (rawItems is! List) {
+        return const BackupContents(error: 'الملف لا يحتوي مواد');
+      }
+
+      final items = <Medicine>[];
+      var skipped = 0;
+      for (final raw in rawItems) {
+        // سجل تالف واحد يجب ألا يُفقد بقية النسخة الاحتياطية
+        try {
+          if (raw is! Map) {
+            skipped++;
+            continue;
+          }
+          items.add(Medicine.fromMap(Map<String, Object?>.from(raw)));
+        } catch (_) {
+          skipped++;
+        }
+      }
+
+      return BackupContents(items: items, skipped: skipped);
+    } catch (e) {
+      debugPrint('تعذّرت قراءة النسخة الاحتياطية: $e');
+      return BackupContents(error: 'تعذّرت قراءة الملف: $e');
+    }
+  }
+
+  /// أحدث ملف نسخة احتياطية موجود، أو null.
+  static Future<File?> latest() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final files =
+          (await Directory(
+            dir.path,
+          ).list().where((e) => e is File).cast<File>().toList())..removeWhere(
+            (f) => !p.basename(f.path).startsWith('saydaliyati-backup-'),
+          );
+      if (files.isEmpty) return null;
+      files.sort(
+        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+      );
+      return files.first;
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+class BackupContents {
+  final List<Medicine> items;
+
+  /// سجلات تعذّرت قراءتها ولم توقف الاستيراد.
+  final int skipped;
+  final String? error;
+
+  const BackupContents({this.items = const [], this.skipped = 0, this.error});
+
+  bool get ok => error == null;
+}

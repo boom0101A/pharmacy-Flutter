@@ -1,0 +1,329 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+import '../models/medicine.dart';
+import 'app_settings.dart';
+
+/// سطر واحد استُخرج من صورة فاتورة.
+///
+/// كل الحقول الاختيارية `nullable`: قد لا يقرأ Gemini كل شيء من كل سطر،
+/// والمراجعة اليدوية في شاشة الفاتورة تكمّل الناقص وتصحّح المشتبه به.
+class InvoiceLine {
+  InvoiceLine({
+    required this.name,
+    this.price,
+    this.quantity,
+    this.barcode,
+    this.expiry,
+    this.category,
+  });
+
+  final String name;
+  final double? price;
+  final int? quantity;
+  final String? barcode;
+
+  /// نص التاريخ كما ظهر في الفاتورة — يُحوَّل لاحقاً حين يعبث المستخدم بالحقل.
+  final String? expiry;
+
+  /// الشكل الصيدلاني للمستلزمات (Tablet/Cream/Syrup/Drops/...) — يظهر في
+  /// عمود «نوع المواد» في فواتير المجهّزين ويُحفظ كما هو بلا ترجمة.
+  final String? category;
+}
+
+/// نتيجة قراءة صورة فاتورة.
+class InvoiceResult {
+  const InvoiceResult._(this.ok, this.lines, this.error);
+
+  final bool ok;
+  final List<InvoiceLine> lines;
+  final String? error;
+
+  factory InvoiceResult.success(List<InvoiceLine> lines) =>
+      InvoiceResult._(true, lines, null);
+  factory InvoiceResult.failure(String reason) =>
+      InvoiceResult._(false, const [], reason);
+}
+
+/// عميل Google Gemini للفواتير — الصورة تُرسَل إلى endpoint نموذج
+/// `gemini-2.0-flash` مع مخطط JSON صارم يجبر النموذج على إعادة أسطر منظّمة
+/// بدل نص حرّ يحتاج تحليلاً هشّاً.
+///
+/// **لا يرمي استثناء أبداً:** كل حالات الفشل تُعاد كـ `InvoiceResult.failure`
+/// برسالة عربية واضحة، فلا يعطّل خطأ الشبكة أو انتهاء المهلة الواجهة.
+class GeminiVision {
+  GeminiVision._();
+
+  /// نموذج «تفكير» جديد يُوصي Google باستعماله بعد إيقاف gemini-2.0-flash
+  /// و2.5-flash للمستخدمين الجدد. يستهلك بضع مئات من توكنات التفكير قبل
+  /// الرد فيبطئ الاستجابة إلى 6-10 ثوانٍ للفاتورة الواحدة — مقبول لأن
+  /// المستخدم يلتقط صورة ثم ينتظر مرة واحدة، لا يكرّرها في كل ضغطة.
+  static const _model = 'gemini-3.6-flash';
+  static const _endpoint =
+      'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent';
+
+  /// الحد الأقصى لحجم الصورة المرسلة — Gemini يقبل حتى 20MB لكن صورة فاتورة
+  /// عادية أقل من 2MB. نمنع تصعيد أي صورة كبيرة عرضاً كي لا يفشل الطلب.
+  static const _maxBytes = 4 * 1024 * 1024;
+
+  /// 90 ثانية سقف — يكفي فواتير طويلة مع توكنات التفكير قبل الاستخراج.
+  static const Duration _timeout = Duration(seconds: 90);
+
+  static bool get isConfigured => AppSettings.instance.hasGeminiKey;
+
+  /// يقرأ فاتورة من ملف على القرص.
+  static Future<InvoiceResult> readInvoice(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      return await readInvoiceBytes(bytes);
+    } catch (e) {
+      return InvoiceResult.failure('تعذّرت قراءة ملف الصورة: $e');
+    }
+  }
+
+  /// يقرأ فاتورة من بايتات مباشرة — نقطة الدخول الوحيدة القابلة للاختبار.
+  static Future<InvoiceResult> readInvoiceBytes(Uint8List bytes) async {
+    if (!isConfigured) {
+      return InvoiceResult.failure(
+        'قراءة الفاتورة غير مفعّلة — لم يُضبط مفتاح Gemini في ملف .env.',
+      );
+    }
+    if (bytes.length > _maxBytes) {
+      return InvoiceResult.failure(
+        'الصورة أكبر من ${_maxBytes ~/ (1024 * 1024)} ميجابايت — جرّب صورة أخفّ.',
+      );
+    }
+
+    try {
+      final key = AppSettings.instance.geminiKey;
+      final url = Uri.parse('$_endpoint?key=$key');
+      final body = jsonEncode(_buildRequest(bytes));
+
+      final response = await http
+          .post(
+            url,
+            headers: const {'Content-Type': 'application/json'},
+            body: body,
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode != 200) {
+        return InvoiceResult.failure(_explainHttpError(response));
+      }
+
+      return parseResponse(response.body);
+    } on SocketException {
+      return InvoiceResult.failure('لا يوجد اتصال بالإنترنت.');
+    } on http.ClientException catch (e) {
+      return InvoiceResult.failure('تعذّر الاتصال بخدمة القراءة: ${e.message}');
+    } catch (e) {
+      return InvoiceResult.failure('خطأ غير متوقع: $e');
+    }
+  }
+
+  /// يبني حمولة الطلب لـ Gemini بمخطط JSON structured output.
+  static Map<String, Object?> _buildRequest(Uint8List bytes) => {
+    'contents': [
+      {
+        'parts': [
+          {
+            'inline_data': {
+              'mime_type': 'image/jpeg',
+              'data': base64Encode(bytes),
+            },
+          },
+          {'text': _invoicePrompt},
+        ],
+      },
+    ],
+    'generationConfig': {
+      'temperature': 0.05,
+      'response_mime_type': 'application/json',
+      'response_schema': _invoiceSchema,
+    },
+  };
+
+  static const _invoicePrompt = '''
+هذه صورة لفاتورة صيدلية بالعربية أو الإنجليزية. استخرج **كل سطر مادة** في
+الفاتورة كعنصر منفصل، بلا صفوف الملخّص والمجموع والضريبة.
+
+لكل سطر:
+- name: اسم المادة كما ظهر (نظّف المسافات الزائدة، بلا تعليق).
+- quantity: عدد صحيح للكمية (إن ظهرت).
+- price: **سعر شراء الوحدة** (كلفة) لا سعر البيع، وليس المجموع الكلي للسطر.
+  إن كان الظاهر هو المجموع فقط، اقسم على الكمية لتحصل على سعر الوحدة.
+- barcode: الباركود إن ظهر في السطر (نص رقمي فقط).
+- expiry: تاريخ الصلاحية كما هو في السطر (YYYY-MM أو DD/MM/YYYY، بلا تحويل).
+- category: إن وُجد عمود «نوع المواد» أو «Type» يُشير إلى الشكل الصيدلاني
+  (Tablet/Cream/Syrup/Drops/Vial/...) — انسخه كما هو حرفياً بلا ترجمة.
+  إن لم يوجد هذا العمود في الفاتورة، اترك القيمة null — لا تخترعها.
+
+لا تُضف مواد ليست في الصورة. إن كنت غير متأكد من قيمة، اتركها null.
+''';
+
+  static const Map<String, Object?> _invoiceSchema = {
+    'type': 'OBJECT',
+    'properties': {
+      'lines': {
+        'type': 'ARRAY',
+        'items': {
+          'type': 'OBJECT',
+          'properties': {
+            'name': {'type': 'STRING'},
+            'price': {'type': 'NUMBER', 'nullable': true},
+            'quantity': {'type': 'INTEGER', 'nullable': true},
+            'barcode': {'type': 'STRING', 'nullable': true},
+            'expiry': {'type': 'STRING', 'nullable': true},
+            'category': {'type': 'STRING', 'nullable': true},
+          },
+          'required': ['name'],
+        },
+      },
+    },
+    'required': ['lines'],
+  };
+
+  /// دالة عامة قابلة للاختبار: تفكيك ردّ Gemini إلى قائمة أسطر.
+  @visibleForTesting
+  static InvoiceResult parseResponse(String responseBody) {
+    try {
+      final root = jsonDecode(responseBody) as Map<String, Object?>;
+      final candidates = root['candidates'] as List?;
+      if (candidates == null || candidates.isEmpty) {
+        return InvoiceResult.failure('لم تُرجع الخدمة أي محتوى.');
+      }
+      final parts =
+          ((candidates.first as Map)['content'] as Map)['parts'] as List;
+      final raw = (parts.first as Map)['text'] as String;
+      return parseInvoiceJson(raw);
+    } catch (e) {
+      return InvoiceResult.failure('تعذّر فهم ردّ الخدمة: $e');
+    }
+  }
+
+  /// تفكيك جسم JSON المُعاد من Gemini بحدّ ذاته — أُفرد ليختبَر مباشرةً
+  /// بنصوص جاهزة بلا شبكة.
+  @visibleForTesting
+  static InvoiceResult parseInvoiceJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw) as Map<String, Object?>;
+      final items = (decoded['lines'] as List?) ?? const [];
+      final lines = <InvoiceLine>[];
+      for (final item in items) {
+        if (item is! Map) continue;
+        final name = _clean(item['name']);
+        if (name == null || name.isEmpty) continue;
+        lines.add(
+          InvoiceLine(
+            name: name,
+            price: _num(item['price'])?.toDouble(),
+            quantity: _num(item['quantity'])?.toInt(),
+            barcode: _clean(item['barcode']),
+            expiry: _clean(item['expiry']),
+            category: _clean(item['category']),
+          ),
+        );
+      }
+      return InvoiceResult.success(lines);
+    } catch (e) {
+      return InvoiceResult.failure('تعذّر فهم صيغة الأسطر: $e');
+    }
+  }
+
+  /// يحوّل أي حقل نص إلى string منظّف أو null.
+  static String? _clean(Object? v) {
+    if (v == null) return null;
+    final s = v.toString().trim();
+    return s.isEmpty || s.toLowerCase() == 'null' ? null : s;
+  }
+
+  /// يحوّل أي رقم (int/double/string) إلى num، أو null إن تعذّر.
+  static num? _num(Object? v) {
+    if (v == null) return null;
+    if (v is num) return v;
+    return num.tryParse(v.toString().trim());
+  }
+
+  static String _explainHttpError(http.Response r) {
+    // Gemini يعيد رسالة الخطأ داخل حقل `error.message` عادةً.
+    try {
+      final body = jsonDecode(r.body) as Map<String, Object?>;
+      final err = (body['error'] as Map?)?.cast<String, Object?>();
+      final msg = err?['message']?.toString();
+      if (msg != null && msg.isNotEmpty) return 'Gemini ${r.statusCode}: $msg';
+    } catch (_) {}
+    return 'Gemini استجاب ${r.statusCode}: ${r.reasonPhrase ?? ""}';
+  }
+}
+
+/// امتداد بسيط لتحويل `InvoiceLine` إلى `Medicine` جاهز للحفظ.
+///
+/// المنطق الوحيد هنا: توليد `id` جديد بالوقت، تحويل `expiry` النصي إلى
+/// millis إن نجح، وتحديد `category` للمستلزمات فقط. بقيّة القرارات (النوع،
+/// الدمج بالاسم) في شاشة المراجعة.
+extension InvoiceLineToMedicine on InvoiceLine {
+  Medicine toMedicine({required ItemType type, DateTime? now}) {
+    final ts = (now ?? DateTime.now()).millisecondsSinceEpoch;
+    final expiryMs = _tryParseExpiry(expiry);
+    return Medicine(
+      id: 'inv_${ts}_${(now ?? DateTime.now()).microsecond}',
+      barcode: barcode ?? '',
+      name: name,
+      price: price ?? 0,
+      quantity: quantity ?? 0,
+      expiryDate: expiryMs,
+      type: type,
+      category: type == ItemType.supply ? category : null,
+      createdAt: ts,
+      updatedAt: ts,
+    );
+  }
+
+  /// يحوّل نص تاريخ الفاتورة إلى مللي ثانية.
+  ///
+  /// يقبل: `2027-11` · `11/2027` · `2027-11-30` · `30-11-2027` — **وأيضاً
+  /// السنة ذات الرقمين** (`11/27` · `1/1/27`) وهي الصيغة الأشيع في فواتير
+  /// الصيدليات الحقيقية. كانت تُرفض سابقاً فتُحفظ المادة **بلا تاريخ صلاحية
+  /// إطلاقاً**، فلا تظهر أبداً في تنبيهات الصلاحية — دواء منتهٍ يبقى خفياً.
+  static int? _tryParseExpiry(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final s = raw.replaceAll('/', '-').replaceAll('.', '-').trim();
+    final parts = s.split('-').where((p) => p.isNotEmpty).toList();
+    if (parts.length < 2) return null;
+    try {
+      int year, month, day;
+      if (parts[0].length == 4) {
+        // سنة أولاً: 2027-11 أو 2027-11-30
+        year = int.parse(parts[0]);
+        month = int.parse(parts[1]);
+        day = parts.length > 2 ? int.parse(parts[2]) : 0;
+      } else {
+        // سنة أخيراً: 11-2027 أو 30-11-2027 أو 11-27 أو 1-1-27
+        year = _expandYear(int.parse(parts.last));
+        month = int.parse(parts[parts.length - 2]);
+        day = parts.length > 2 ? int.parse(parts[0]) : 0;
+      }
+      if (month < 1 || month > 12 || year < 2020 || year > 2100) return null;
+
+      // آخر يوم في الشهر عند غياب اليوم، وحدٌّ أعلى عند وجوده: بلا هذا كان
+      // «2027-11-31» ينزلق إلى 1 ديسمبر (DateTime يتسامح مع الفيض).
+      final lastDay = DateTime(year, month + 1, 0).day;
+      if (day <= 0 || day > lastDay) day = lastDay;
+
+      return DateTime(year, month, day).millisecondsSinceEpoch;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// يوسّع سنة من رقمين إلى أربعة بنفس قاعدة القرن المستعملة في مفكّك GS1
+  /// (`gs1_parser`): 00-50 ⇒ 20xx، وما فوق ⇒ 19xx. السنوات المكتوبة أصلاً
+  /// بأربعة أرقام تمرّ كما هي.
+  static int _expandYear(int raw) {
+    if (raw >= 100) return raw;
+    return raw <= 50 ? 2000 + raw : 1900 + raw;
+  }
+}
