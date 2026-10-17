@@ -250,11 +250,11 @@ class MedicineStore extends ChangeNotifier {
       }
     }
 
-    // ما حُذف محلياً بالدمج أو بإصلاح الباركود يجب أن يُحذف من السحابة أيضاً،
-    // وإلا نزّلته المزامنة من جديد وعاد المكرر بلا نهاية.
-    await _flushPendingDeletes();
-
+    // المزامنة أولاً ثم تفريغ طابور الحذف: المزامنة تعامل ما في الطابور كمحذوف
+    // (فلا تعيد تنزيله)، وتزيل منه أولاً أي أثر تعارض باركود قبل أن يحاول
+    // التفريغ حذف مخزون حقيقي من السحابة.
     final changed = await SyncService.instance.syncAll();
+    await _flushPendingDeletes();
     if (changed) {
       _all = await _db.getAll();
       notifyListeners();
@@ -323,10 +323,11 @@ class MedicineStore extends ChangeNotifier {
     }
 
     if (toWrite.isNotEmpty) {
-      final losers = (await _db.upsertAllResolvingBarcodes(toWrite)).toSet();
+      final losers = (await _db.upsertAllSkippingBarcodeConflicts(toWrite))
+          .toSet();
       for (final item in toWrite) {
         if (!losers.contains(item.id)) continue;
-        // وارد خسر أمام باركود محلي أحدث — لم يُكتب
+        // وارد يتعارض باركوده مع مادة محلية أخرى — لم يُكتب
         if (byId.containsKey(item.id)) {
           updated--;
         } else {

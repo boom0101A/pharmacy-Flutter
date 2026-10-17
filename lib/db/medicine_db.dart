@@ -242,50 +242,31 @@ class MedicineDb {
 
   /// كتابة دفعة قد تحمل باركوداً موجوداً تحت معرّف آخر (مزامنة، استرجاع نسخة).
   ///
-  /// `replace` وحده يحذف الصف المتعارض بصمت ولا يسجّله للحذف السحابي، فيعود
-  /// من السحابة في المزامنة التالية ويحذف الآخر بدوره — تناوب بلا نهاية. هنا
-  /// يُحسم التعارض بقاعدة [repairGs1Barcodes] نفسها: الأحدث يفوز، والتساوي
-  /// يحسمه المعرّف الأصغر (حتمي على كل الأجهزة). الخاسر يُحذف ويُدرج في
-  /// `pending_deletes` فيُمحى من السحابة أيضاً. يعيد معرّفات الخاسرين.
-  Future<List<String>> upsertAllResolvingBarcodes(List<Medicine> items) async {
+  /// `replace` وحده يحذف الصف المتعارض بصمت. لكن الحذف هنا خطأ أيضاً: بيانات
+  /// الصيدلية فيها عشرات المواد بنفس الباركود من فواتير مختلفة بكميات حقيقية،
+  /// وبعضها منتجات مختلفة. لذلك **لا يُحذف شيء**: المحلي يبقى، والوارد المتعارض
+  /// يُتخطّى ولا يُدرج في أي طابور. ثابت بلا تناوب لأن المحلي لا يتغيّر.
+  /// يعيد معرّفات العناصر الواردة المتخطّاة.
+  Future<List<String>> upsertAllSkippingBarcodeConflicts(
+    List<Medicine> items,
+  ) async {
     if (items.isEmpty) return const [];
     final db = await database;
-    final losers = <String>[];
-
+    final skipped = <String>[];
     await db.transaction((txn) async {
       for (final item in items) {
-        var incomingLoses = false;
         if (item.barcode.isNotEmpty) {
-          final rows = await txn.query(
+          final clash = await txn.query(
             _table,
-            columns: ['id', 'updatedAt'],
+            columns: ['id'],
             where: 'barcode = ? AND id != ?',
             whereArgs: [item.barcode, item.id],
+            limit: 1,
           );
-          for (final row in rows) {
-            final otherId = row['id'].toString();
-            final otherUpdated = _asInt(row['updatedAt']);
-            final otherWins =
-                otherUpdated > item.updatedAt ||
-                (otherUpdated == item.updatedAt &&
-                    otherId.compareTo(item.id) < 0);
-            if (otherWins) {
-              incomingLoses = true;
-            } else {
-              await txn.delete(_table, where: 'id = ?', whereArgs: [otherId]);
-              await txn.insert(_pendingDeletes, {
-                'id': otherId,
-              }, conflictAlgorithm: ConflictAlgorithm.ignore);
-              losers.add(otherId);
-            }
+          if (clash.isNotEmpty) {
+            skipped.add(item.id);
+            continue;
           }
-        }
-        if (incomingLoses) {
-          await txn.insert(_pendingDeletes, {
-            'id': item.id,
-          }, conflictAlgorithm: ConflictAlgorithm.ignore);
-          losers.add(item.id);
-          continue;
         }
         await txn.insert(
           _table,
@@ -294,7 +275,7 @@ class MedicineDb {
         );
       }
     });
-    return losers;
+    return skipped;
   }
 
   Future<void> delete(String id) async {

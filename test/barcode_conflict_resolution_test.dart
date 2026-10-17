@@ -56,35 +56,39 @@ void main() {
 
   final dbi = MedicineDb.instance;
 
-  test('وارد أحدث بنفس الباركود يحلّ محل المحلي ويُسجَّل المحلي للحذف', () async {
+  // القرار: تعارض الباركود لا يحذف شيئاً أبداً. بيانات الصيدلية الحقيقية فيها
+  // عشرات المواد بنفس الباركود من فواتير مختلفة بكميات حقيقية (بل منتجات
+  // مختلفة أحياناً)، فالحذف كان يمحو مخزوناً فعلياً. المحلي يبقى، والوارد
+  // المتعارض يُتخطّى بلا أي إدراج في طابور الحذف.
+  test('وارد أحدث بنفس الباركود يُتخطّى ولا يحذف المحلي', () async {
     await dbi.upsert(med(id: 'a1', barcode: '123', qty: 200, updatedAt: 100));
-    final losers = await dbi.upsertAllResolvingBarcodes([
+    final skipped = await dbi.upsertAllSkippingBarcodeConflicts([
       med(id: 'b1', barcode: '123', qty: 5, updatedAt: 200),
     ]);
-    expect(losers, ['a1']);
-    expect((await dbi.getAll()).map((m) => m.id), ['b1']);
-    expect(await dbi.peekPendingDeletes(), contains('a1'));
-  });
-
-  test('وارد أقدم بنفس الباركود يُتخطّى ولا يمس المحلي', () async {
-    await dbi.upsert(med(id: 'a1', barcode: '123', qty: 200, updatedAt: 300));
-    final losers = await dbi.upsertAllResolvingBarcodes([
-      med(id: 'b1', barcode: '123', qty: 5, updatedAt: 200),
-    ]);
-    expect(losers, ['b1']);
+    expect(skipped, ['b1']);
     final all = await dbi.getAll();
     expect(all.single.id, 'a1');
     expect(all.single.quantity, 200);
-    expect(await dbi.peekPendingDeletes(), contains('b1'));
+    expect(await dbi.peekPendingDeletes(), isEmpty);
   });
 
-  test('تساوي الختم: المعرّف الأصغر يفوز على الجهازين', () async {
-    await dbi.upsert(med(id: 'b1', barcode: '123', updatedAt: 100));
-    final losers = await dbi.upsertAllResolvingBarcodes([
-      med(id: 'a1', barcode: '123', updatedAt: 100),
+  test('وارد أقدم بنفس الباركود يُتخطّى كذلك', () async {
+    await dbi.upsert(med(id: 'a1', barcode: '123', qty: 200, updatedAt: 300));
+    final skipped = await dbi.upsertAllSkippingBarcodeConflicts([
+      med(id: 'b1', barcode: '123', qty: 5, updatedAt: 200),
     ]);
-    expect(losers, ['b1']);
-    expect((await dbi.getAll()).single.id, 'a1');
+    expect(skipped, ['b1']);
+    expect((await dbi.getAll()).single.quantity, 200);
+    expect(await dbi.peekPendingDeletes(), isEmpty);
+  });
+
+  test('تحديث نفس المعرّف يُكتب عادياً', () async {
+    await dbi.upsert(med(id: 'a1', barcode: '123', qty: 1, updatedAt: 100));
+    final skipped = await dbi.upsertAllSkippingBarcodeConflicts([
+      med(id: 'a1', barcode: '123', qty: 9, updatedAt: 200),
+    ]);
+    expect(skipped, isEmpty);
+    expect((await dbi.getAll()).single.quantity, 9);
   });
 
   test('لا تناوب: تطبيق نفس الدفعة مرتين بترتيبين يعطي نفس النتيجة', () async {
@@ -92,16 +96,14 @@ void main() {
       med(id: 'a1', barcode: '123', updatedAt: 100),
       med(id: 'b1', barcode: '123', updatedAt: 200),
     ];
-    await dbi.upsertAllResolvingBarcodes(batch);
-    await dbi.upsertAllResolvingBarcodes(batch.reversed.toList());
-    expect((await dbi.getAll()).map((m) => m.id), ['b1']);
+    await dbi.upsertAllSkippingBarcodeConflicts(batch);
+    await dbi.upsertAllSkippingBarcodeConflicts(batch.reversed.toList());
+    expect((await dbi.getAll()).map((m) => m.id), ['a1']);
+    expect(await dbi.peekPendingDeletes(), isEmpty);
   });
 
   test('باركود فارغ لا يتعارض', () async {
-    await dbi.upsertAllResolvingBarcodes([
-      med(id: 'a1'),
-      med(id: 'b1'),
-    ]);
+    await dbi.upsertAllSkippingBarcodeConflicts([med(id: 'a1'), med(id: 'b1')]);
     expect((await dbi.getAll()).length, 2);
   });
 

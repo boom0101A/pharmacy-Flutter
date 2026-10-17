@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import '../db/medicine_db.dart';
 import '../models/medicine.dart';
 import 'app_settings.dart';
+import 'barcode_conflicts.dart';
 import 'auth_service.dart';
 import 'barcode_registry.dart';
 import 'image_store.dart';
@@ -252,7 +253,13 @@ class SyncService extends ChangeNotifier {
       // ولم يُثبَّت شاهد بعد) يُعامَل كمحذوف لهذه المزامنة — بلا هذا يظل
       // مرئياً في السحابة، فتُحضره حلقة النزول أدناه ويعود الحذف الظاهري.
       final pendingDeletes = await MedicineDb.instance.peekPendingDeletes();
-      deletedIds.addAll(pendingDeletes);
+      // أثر نسخة سابقة أدرجت مخزوناً حقيقياً في الطابور بسبب تعارض باركود:
+      // يُزال من الطابور ولا يُعامَل كمحذوف.
+      final artifacts = conflictArtifactIds(pendingDeletes, remoteById);
+      for (final id in artifacts) {
+        await MedicineDb.instance.clearPendingDelete(id);
+      }
+      deletedIds.addAll(pendingDeletes.where((id) => !artifacts.contains(id)));
 
       var localChanged = false;
       final pending = <String, Map<String, Object?>>{};
@@ -301,11 +308,8 @@ class SyncService extends ChangeNotifier {
         }
       }
       if (downloads.isNotEmpty) {
-        // الخاسرون صاروا في طابور الحذف؛ نضمّهم هنا كي لا تعيد حلقة الصعود
-        // رفع خاسر محلي في نفس الدورة
-        deletedIds.addAll(
-          await MedicineDb.instance.upsertAllResolvingBarcodes(downloads),
-        );
+        // المتعارض بالباركود يُتخطّى محلياً ولا يُحذف من أي مكان
+        await MedicineDb.instance.upsertAllSkippingBarcodeConflicts(downloads);
         localChanged = true;
       }
 
