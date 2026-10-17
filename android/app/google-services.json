@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "87184383093",
+    "project_id": "pharmacy-app-ef990",
+    "storage_bucket": "pharmacy-app-ef990.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87184383093:android:cd58c88060eccfefcaac3c",
+        "android_client_info": {
+          "package_name": "com.pharmacy.saydaliyati"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8XD4XsCMKAcFk6_wcrOKGhilDu1Dr4eo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
