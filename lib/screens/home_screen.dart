@@ -334,28 +334,41 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _actionRow() {
+    final hasInvoice = AppSettings.instance.hasGeminiKey;
+    // ثلاثة أزرار عريضة لا تتسع للهواتف الضيقة: «مسح باركود» يصير أيقونة
+    // فقط هناك، ويبقى «فاتورة ذكية» باسمه لأنه الأقل وضوحاً بلا نص.
+    final compactScan = hasInvoice && MediaQuery.sizeOf(context).width < 400;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // قراءة الفاتورة متاحة في القسمين — الأسطر تُصنَّف في شاشة المراجعة.
         // تختفي تلقائياً إن غاب مفتاح Gemini (لا فائدة من زرّ يفتح خطأ).
-        if (AppSettings.instance.hasGeminiKey) ...[
-          FloatingActionButton.small(
+        if (hasInvoice) ...[
+          FloatingActionButton.extended(
             heroTag: 'invoice-${type.code}',
             onPressed: _openInvoiceScan,
             backgroundColor: AppColors.warning,
-            tooltip: 'قراءة فاتورة',
-            child: const Icon(Icons.receipt_long, size: 20),
+            icon: const Icon(Icons.receipt_long),
+            label: const Text('فاتورة ذكية'),
           ),
           const SizedBox(width: 10),
         ],
-        FloatingActionButton.extended(
-          heroTag: 'scan-${type.code}',
-          onPressed: () => _openForm(scanFirst: true),
-          backgroundColor: AppColors.primary,
-          icon: const Icon(Icons.qr_code_scanner),
-          label: const Text('مسح باركود'),
-        ),
+        if (compactScan)
+          FloatingActionButton(
+            heroTag: 'scan-${type.code}',
+            onPressed: () => _openForm(scanFirst: true),
+            backgroundColor: AppColors.primary,
+            tooltip: 'مسح باركود',
+            child: const Icon(Icons.qr_code_scanner),
+          )
+        else
+          FloatingActionButton.extended(
+            heroTag: 'scan-${type.code}',
+            onPressed: () => _openForm(scanFirst: true),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.qr_code_scanner),
+            label: const Text('مسح باركود'),
+          ),
         const SizedBox(width: 10),
         FloatingActionButton(
           heroTag: 'add-${type.code}',

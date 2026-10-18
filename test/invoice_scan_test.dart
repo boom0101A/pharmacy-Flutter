@@ -23,6 +23,7 @@ InvoiceLineDraft _draft(
   int quantity = 0,
   String barcode = '',
   String? category,
+  int? expiryDate,
 }) => InvoiceLineDraft(
   name: name,
   type: type,
@@ -30,6 +31,7 @@ InvoiceLineDraft _draft(
   quantity: quantity,
   barcode: barcode,
   category: category,
+  expiryDate: expiryDate,
 );
 
 void main() {
@@ -256,6 +258,101 @@ void main() {
       expect(parsed('غير معروف'), isNull);
       expect(parsed('13/2027'), isNull, reason: 'شهر 13 غير صالح');
       expect(parsed('11/1999'), isNull, reason: 'سنة خارج المدى المعقول');
+    });
+  });
+
+  group('مطابقة الباركود والصلاحية', () {
+    Medicine existing({String barcode = '', int? expiry}) => Medicine(
+      id: 'e1',
+      barcode: barcode,
+      name: 'Klamoks Fort 312.5 mg ( 100 ml )',
+      price: 3000,
+      quantity: 6,
+      expiryDate: expiry,
+      type: ItemType.medicine,
+      createdAt: 0,
+      updatedAt: 0,
+    );
+
+    // الباركود في الفاتورة يخص مادة موجودة باسم مكتوب بشكل آخر: كان يُنشأ سجل
+    // جديد بنفس الباركود، فيحذف upsert(replace) المادة الأصلية محلياً
+    // وتبقى النسختان في السحابة — مصدر مجموعات الباركود المكرّرة.
+    test('باركود مادة موجودة واسم مختلف → يُدمج معها لا سجل جديد', () {
+      final store = _TestStore()..seed([existing(barcode: '6285128013338')]);
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'Klamoks 312.5mg Syrup 100ml',
+            type: ItemType.medicine,
+            quantity: 20,
+            barcode: '6285128013338',
+          ),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(r.items.single.id, 'e1');
+      expect(r.items.single.quantity, 26);
+      expect(r.addedNew, 0);
+    });
+
+    test('مطابقة الباركود تقبل الصيغة المكافئة (13 مقابل 14 خانة)', () {
+      final store = _TestStore()..seed([existing(barcode: '06285128013338')]);
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'X',
+            type: ItemType.medicine,
+            quantity: 1,
+            barcode: '6285128013338',
+          ),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(r.items.single.id, 'e1');
+    });
+
+    test('الصلاحية تنتقل للمادة الجديدة', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [_draft('شاش', quantity: 5, expiryDate: 1900000000000)],
+        store: _TestStore(),
+        now: now,
+      );
+      expect(r.items.single.expiryDate, 1900000000000);
+    });
+
+    test('المادة المدموجة تأخذ الصلاحية الأقرب', () {
+      final store = _TestStore()
+        ..seed([existing(barcode: '6285128013338', expiry: 1800000000000)]);
+      final later = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'X',
+            type: ItemType.medicine,
+            quantity: 1,
+            barcode: '6285128013338',
+            expiryDate: 1900000000000,
+          ),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(later.items.single.expiryDate, 1800000000000);
+      final sooner = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'X',
+            type: ItemType.medicine,
+            quantity: 1,
+            barcode: '6285128013338',
+            expiryDate: 1700000000000,
+          ),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(sooner.items.single.expiryDate, 1700000000000);
     });
   });
 }

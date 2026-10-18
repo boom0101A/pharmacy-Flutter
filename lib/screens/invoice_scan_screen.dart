@@ -10,8 +10,18 @@ import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
 import '../theme.dart';
 
+/// يختار صورة صفحة (كاميرا أو معرض) — قابل للحقن في الاختبار.
+typedef InvoicePagePicker = Future<File?> Function({required bool camera});
+
+/// يقرأ صورة صفحة واحدة — قابل للحقن في الاختبار.
+typedef InvoicePageReader = Future<InvoiceResult> Function(File image);
+
 /// قراءة فاتورة مجهّز بالذكاء الاصطناعي (Gemini) → مراجعة الأسطر مع تحرير
 /// كامل → حفظها دفعة واحدة عبر `MedicineStore.saveAll`.
+///
+/// **صفحات متعددة:** كل صفحة تُقرأ في طلب مستقل وتُلحق أسطرها، ففشل صفحة لا
+/// يُسقط البقية ويمكن إعادة محاولتها وحدها. الأسطر المكرّرة بين الصفحات تُدمج
+/// عند الحفظ في [buildInvoiceSaveItems].
 ///
 /// **يعمل فقط عند وجود مفتاح Gemini في ملف `.env`** — الزر الذي يفتح هذه
 /// الشاشة يختفي تلقائياً في `home_screen.dart` عند غياب المفتاح.
@@ -20,32 +30,49 @@ class InvoiceScanScreen extends StatefulWidget {
     super.key,
     required this.store,
     this.initialType = ItemType.supply,
+    this.pickPage,
+    this.readPage,
   });
 
   final MedicineStore store;
 
-  /// النوع الافتراضي لأسطر الفاتورة — قابل للتغيير في الأعلى بأزرار السطر
-  /// أو جماعياً بأداة `_bulkType`.
+  /// النوع الافتراضي لأسطر الفاتورة — قابل للتغيير لكل سطر أو جماعياً.
   final ItemType initialType;
+
+  final InvoicePagePicker? pickPage;
+  final InvoicePageReader? readPage;
 
   @override
   State<InvoiceScanScreen> createState() => _InvoiceScanScreenState();
 }
 
+enum _PageState { reading, done, failed }
+
+class _InvoicePage {
+  _InvoicePage(this.image);
+  final File image;
+  _PageState state = _PageState.reading;
+  String? error;
+}
+
 class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
-  bool _busy = false;
+  bool _saving = false;
   String? _error;
+  final List<_InvoicePage> _pages = [];
   List<_EditableLine> _lines = const [];
-  File? _preview;
+  bool _flaggedOnly = false;
 
   ItemType _bulkType = ItemType.supply;
+
+  InvoicePagePicker get _pick => widget.pickPage ?? _defaultPick;
+  InvoicePageReader get _read => widget.readPage ?? GeminiVision.readInvoice;
 
   @override
   void initState() {
     super.initState();
     _bulkType = widget.initialType;
     // نبدأ فور الفتح — الكاميرا هي التدفّق الطبيعي
-    WidgetsBinding.instance.addPostFrameCallback((_) => _capture(camera: true));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _addPage(camera: true));
   }
 
   @override
@@ -56,41 +83,72 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     super.dispose();
   }
 
-  Future<void> _capture({required bool camera}) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
+  /// دقة أعلى من السابق (1600) — فواتير المجهّزين كثيفة الأسطر بخط صغير.
+  static Future<File?> _defaultPick({required bool camera}) async {
+    final picked = await ImagePicker().pickImage(
       source: camera ? ImageSource.camera : ImageSource.gallery,
-      maxWidth: 1600,
-      imageQuality: 85,
+      maxWidth: 2400,
+      imageQuality: 90,
     );
-    if (picked == null || !mounted) return;
+    return picked == null ? null : File(picked.path);
+  }
 
+  Future<void> _addPage({required bool camera}) async {
+    final file = await _pick(camera: camera);
+    if (file == null || !mounted) return;
+    final page = _InvoicePage(file);
     setState(() {
-      _busy = true;
       _error = null;
-      _preview = File(picked.path);
+      _pages.add(page);
     });
+    await _readPage(page);
+  }
 
-    final result = await GeminiVision.readInvoice(_preview!);
-    if (!mounted) return;
+  Future<void> _readPage(_InvoicePage page) async {
+    setState(() {
+      page.state = _PageState.reading;
+      page.error = null;
+    });
+    final result = await _read(page.image);
+    // الصفحة قد تُحذف أثناء القراءة
+    if (!mounted || !_pages.contains(page)) return;
 
     if (!result.ok) {
       setState(() {
-        _busy = false;
-        _error = result.error;
+        page.state = _PageState.failed;
+        page.error = result.error;
       });
       return;
     }
-
-    // نظافة: أفرغ محرّرات الأسطر السابقة قبل استبدالها
-    for (final line in _lines) {
-      line.dispose();
+    final added = <_EditableLine>[];
+    for (final l in result.lines) {
+      final v = GeminiVision.validateLine(l);
+      added.add(
+        _EditableLine(
+          source: v.line,
+          issues: v.issues,
+          page: page,
+          type: _bulkType,
+        ),
+      );
     }
     setState(() {
-      _busy = false;
-      _lines = [
-        for (final l in result.lines) _EditableLine(source: l, type: _bulkType),
-      ];
+      page.state = _PageState.done;
+      _lines = [..._lines, ...added];
+    });
+  }
+
+  /// حذف صفحة مع أسطرها — بنفس نمط [_removeLine] الآمن.
+  void _removePage(_InvoicePage page) {
+    final removed = _lines.where((l) => l.page == page).toList();
+    setState(() {
+      _pages.remove(page);
+      _lines = _lines.where((l) => l.page != page).toList();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final l in removed) {
+        l.dispose();
+      }
     });
   }
 
@@ -98,14 +156,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   /// الإطار.
   ///
   /// `dispose()` المباشر داخل `setState` كان يُتلف المحرّرات بينما حقولها
-  /// ما زالت مبنيّة في الإطار الحالي (الإزالة الفعلية تحدث في إعادة البناء
-  /// التالية). لو كان حقل السطر المحذوف يحمل التركيز، يصل تحديث إدخال معلَّق
-  /// من المنصّة إلى محرّر مُتلَف → «A TextEditingController was used after
-  /// being disposed» وشاشة حمراء.
-  void _removeLine(int index) {
-    final removed = _lines[index];
-    setState(() => _lines = List.of(_lines)..removeAt(index));
-    WidgetsBinding.instance.addPostFrameCallback((_) => removed.dispose());
+  /// ما زالت مبنيّة في الإطار الحالي. لو كان حقل السطر المحذوف يحمل التركيز،
+  /// يصل تحديث إدخال معلَّق إلى محرّر مُتلَف → شاشة حمراء.
+  void _removeLine(_EditableLine line) {
+    setState(() => _lines = List.of(_lines)..remove(line));
+    WidgetsBinding.instance.addPostFrameCallback((_) => line.dispose());
   }
 
   void _applyBulkType(ItemType type) {
@@ -116,6 +171,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       }
     });
   }
+
+  int _pageNumber(_InvoicePage page) => _pages.indexOf(page) + 1;
 
   Future<void> _save() async {
     final drafts = <InvoiceLineDraft>[
@@ -128,6 +185,9 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             quantity: parseLocalizedInt(line.quantity.text) ?? 0,
             barcode: line.barcode.text.trim(),
             category: _orNull(line.category.text),
+            expiryDate: InvoiceLineToMedicine.parseExpiry(
+              _orNull(line.expiry.text),
+            ),
           ),
     ];
 
@@ -142,13 +202,13 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       return;
     }
 
-    setState(() => _busy = true);
+    setState(() => _saving = true);
     try {
       await widget.store.saveAll(result.items);
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _busy = false;
+        _saving = false;
         _error = 'تعذّر الحفظ: $e';
       });
       return;
@@ -159,23 +219,24 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
 
   String? _orNull(String s) => s.trim().isEmpty ? null : s.trim();
 
-  /// هل يطابق هذا السطر سجلاً موجوداً مسبقاً في المخزون؟ — للشارة أثناء
-  /// المراجعة، قبل أن يضغط المستخدم حفظ.
+  /// المطابق الموجود في المخزون — بالباركود أولاً ثم بالاسم، بنفس ترتيب
+  /// [buildInvoiceSaveItems] حتى تقول الشارة ما سيحدث فعلاً عند الحفظ.
   Medicine? _existingMatchFor(_EditableLine line) {
+    final byBarcode = widget.store.findExistingByBarcode(line.barcode.text);
+    if (byBarcode != null) return byBarcode;
     final name = line.name.text.trim();
     if (name.isEmpty) return null;
     return widget.store.findExistingByName(name, line.type);
   }
 
   /// هل يطابق هذا السطر سطراً آخر في نفس الفاتورة (نفس الاسم بعد التطبيع
-  /// ونفس القسم)؟ — للشارة أثناء المراجعة أيضاً.
+  /// ونفس القسم)؟
   bool _duplicatesAnotherLine(_EditableLine line) {
     final name = line.name.text.trim();
     if (name.isEmpty) return false;
     final norm = MedicineStore.normalizeName(name);
     for (final other in _lines) {
-      if (identical(other, line)) continue;
-      if (other.type != line.type) continue;
+      if (identical(other, line) || other.type != line.type) continue;
       if (MedicineStore.normalizeName(other.name.text.trim()) == norm) {
         return true;
       }
@@ -183,26 +244,33 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     return false;
   }
 
+  bool get _anyReading => _pages.any((p) => p.state == _PageState.reading);
+
   @override
   Widget build(BuildContext context) {
+    final named = _lines.where((l) => l.name.text.trim().isNotEmpty).length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('📄 قراءة فاتورة'),
+        title: const Text('🧾 فاتورة ذكية'),
         backgroundColor: AppColors.bgCard,
         actions: [
-          if (_lines.isNotEmpty && !_busy)
+          if (_lines.isNotEmpty && !_saving && !_anyReading)
             TextButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.check, color: AppColors.success),
               label: Text(
-                'حفظ (${_lines.where((l) => l.name.text.trim().isNotEmpty).length})',
+                'حفظ ($named)',
                 style: const TextStyle(color: AppColors.success),
               ),
             ),
         ],
       ),
-      body: _busy ? _busyView() : _mainView(),
-      bottomNavigationBar: _lines.isEmpty && !_busy
+      body: _saving
+          ? const Center(child: CircularProgressIndicator())
+          : _pages.isEmpty
+          ? _introView()
+          : _reviewView(),
+      bottomNavigationBar: _pages.isEmpty && !_saving
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -210,7 +278,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () => _capture(camera: true),
+                        onPressed: () => _addPage(camera: true),
                         icon: const Icon(Icons.photo_camera),
                         label: const Text('كاميرا'),
                       ),
@@ -218,7 +286,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _capture(camera: false),
+                        onPressed: () => _addPage(camera: false),
                         icon: const Icon(Icons.photo_library),
                         label: const Text('معرض'),
                       ),
@@ -231,83 +299,311 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     );
   }
 
-  Widget _busyView() => Center(
+  Widget _introView() => Padding(
+    padding: const EdgeInsets.all(20),
     child: Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
-        Text(
-          _preview == null ? 'جاري تحضير الكاميرا…' : 'جاري قراءة الفاتورة…',
-          style: const TextStyle(color: AppColors.textSecondary),
+        const Text('🧾', style: TextStyle(fontSize: 60)),
+        const SizedBox(height: 12),
+        const Text(
+          'صوّر الفاتورة أو اخترها من المعرض',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 8),
+        const Text(
+          'تُقرأ الأسطر تلقائياً وتظهر لك للمراجعة قبل الحفظ. الفاتورة الطويلة؟ '
+          'أضف صفحاتها واحدة تلو الأخرى.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        if (_error != null) ...[const SizedBox(height: 14), _errorBox(_error!)],
       ],
     ),
   );
 
-  Widget _mainView() {
-    if (_lines.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('📸', style: TextStyle(fontSize: 60)),
-            const SizedBox(height: 12),
-            const Text(
-              'صوّر الفاتورة أو اخترها من المعرض',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'تُقرأ الأسطر تلقائياً بالذكاء الاصطناعي وتظهر لك للمراجعة قبل الحفظ.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.danger.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.danger, fontSize: 13),
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
+  Widget _errorBox(String text) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: AppColors.danger.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+    ),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: AppColors.danger, fontSize: 13),
+    ),
+  );
 
+  Widget _reviewView() {
+    final flagged = _lines.where((l) => l.issues.isNotEmpty).length;
+    final shown = _flaggedOnly
+        ? _lines.where((l) => l.issues.isNotEmpty).toList()
+        : _lines;
     return Column(
       children: [
-        _bulkHeader(),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-            itemCount: _lines.length,
-            itemBuilder: (_, i) => _lineCard(i),
+        _pageStrip(),
+        if (_lines.isNotEmpty) _summary(flagged),
+        if (_lines.isNotEmpty) _bulkHeader(),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _errorBox(_error!),
           ),
+        Expanded(
+          child: _lines.isEmpty
+              ? Center(
+                  child: Text(
+                    _anyReading
+                        ? 'جاري قراءة الفاتورة…'
+                        : 'لم تُقرأ أي أسطر بعد',
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+                  itemCount: shown.length,
+                  itemBuilder: (_, i) => _lineCard(shown[i]),
+                ),
         ),
       ],
     );
   }
 
+  /// شريط الصفحات: مصغّرة لكل صفحة بحالتها، وزرّا إضافة صفحة.
+  Widget _pageStrip() => Container(
+    color: AppColors.bgCard,
+    height: 112,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: [
+        for (final page in _pages) _pageTile(page),
+        _addPageButton(
+          icon: Icons.photo_camera,
+          tooltip: 'إضافة صفحة بالكاميرا',
+          camera: true,
+        ),
+        _addPageButton(
+          icon: Icons.photo_library,
+          tooltip: 'إضافة صفحة من المعرض',
+          camera: false,
+        ),
+      ],
+    ),
+  );
+
+  Widget _addPageButton({
+    required IconData icon,
+    required String tooltip,
+    required bool camera,
+  }) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 8),
+    child: Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: _saving ? null : () => _addPage(camera: camera),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 64,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColors.primary),
+              const SizedBox(height: 4),
+              const Text('+ صفحة', style: TextStyle(fontSize: 11)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _pageTile(_InvoicePage page) {
+    final n = _pageNumber(page);
+    final color = switch (page.state) {
+      _PageState.reading => AppColors.primary,
+      _PageState.done => AppColors.success,
+      _PageState.failed => AppColors.danger,
+    };
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: Container(
+        width: page.state == _PageState.failed ? 140 : 76,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  GestureDetector(
+                    onTap: () => _viewPage(page),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(9),
+                      child: Image.file(
+                        page.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const Center(
+                          child: Icon(Icons.description_outlined),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (page.state == _PageState.reading)
+                    const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                    ),
+                  PositionedDirectional(
+                    bottom: 2,
+                    start: 2,
+                    child: _miniLabel('$n', color),
+                  ),
+                  PositionedDirectional(
+                    top: 0,
+                    end: 0,
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: IconButton(
+                        tooltip: 'حذف الصفحة $n',
+                        padding: EdgeInsets.zero,
+                        iconSize: 18,
+                        icon: const Icon(Icons.cancel, color: AppColors.danger),
+                        onPressed: () => _removePage(page),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (page.state == _PageState.failed)
+              SizedBox(
+                width: 62,
+                child: TextButton(
+                  onPressed: () => _readPage(page),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  child: const Text(
+                    'إعادة المحاولة',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, color: AppColors.danger),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _miniLabel(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(fontSize: 10, color: Colors.white),
+    ),
+  );
+
+  /// الصفحة مكبّرة للمقارنة مع الأسطر، مع سبب الفشل إن فشلت.
+  void _viewPage(_InvoicePage page) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.bgDark,
+        insetPadding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (page.error != null)
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(
+                  page.error!,
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ),
+            Flexible(
+              child: InteractiveViewer(
+                maxScale: 6,
+                child: Image.file(
+                  page.image,
+                  errorBuilder: (_, _, _) => const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Icon(Icons.broken_image_outlined, size: 48),
+                  ),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إغلاق'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// «N سطراً · M جديدة · K ستُضاف لمخزون موجود · J تحتاج مراجعة»
+  Widget _summary(int flagged) {
+    final named = _lines.where((l) => l.name.text.trim().isNotEmpty);
+    final existing = named.where((l) => _existingMatchFor(l) != null).length;
+    final total = named.length;
+    return Container(
+      color: AppColors.bgCard,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$total سطراً · ${total - existing} جديدة · '
+              '$existing ستُضاف لمخزون موجود'
+              '${flagged > 0 ? ' · $flagged تحتاج مراجعة' : ''}',
+              style: const TextStyle(fontSize: 12, height: 1.5),
+            ),
+          ),
+          if (flagged > 0)
+            FilterChip(
+              label: const Text(
+                'المشكوك فيها فقط',
+                style: TextStyle(fontSize: 11),
+              ),
+              selected: _flaggedOnly,
+              onSelected: (v) => setState(() => _flaggedOnly = v),
+              selectedColor: AppColors.warning.withValues(alpha: 0.25),
+              showCheckmark: false,
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _bulkHeader() => Container(
     color: AppColors.bgCard,
-    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
     child: Row(
       children: [
         const Text('نوع كل الأسطر:', style: TextStyle(fontSize: 13)),
@@ -327,14 +623,20 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     ),
   );
 
-  Widget _lineCard(int i) {
-    final line = _lines[i];
+  Widget _lineCard(_EditableLine line) {
+    final i = _lines.indexOf(line);
+    final flagged = line.issues.isNotEmpty;
     return Card(
       // مفتاح مرتبط بهوية السطر نفسه: بلاه يُعيد ListView تدوير العنصر بعد
-      // الحذف فيربط حقول السطر التالي بحالة السطر المحذوف (تركيز ولوحة
-      // مفاتيح تشير إلى حقل لم يعد موجوداً).
+      // الحذف فيربط حقول السطر التالي بحالة السطر المحذوف.
       key: ObjectKey(line),
       margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: flagged
+            ? const BorderSide(color: AppColors.warning, width: 1.5)
+            : BorderSide.none,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -355,26 +657,47 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: _typeChip(line)),
+                if (_pages.length > 1)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 4),
+                    child: _badge(
+                      'صفحة ${_pageNumber(line.page)}',
+                      AppColors.textMuted,
+                    ),
+                  ),
                 IconButton(
                   icon: const Icon(
                     Icons.delete_outline,
                     size: 20,
                     color: AppColors.danger,
                   ),
-                  onPressed: () => _removeLine(i),
+                  onPressed: () => _removeLine(line),
                 ),
               ],
             ),
+            if (flagged)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final issue in line.issues)
+                      _badge(issue.label, AppColors.warning),
+                  ],
+                ),
+              ),
             const SizedBox(height: 6),
             TextField(
               controller: line.name,
               decoration: const InputDecoration(labelText: 'الاسم'),
             ),
-            // شارتا تنبيه تتحدّثان حيّاً مع تعديل أي اسم — نستمع لكل أسماء
-            // الأسطر معاً (لا اسم هذا السطر وحده) لأن «مكرر مع سطر آخر»
-            // تعتمد على تغيّر السطر الآخر أيضاً، لا هذا السطر فقط.
+            // الشارات تتحدّث حيّاً مع تعديل أي اسم أو باركود — «مكرر مع سطر
+            // آخر» تعتمد على تغيّر السطر الآخر أيضاً.
             ListenableBuilder(
-              listenable: Listenable.merge([for (final l in _lines) l.name]),
+              listenable: Listenable.merge([
+                for (final l in _lines) ...[l.name, l.barcode],
+              ]),
               builder: (context, _) => _duplicateBadges(line),
             ),
             const SizedBox(height: 6),
@@ -396,7 +719,35 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                   child: TextField(
                     controller: line.quantity,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'الكمية'),
+                    decoration: InputDecoration(
+                      labelText: 'الكمية',
+                      helperText: line.bonus > 0
+                          ? '+${line.bonus} مجاناً'
+                          : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: line.expiry,
+                    decoration: const InputDecoration(
+                      labelText: 'الصلاحية (مثل 2027-11)',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: line.barcode,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'الباركود (اختياري)',
+                    ),
                   ),
                 ),
               ],
@@ -410,22 +761,13 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 6),
-            TextField(
-              controller: line.barcode,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'الباركود (اختياري)',
-              ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  /// شارتا التنبيه: «موجودة مسبقاً» (كهرمانية) و«مكررة داخل هذه الفاتورة»
-  /// (زرقاء) — تظهران فقط عند الحاجة، جنباً إلى جنب إن انطبقتا معاً.
+  /// «موجودة مسبقاً» و«مكررة داخل هذه الفاتورة» — عند الحاجة فقط.
   Widget _duplicateBadges(_EditableLine line) {
     final existing = _existingMatchFor(line);
     final duplicatesOther = _duplicatesAnotherLine(line);
@@ -439,7 +781,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         children: [
           if (existing != null)
             _badge(
-              '🔁 موجودة مسبقاً — الرصيد الحالي ${existing.quantity}، سيُضاف الوارد إليه',
+              '🔁 موجودة مسبقاً («${existing.name}») — الرصيد '
+              '${existing.quantity}، سيُضاف الوارد إليه',
               AppColors.warning,
             ),
           if (duplicatesOther)
@@ -488,6 +831,7 @@ class InvoiceLineDraft {
     this.quantity = 0,
     this.barcode = '',
     this.category,
+    this.expiryDate,
   });
 
   final String name;
@@ -496,6 +840,9 @@ class InvoiceLineDraft {
   final int quantity;
   final String barcode;
   final String? category;
+
+  /// مللي ثانية، أو null إن لم تُقرأ صلاحية.
+  final int? expiryDate;
 }
 
 /// نتيجة حفظ فاتورة — تُستعمل لعرض ملخّص صادق للمستخدم بدل عدّاد مبهم لا
@@ -560,6 +907,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
         quantity: prev.quantity + d.quantity,
         barcode: prev.barcode.isNotEmpty ? prev.barcode : d.barcode,
         category: prev.category ?? d.category,
+        expiryDate: _earlier(prev.expiryDate, d.expiryDate),
       );
       mergedWithinFlags[key] = true;
     }
@@ -575,17 +923,27 @@ InvoiceSaveResult buildInvoiceSaveItems({
     final d = byKey[key]!;
     if (mergedWithinFlags[key] == true) mergedWithinInvoice++;
 
-    final existing = store.findExistingByName(d.name, d.type);
+    // الباركود أولاً: سطر بباركود مادة موجودة (ولو باسم مكتوب بشكل آخر) يُدمج
+    // معها. إنشاء سجل جديد بنفس الباركود كان يجعل upsert(replace) يحذف
+    // المادة الأصلية محلياً بينما تبقى النسختان في السحابة.
+    final byBarcode = store.findExistingByBarcode(d.barcode);
+    final existing = byBarcode ?? store.findExistingByName(d.name, d.type);
     final ts = now.millisecondsSinceEpoch;
     if (existing != null) {
       mergedExisting++;
+      // مطابقة الباركود لا تنقل المادة لقسم آخر بسبب تصنيف الفاتورة الجماعي
+      final type = byBarcode != null ? existing.type : d.type;
+      final expiry = _earlier(existing.expiryDate, d.expiryDate);
       items.add(
         existing.copyWith(
           price: d.price > 0 ? d.price : existing.price,
           quantity: existing.quantity + d.quantity,
-          type: d.type,
-          category: d.type == ItemType.supply ? d.category : null,
-          clearCategory: d.type != ItemType.supply,
+          type: type,
+          category: type == ItemType.supply
+              ? (d.category ?? existing.category)
+              : null,
+          clearCategory: type != ItemType.supply,
+          expiryDate: expiry,
           updatedAt: ts,
         ),
       );
@@ -600,6 +958,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
           quantity: d.quantity,
           type: d.type,
           category: d.type == ItemType.supply ? d.category : null,
+          expiryDate: d.expiryDate,
           createdAt: ts,
           updatedAt: ts,
         ),
@@ -615,23 +974,43 @@ InvoiceSaveResult buildInvoiceSaveItems({
   );
 }
 
-/// حاوية محرّرات سطر واحد — عمرها بعمر الشاشة، تُتلَف عند الاستبدال أو الخروج.
-class _EditableLine {
-  _EditableLine({required InvoiceLine source, required this.type})
-    : name = TextEditingController(text: source.name),
-      price = TextEditingController(
-        text: source.price == null ? '' : _num(source.price!),
-      ),
-      quantity = TextEditingController(
-        text: source.quantity == null ? '' : source.quantity!.toString(),
-      ),
-      barcode = TextEditingController(text: source.barcode ?? ''),
-      category = TextEditingController(text: source.category ?? '');
+/// الأقرب من تاريخين — التنبيه المبكر بالصلاحية أسلم من المتأخر.
+int? _earlier(int? a, int? b) {
+  if (a == null) return b;
+  if (b == null) return a;
+  return a < b ? a : b;
+}
 
+/// حاوية محرّرات سطر واحد — عمرها بعمر الشاشة، تُتلَف عند الحذف أو الخروج.
+class _EditableLine {
+  _EditableLine({
+    required InvoiceLine source,
+    required this.type,
+    required this.page,
+    this.issues = const [],
+  }) : bonus = source.bonus ?? 0,
+       name = TextEditingController(text: source.name),
+       price = TextEditingController(
+         text: source.price == null ? '' : _num(source.price!),
+       ),
+       // البونص يصل للرف فعلاً فيُضاف للكمية، ويُعرض «+N مجاناً» تحت الحقل
+       quantity = TextEditingController(
+         text: source.quantity == null && source.bonus == null
+             ? ''
+             : '${(source.quantity ?? 0) + (source.bonus ?? 0)}',
+       ),
+       barcode = TextEditingController(text: source.barcode ?? ''),
+       expiry = TextEditingController(text: source.expiry ?? ''),
+       category = TextEditingController(text: source.category ?? '');
+
+  final _InvoicePage page;
+  final List<LineIssue> issues;
+  final int bonus;
   final TextEditingController name;
   final TextEditingController price;
   final TextEditingController quantity;
   final TextEditingController barcode;
+  final TextEditingController expiry;
   final TextEditingController category;
   ItemType type;
 
@@ -640,6 +1019,7 @@ class _EditableLine {
     price.dispose();
     quantity.dispose();
     barcode.dispose();
+    expiry.dispose();
     category.dispose();
   }
 

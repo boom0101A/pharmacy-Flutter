@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/medicine.dart';
 import 'app_settings.dart';
+import 'gs1_parser.dart';
 
 /// سطر واحد استُخرج من صورة فاتورة.
 ///
@@ -19,6 +20,9 @@ class InvoiceLine {
     this.barcode,
     this.expiry,
     this.category,
+    this.bonus,
+    this.lineTotal,
+    this.uncertain = false,
   });
 
   final String name;
@@ -32,6 +36,45 @@ class InvoiceLine {
   /// الشكل الصيدلاني للمستلزمات (Tablet/Cream/Syrup/Drops/...) — يظهر في
   /// عمود «نوع المواد» في فواتير المجهّزين ويُحفظ كما هو بلا ترجمة.
   final String? category;
+
+  /// الكمية المجانية (بونص) — تصل للرف فعلاً فتُضاف للكمية عند الحفظ.
+  final int? bonus;
+
+  /// مجموع السطر كما طُبع — للتحقق من الكمية × السعر.
+  final double? lineTotal;
+
+  /// علَّمه Gemini بنفسه: سطر غير واضح في الصورة.
+  final bool uncertain;
+
+  InvoiceLine withoutBarcode() => InvoiceLine(
+    name: name,
+    price: price,
+    quantity: quantity,
+    expiry: expiry,
+    category: category,
+    bonus: bonus,
+    lineTotal: lineTotal,
+    uncertain: uncertain,
+  );
+}
+
+/// مشكلة معروفة في سطر مقروء — تُعرض كشارة في المراجعة.
+enum LineIssue {
+  invalidBarcode('باركود غير صالح — حُذف'),
+  totalMismatch('الكمية × السعر ≠ المجموع'),
+  missingPrice('السعر ناقص'),
+  missingQuantity('الكمية ناقصة'),
+  uncertain('غير واضح في الصورة');
+
+  const LineIssue(this.label);
+  final String label;
+}
+
+/// سطر بعد التحقق: قد يُعدَّل (حذف باركود غير صالح) مع قائمة مشكلاته.
+class ValidatedLine {
+  const ValidatedLine(this.line, this.issues);
+  final InvoiceLine line;
+  final List<LineIssue> issues;
 }
 
 /// نتيجة قراءة صورة فاتورة.
@@ -67,7 +110,7 @@ class GeminiVision {
 
   /// الحد الأقصى لحجم الصورة المرسلة — Gemini يقبل حتى 20MB لكن صورة فاتورة
   /// عادية أقل من 2MB. نمنع تصعيد أي صورة كبيرة عرضاً كي لا يفشل الطلب.
-  static const _maxBytes = 4 * 1024 * 1024;
+  static const _maxBytes = 7 * 1024 * 1024;
 
   /// 90 ثانية سقف — يكفي فواتير طويلة مع توكنات التفكير قبل الاستخراج.
   static const Duration _timeout = Duration(seconds: 90);
@@ -147,21 +190,29 @@ class GeminiVision {
   };
 
   static const _invoicePrompt = '''
-هذه صورة لفاتورة صيدلية بالعربية أو الإنجليزية. استخرج **كل سطر مادة** في
-الفاتورة كعنصر منفصل، بلا صفوف الملخّص والمجموع والضريبة.
+هذه صورة صفحة من فاتورة مجهّز أدوية ومستلزمات طبية (عربية أو إنجليزية أو
+مختلطة). استخرج **كل سطر مادة** كعنصر منفصل وبنفس ترتيب الفاتورة. تجاهل
+الترويسة واسم المجهّز والتذييل وصفوف المجموع والخصم والضريبة.
+
+الأرقام قد تكون عربية-هندية (٠١٢٣٤٥٦٧٨٩) — أعدها أرقاماً عادية.
 
 لكل سطر:
-- name: اسم المادة كما ظهر (نظّف المسافات الزائدة، بلا تعليق).
-- quantity: عدد صحيح للكمية (إن ظهرت).
-- price: **سعر شراء الوحدة** (كلفة) لا سعر البيع، وليس المجموع الكلي للسطر.
-  إن كان الظاهر هو المجموع فقط، اقسم على الكمية لتحصل على سعر الوحدة.
-- barcode: الباركود إن ظهر في السطر (نص رقمي فقط).
-- expiry: تاريخ الصلاحية كما هو في السطر (YYYY-MM أو DD/MM/YYYY، بلا تحويل).
-- category: إن وُجد عمود «نوع المواد» أو «Type» يُشير إلى الشكل الصيدلاني
-  (Tablet/Cream/Syrup/Drops/Vial/...) — انسخه كما هو حرفياً بلا ترجمة.
-  إن لم يوجد هذا العمود في الفاتورة، اترك القيمة null — لا تخترعها.
+- name: اسم المادة كما ظهر حرفياً مع التركيز والحجم (مثل 500mg، 100 ml).
+- quantity: الكمية المشتراة (عدد صحيح)، **بلا** الكمية المجانية.
+- bonus: الكمية المجانية إن وُجد عمود «بونص» أو «مجاني» أو «Free» أو «Bonus»،
+  وإلا null.
+- price: **سعر شراء الوحدة** لا سعر البيع ولا مجموع السطر. إن ظهر المجموع فقط
+  فاقسمه على الكمية.
+- line_total: مجموع السطر كما طُبع إن وُجد، وإلا null.
+- barcode: فقط إن كان الباركود مطبوعاً **في نفس السطر**. لا تنسخه من سطر مجاور
+  ولا تخمّنه. إن لم يوجد فـ null.
+- expiry: تاريخ الصلاحية كما ظهر في السطر بلا تحويل، وإلا null.
+- category: الشكل الصيدلاني إن وُجد له عمود (Tablet/Cream/Syrup/Drops/...)
+  كما هو حرفياً بلا ترجمة، وإلا null — لا تخترعه.
+- uncertain: true إن كان أي جزء من السطر مقطوعاً أو مطموساً أو غير مقروء
+  بوضوح، وإلا false.
 
-لا تُضف مواد ليست في الصورة. إن كنت غير متأكد من قيمة، اتركها null.
+لا تُضف مواد ليست في الصورة. القيمة غير المؤكدة اتركها null.
 ''';
 
   static const Map<String, Object?> _invoiceSchema = {
@@ -178,6 +229,9 @@ class GeminiVision {
             'barcode': {'type': 'STRING', 'nullable': true},
             'expiry': {'type': 'STRING', 'nullable': true},
             'category': {'type': 'STRING', 'nullable': true},
+            'bonus': {'type': 'INTEGER', 'nullable': true},
+            'line_total': {'type': 'NUMBER', 'nullable': true},
+            'uncertain': {'type': 'BOOLEAN'},
           },
           'required': ['name'],
         },
@@ -224,6 +278,9 @@ class GeminiVision {
             barcode: _clean(item['barcode']),
             expiry: _clean(item['expiry']),
             category: _clean(item['category']),
+            bonus: _num(item['bonus'])?.toInt(),
+            lineTotal: _num(item['line_total'])?.toDouble(),
+            uncertain: item['uncertain'] == true,
           ),
         );
       }
@@ -231,6 +288,30 @@ class GeminiVision {
     } catch (e) {
       return InvoiceResult.failure('تعذّر فهم صيغة الأسطر: $e');
     }
+  }
+
+  /// تحقق صِرف بعد القراءة.
+  ///
+  /// الباركود الذي لا يجتاز خانة التحقق يُحذف: Gemini قد يقرأه خطأً أو ينسخه
+  /// من سطر مجاور، وباركود خاطئ يربط المادة بسجل آخر في المخزون.
+  static ValidatedLine validateLine(InvoiceLine l) {
+    final issues = <LineIssue>[];
+    var line = l;
+    final bc = l.barcode;
+    if (bc != null && bc.isNotEmpty && !Gs1Parser.isValidGtin(bc)) {
+      issues.add(LineIssue.invalidBarcode);
+      line = l.withoutBarcode();
+    }
+    final price = l.price, qty = l.quantity, total = l.lineTotal;
+    if (price != null && qty != null && total != null && total > 0) {
+      if (((price * qty) - total).abs() / total > 0.01) {
+        issues.add(LineIssue.totalMismatch);
+      }
+    }
+    if (price == null || price <= 0) issues.add(LineIssue.missingPrice);
+    if (qty == null || qty <= 0) issues.add(LineIssue.missingQuantity);
+    if (l.uncertain) issues.add(LineIssue.uncertain);
+    return ValidatedLine(line, issues);
   }
 
   /// يحوّل أي حقل نص إلى string منظّف أو null.
@@ -267,7 +348,7 @@ class GeminiVision {
 extension InvoiceLineToMedicine on InvoiceLine {
   Medicine toMedicine({required ItemType type, DateTime? now}) {
     final ts = (now ?? DateTime.now()).millisecondsSinceEpoch;
-    final expiryMs = _tryParseExpiry(expiry);
+    final expiryMs = parseExpiry(expiry);
     return Medicine(
       id: 'inv_${ts}_${(now ?? DateTime.now()).microsecond}',
       barcode: barcode ?? '',
@@ -288,7 +369,7 @@ extension InvoiceLineToMedicine on InvoiceLine {
   /// السنة ذات الرقمين** (`11/27` · `1/1/27`) وهي الصيغة الأشيع في فواتير
   /// الصيدليات الحقيقية. كانت تُرفض سابقاً فتُحفظ المادة **بلا تاريخ صلاحية
   /// إطلاقاً**، فلا تظهر أبداً في تنبيهات الصلاحية — دواء منتهٍ يبقى خفياً.
-  static int? _tryParseExpiry(String? raw) {
+  static int? parseExpiry(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     final s = raw.replaceAll('/', '-').replaceAll('.', '-').trim();
     final parts = s.split('-').where((p) => p.isNotEmpty).toList();

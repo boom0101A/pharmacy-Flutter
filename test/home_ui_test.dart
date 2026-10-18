@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
@@ -159,6 +160,20 @@ void main() {
       await tester.tap(find.textContaining('مستلزم طبي'));
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.receipt_long), findsNothing);
+    });
+
+    testWidgets('زر «فاتورة ذكية» ظاهر بنصه في القسمين عند وجود المفتاح', (
+      tester,
+    ) async {
+      dotenv.testLoad(fileInput: 'GEMINI_API_KEY=test-key');
+      addTearDown(dotenv.clean);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(find.text('فاتورة ذكية'), findsOneWidget);
+
+      await tester.tap(find.textContaining('مستلزم طبي'));
+      await tester.pumpAndSettle();
+      expect(find.text('فاتورة ذكية'), findsOneWidget);
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
@@ -146,6 +147,39 @@ void main() {
         size: const Size(360, 640),
         textScale: 2.0,
         openFilters: true,
+      );
+    });
+  });
+
+  // مع مفتاح Gemini يظهر زر «فاتورة ذكية» العريض — ثلاثة أزرار في صف واحد
+  group('لا فيضان مع زر الفاتورة الذكية', () {
+    setUp(() => dotenv.testLoad(fileInput: 'GEMINI_API_KEY=test-key'));
+    tearDown(dotenv.clean);
+
+    testWidgets('هاتف صغير جداً 320x568', (tester) async {
+      await _expectNoOverflow(
+        tester,
+        size: const Size(320, 568),
+        textScale: 1.0,
+        openFilters: false,
+      );
+    });
+
+    testWidgets('هاتف صغير 360x640 بخط مكبَّر', (tester) async {
+      await _expectNoOverflow(
+        tester,
+        size: const Size(360, 640),
+        textScale: 2.0,
+        openFilters: false,
+      );
+    });
+
+    testWidgets('هاتف المستخدم 1080x2400 بكثافة 1', (tester) async {
+      await _expectNoOverflow(
+        tester,
+        size: const Size(1080, 2400),
+        textScale: 1.0,
+        openFilters: false,
       );
     });
   });

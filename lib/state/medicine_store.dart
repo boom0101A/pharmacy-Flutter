@@ -120,6 +120,20 @@ class MedicineStore extends ChangeNotifier {
     return null;
   }
 
+  /// المادة التي تحمل هذا الباركود (أو صيغته المكافئة 13/14 خانة) في أي قسم.
+  ///
+  /// بلا قيد القسم عمداً: الفهرس الفريد على `barcode` يشمل الجدول كله، فسطر
+  /// فاتورة مصنَّف «مستلزم» بباركود دواء موجود سيصطدم به مهما كان قسمه.
+  Medicine? findExistingByBarcode(String barcode) {
+    final code = barcode.trim();
+    if (code.isEmpty) return null;
+    final variants = Gs1Parser.lookupVariants(code).toSet();
+    for (final m in _all) {
+      if (m.barcode.isNotEmpty && variants.contains(m.barcode)) return m;
+    }
+    return null;
+  }
+
   /// تطبيع اسم للمطابقة: بلا حساسية لحالة الأحرف ولا مسافات زائدة.
   ///
   /// عامة (لا خاصة) لأن `invoice_scan_screen.dart` يحتاج نفس التعريف بالضبط
@@ -323,8 +337,9 @@ class MedicineStore extends ChangeNotifier {
     }
 
     if (toWrite.isNotEmpty) {
-      final losers = (await _db.upsertAllSkippingBarcodeConflicts(toWrite))
-          .toSet();
+      final losers = (await _db.upsertAllSkippingBarcodeConflicts(
+        toWrite,
+      )).toSet();
       for (final item in toWrite) {
         if (!losers.contains(item.id)) continue;
         // وارد يتعارض باركوده مع مادة محلية أخرى — لم يُكتب

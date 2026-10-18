@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:saydaliyati/db/medicine_db.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/screens/invoice_scan_screen.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -129,5 +130,30 @@ void main() {
     final all = await dbi.getAll();
     expect(all.single.id, 'a1');
     expect(all.single.quantity, 200);
+  });
+
+  // مصدر الـ71 مجموعة باركود مكرّر: سطر فاتورة بباركود مادة موجودة (باسم آخر)
+  // كان يُحفظ كسجل جديد، فيحذف replace المادة الأصلية محلياً.
+  test('حفظ فاتورة بباركود مادة موجودة لا يحذفها بل يدمج معها', () async {
+    await dbi.upsert(Medicine(
+      id: 'e1', barcode: '6285128013338', name: 'RELAXON cap',
+      price: 2000, quantity: 10, createdAt: 1, updatedAt: 1,
+    ));
+    final store = _TestStore();
+    await store.load();
+    final r = buildInvoiceSaveItems(
+      drafts: const [
+        InvoiceLineDraft(
+          name: 'Relaxon capsules 20', type: ItemType.supply,
+          price: 2100, quantity: 5, barcode: '6285128013338',
+        ),
+      ],
+      store: store,
+      now: DateTime(2026, 10, 18),
+    );
+    await store.saveAll(r.items);
+    final all = await dbi.getAll();
+    expect(all.map((m) => m.id), ['e1']);
+    expect(all.single.quantity, 15);
   });
 }
