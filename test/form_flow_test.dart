@@ -803,7 +803,9 @@ void main() {
       expect(store.saved.single.quantity, 3);
     });
 
-    testWidgets('سعر غير صالح عند التعديل لا يدهس السعر القديم', (tester) async {
+    testWidgets('سعر غير صالح عند التعديل لا يدهس السعر القديم', (
+      tester,
+    ) async {
       useTallSurface(tester);
       const existing = Medicine(
         id: 'm1',

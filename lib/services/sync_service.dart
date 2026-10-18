@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import '../db/medicine_db.dart';
 import '../models/medicine.dart';
 import 'app_settings.dart';
-import 'barcode_conflicts.dart';
 import 'auth_service.dart';
 import 'barcode_registry.dart';
 import 'image_store.dart';
@@ -177,6 +176,36 @@ class SyncService extends ChangeNotifier {
     }
   }
 
+  /// كل مواد صيدلية هذا الجهاز كما في السحابة، بلا أي كتابة — لشاشة مراجعة
+  /// التكرارات (مجموعات الباركود المكرّر لا تُرى محلياً). null إن تعذّر.
+  Future<List<Medicine>?> fetchPharmacyItems() async {
+    final db = _db;
+    final pharmacyId = AppSettings.instance.pharmacyId;
+    if (db == null || !isEnabled || pharmacyId == null) return null;
+    try {
+      final snapshot = await db
+          .collection(_collection)
+          .where('pharmacyId', isEqualTo: pharmacyId)
+          .get();
+      final items = <Medicine>[];
+      for (final doc in snapshot.docs) {
+        try {
+          items.add(
+            Medicine.fromMap(
+              Map<String, Object?>.from(doc.data())..['id'] = doc.id,
+            ),
+          );
+        } catch (_) {
+          // مستند تالف لا يُسقط القائمة
+        }
+      }
+      return items;
+    } catch (e) {
+      debugPrint('تعذّر جلب مواد الصيدلية: $e');
+      return null;
+    }
+  }
+
   /// مزامنة كاملة في الاتجاهين. ترجع true إذا تغيّرت البيانات المحلية.
   Future<bool> syncAll() async {
     final db = _db;
@@ -253,13 +282,7 @@ class SyncService extends ChangeNotifier {
       // ولم يُثبَّت شاهد بعد) يُعامَل كمحذوف لهذه المزامنة — بلا هذا يظل
       // مرئياً في السحابة، فتُحضره حلقة النزول أدناه ويعود الحذف الظاهري.
       final pendingDeletes = await MedicineDb.instance.peekPendingDeletes();
-      // أثر نسخة سابقة أدرجت مخزوناً حقيقياً في الطابور بسبب تعارض باركود:
-      // يُزال من الطابور ولا يُعامَل كمحذوف.
-      final artifacts = conflictArtifactIds(pendingDeletes, remoteById);
-      for (final id in artifacts) {
-        await MedicineDb.instance.clearPendingDelete(id);
-      }
-      deletedIds.addAll(pendingDeletes.where((id) => !artifacts.contains(id)));
+      deletedIds.addAll(pendingDeletes);
 
       var localChanged = false;
       final pending = <String, Map<String, Object?>>{};

@@ -8,6 +8,7 @@ import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import 'duplicates_screen.dart';
 import 'pairing_sheet.dart';
 
 /// لوحة الإعدادات — تُفتح من أيقونة الترس في الترويسة.
@@ -386,6 +387,19 @@ class _SettingsSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => DuplicatesScreen(store: store),
+            ),
+          ),
+          icon: const Icon(Icons.manage_search, size: 18),
+          label: const Text('مراجعة التكرارات'),
+        ),
       ),
     ],
   );

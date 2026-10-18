@@ -93,5 +93,15 @@ void main() {
       expect(find.text('🔗 الانضمام إلى مخزون موجود'), findsOneWidget);
       expect(find.byKey(const Key('pairing_code_field')), findsOneWidget);
     });
+
+    testWidgets('«مراجعة التكرارات» يفتح شاشة التكرارات', (tester) async {
+      useTallSurface(tester);
+      await openSettings(tester);
+
+      await tester.tap(find.text('مراجعة التكرارات'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('🔍 مراجعة التكرارات'), findsOneWidget);
+    });
   });
 }

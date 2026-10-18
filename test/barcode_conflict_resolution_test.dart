@@ -135,17 +135,27 @@ void main() {
   // مصدر الـ71 مجموعة باركود مكرّر: سطر فاتورة بباركود مادة موجودة (باسم آخر)
   // كان يُحفظ كسجل جديد، فيحذف replace المادة الأصلية محلياً.
   test('حفظ فاتورة بباركود مادة موجودة لا يحذفها بل يدمج معها', () async {
-    await dbi.upsert(Medicine(
-      id: 'e1', barcode: '6285128013338', name: 'RELAXON cap',
-      price: 2000, quantity: 10, createdAt: 1, updatedAt: 1,
-    ));
+    await dbi.upsert(
+      Medicine(
+        id: 'e1',
+        barcode: '6285128013338',
+        name: 'RELAXON cap',
+        price: 2000,
+        quantity: 10,
+        createdAt: 1,
+        updatedAt: 1,
+      ),
+    );
     final store = _TestStore();
     await store.load();
     final r = buildInvoiceSaveItems(
       drafts: const [
         InvoiceLineDraft(
-          name: 'Relaxon capsules 20', type: ItemType.supply,
-          price: 2100, quantity: 5, barcode: '6285128013338',
+          name: 'Relaxon capsules 20',
+          type: ItemType.supply,
+          price: 2100,
+          quantity: 5,
+          barcode: '6285128013338',
         ),
       ],
       store: store,

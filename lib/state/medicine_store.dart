@@ -435,6 +435,11 @@ class MedicineStore extends ChangeNotifier {
   Future<Medicine?> findByBarcode(String barcode) =>
       _db.findByAnyBarcode(Gs1Parser.lookupVariants(barcode));
 
+  /// عدد عمليات الحذف التي لم تصل للسحابة بعد — غير صفري يعني أن الحذف
+  /// السحابي يفشل حالياً (شبكة أو صلاحيات).
+  Future<int> pendingCloudDeleteCount() async =>
+      (await _db.peekPendingDeletes()).length;
+
   Future<void> _flushPendingDeletes() async {
     try {
       // Peek بدل take: نمسح المعرّف فقط بعد نجاح الحذف السحابي، فلا يضيع

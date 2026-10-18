@@ -340,14 +340,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     setState(() => _saving = true);
     final now = DateTime.now().millisecondsSinceEpoch;
     // سالب مرفوض هنا أيضاً — لا شيء يمنع كتابته يدوياً في الحقل
-    final enteredPrice = (parsedPrice ?? 0).clamp(
-      0,
-      double.infinity,
-    );
-    final enteredQty = (parsedQty ?? 0).clamp(
-      0,
-      1 << 31,
-    );
+    final enteredPrice = (parsedPrice ?? 0).clamp(0, double.infinity);
+    final enteredQty = (parsedQty ?? 0).clamp(0, 1 << 31);
     final medicine =
         _target?.copyWith(
           barcode: _barcode.text.trim(),
