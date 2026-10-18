@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /// مهلة التراجع بعد الحذف — كافية لتصحيح ضغطة خاطئة بلا إبطاء العمل.
-  static const _undoWindow = Duration(seconds: 5);
+  static const _undoWindow = Duration(seconds: 4);
 
   /// حذف فوري + شريط «تراجع» — بديل عن حوار «هل أنت متأكد؟» الذي كان يُبطئ
   /// كل حذف بضغطتين، مع نفس الأمان: الحذف الحقيقي لا يلمس القاعدة إلا بعد
@@ -221,6 +221,9 @@ class _HomeScreenState extends State<HomeScreen>
         SnackBar(
           content: Text('🗑️ حُذف "${medicine.name}"'),
           duration: _undoWindow,
+          // زر الإجراء يجعل الشريط ثابتاً افتراضياً (Flutter الحديث) فيتجاهل
+          // المهلة ولا يُغلق — والحذف الحقيقي يحدث عند الإغلاق فقط أدناه.
+          persist: false,
           action: SnackBarAction(
             label: 'تراجع',
             textColor: AppColors.warning,

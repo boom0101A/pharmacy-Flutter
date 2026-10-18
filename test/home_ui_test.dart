@@ -344,7 +344,7 @@ void main() {
     });
 
     testWidgets(
-      'مهلة الشريط الفعلية مضبوطة على 5 ثوانٍ بالضبط لا أكثر ولا أقل',
+      'مهلة الشريط الفعلية مضبوطة على 4 ثوانٍ ولا يبقى ثابتاً',
       (tester) async {
         await tester.pumpWidget(_app(store));
         await tester.pumpAndSettle();
@@ -353,9 +353,29 @@ void main() {
         await tester.pumpAndSettle();
 
         final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-        expect(snackBar.duration, const Duration(seconds: 5));
+        expect(snackBar.duration, const Duration(seconds: 4));
+        // زر «تراجع» يجعل الشريط ثابتاً افتراضياً في Flutter الحديث
+        expect(snackBar.persist, isFalse);
       },
     );
+
+    // الشريط الثابت لم يكن يُغلق، والحذف الحقيقي يحدث عند إغلاقه فقط —
+    // فكانت المادة تُخفى من الشاشة دون أن تُحذف، وتعود بعد أي تحديث.
+    testWidgets('الشريط يختفي وحده بعد 4 ثوانٍ ويُنفَّذ الحذف', (tester) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+
+      await tester.tap(deleteButtonFor(tester, 'Panadol'));
+      await tester.pumpAndSettle(); // اكتمال حركة الظهور — المهلة تبدأ بعدها
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(store.deletedIds, isEmpty);
+
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsNothing);
+      expect(store.deletedIds, contains('m1'));
+    });
 
     testWidgets(
       'حذف مادة ثانية أثناء ظهور شريط الأولى يؤكّد حذف الأولى فوراً',
