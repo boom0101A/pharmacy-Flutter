@@ -128,7 +128,12 @@ service cloud.firestore {
     // تمنع عودة السجل المحذوف من جهاز آخر لم يزامن بعد.
     match /tombstones/{docId} {
       allow read: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
-      allow create, update: if
+      // الإنشاء منفصل عن التحديث: عند الإنشاء لا يوجد `resource` أصلاً، وقراءة
+      // `resource.data` كانت ترمي خطأً فيُرفض كل شاهد جديد — ومعه الحذف كله
+      // لأنهما في batch واحد. الحذف السحابي كان معطّلاً بسببها منذ 2026-08-18.
+      allow create: if isMemberOfPharmacy(request.resource.data.pharmacyId)
+                    || ownsIncoming();
+      allow update: if
           (isMemberOfPharmacy(request.resource.data.pharmacyId)
             && (isMemberOfPharmacy(resource.data.pharmacyId)
                 || !('pharmacyId' in resource.data)))
