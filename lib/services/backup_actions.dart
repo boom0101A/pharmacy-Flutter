@@ -37,6 +37,8 @@ class BackupActions {
   static Future<String?> _pickJson() async {
     final files = await FilePicker.pickFiles(type: FileType.any);
     if (files.isEmpty) return null;
-    return utf8.decode(await files.single.readAsBytes());
+    // ملف غير نصي لا يرمي هنا: يصل نصاً مشوّهاً فيرفضه BackupService.parse
+    // برسالة «ليس نسخة احتياطية صالحة».
+    return utf8.decode(await files.single.readAsBytes(), allowMalformed: true);
   }
 }

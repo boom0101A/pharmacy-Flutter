@@ -1,3 +1,4 @@
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/services/notification_service.dart';
@@ -144,6 +145,28 @@ void main() {
       ];
       expect(NotificationService.buildSummary(all), isNull);
       expect(NotificationService.computePayload(all), isNull);
+    });
+  });
+
+  group('scheduleWithFallback', () {
+    test('الدقيقة تنجح ⇒ لا محاولة ثانية', () async {
+      final modes = <AndroidScheduleMode>[];
+      await NotificationService.scheduleWithFallback((m) async => modes.add(m));
+      expect(modes, [AndroidScheduleMode.exactAllowWhileIdle]);
+    });
+
+    test('الدقيقة مرفوضة ⇒ تُجدول غير دقيقة', () async {
+      final modes = <AndroidScheduleMode>[];
+      await NotificationService.scheduleWithFallback((m) async {
+        modes.add(m);
+        if (m == AndroidScheduleMode.exactAllowWhileIdle) {
+          throw Exception('exact_alarms_not_permitted');
+        }
+      });
+      expect(modes, [
+        AndroidScheduleMode.exactAllowWhileIdle,
+        AndroidScheduleMode.inexactAllowWhileIdle,
+      ]);
     });
   });
 }

@@ -42,7 +42,36 @@ class BackupService {
     await file.writeAsString(
       const JsonEncoder.withIndent('  ').convert(payload),
     );
+    await pruneOld(dir);
     return file.path;
+  }
+
+  /// كم نسخة تبقى داخل التطبيق — كل «حفظ نسخة» كان يضيف ملفاً بلا حذف.
+  /// النسخ الحقيقية الآمنة هي ما شاركه المستخدم خارج الهاتف.
+  static const keepLocal = 5;
+
+  /// يحذف نسخ التطبيق الأقدم ويُبقي أحدث [keep]. لا يرمي.
+  @visibleForTesting
+  static Future<void> pruneOld(Directory dir, {int keep = keepLocal}) async {
+    try {
+      final files = await dir
+          .list()
+          .where(
+            (e) =>
+                e is File &&
+                p.basename(e.path).startsWith('saydaliyati-backup-'),
+          )
+          .cast<File>()
+          .toList();
+      if (files.length <= keep) return;
+      // الاسم يحمل ختم الوقت بصيغة ISO فيُرتَّب أبجدياً كترتيبه الزمني
+      files.sort((a, b) => p.basename(b.path).compareTo(p.basename(a.path)));
+      for (final old in files.skip(keep)) {
+        await old.delete();
+      }
+    } catch (e) {
+      debugPrint('تعذّر تنظيف النسخ القديمة: $e');
+    }
   }
 
   /// قراءة ملف نسخة احتياطية وإرجاع المواد التي فيه.

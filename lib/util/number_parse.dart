@@ -29,3 +29,21 @@ int? parseLocalizedInt(String input) {
   final s = _normalize(input);
   return s.isEmpty ? null : int.tryParse(s);
 }
+
+/// أرقام عربية-هندية وفارسية ⇒ أرقام لاتينية، وبقية النص كما هو.
+///
+/// للبحث: الباركود محفوظ بأرقام لاتينية، ولوحة المفاتيح العربية تكتب `٦٢٨…`
+/// فلا يطابق شيئاً.
+String normalizeDigits(String input) {
+  final b = StringBuffer();
+  for (final c in input.runes) {
+    if (c >= 0x0660 && c <= 0x0669) {
+      b.writeCharCode(0x30 + c - 0x0660);
+    } else if (c >= 0x06F0 && c <= 0x06F9) {
+      b.writeCharCode(0x30 + c - 0x06F0);
+    } else {
+      b.writeCharCode(c);
+    }
+  }
+  return b.toString();
+}

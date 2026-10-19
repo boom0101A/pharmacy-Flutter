@@ -5,6 +5,7 @@ import '../models/medicine.dart';
 import '../services/duplicates.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/medicine_card.dart' show formatPrice;
 
 /// مراجعة المواد المكرّرة ودمجها.
 ///
@@ -298,7 +299,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   String _details(Medicine m) {
     final parts = <String>[
       'الكمية ${m.quantity}',
-      'السعر ${_num(m.price)}',
+      'السعر ${formatPrice(m.price)} د.ع',
       if (m.expiryDate != null) 'الصلاحية ${_date(m.expiryDate!)}',
       if (m.barcode.isNotEmpty) m.barcode,
       'عُدّلت ${_date(m.updatedAt)}',
@@ -307,11 +308,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     return parts.join(' · ');
   }
 
-  static String _num(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
-
   static String _date(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
-    return '${d.year}/${d.month}/${d.day}';
+    return '${d.year}/${d.month.toString().padLeft(2, '0')}/'
+        '${d.day.toString().padLeft(2, '0')}';
   }
 }

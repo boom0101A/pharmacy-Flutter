@@ -71,6 +71,7 @@ void main() {
       expect(find.text('🔗 مشاركة المخزون بين الأجهزة'), findsOneWidget);
       expect(find.text('مشاركة مع جهاز آخر'), findsOneWidget);
       expect(find.text('الانضمام إلى مخزون'), findsOneWidget);
+      expect(find.text('الأجهزة المرتبطة'), findsOneWidget);
     });
 
     testWidgets('«مشاركة مع جهاز آخر» يفتح شاشة المشاركة', (tester) async {

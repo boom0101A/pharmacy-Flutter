@@ -151,4 +151,19 @@ void main() {
     expect(saved.quantity, 4);
     expect(saved.expiryDate, InvoiceLineToMedicine.parseExpiry('2027-11'));
   });
+
+  testWidgets('الرجوع بعد قراءة أسطر يسأل قبل إسقاط الفاتورة', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+    ]);
+    await pump(tester);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('الخروج بلا حفظ؟'), findsOneWidget);
+
+    await tester.tap(find.text('البقاء'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
+  });
 }

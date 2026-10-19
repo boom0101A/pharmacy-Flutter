@@ -108,4 +108,59 @@ void main() {
       );
     });
   });
+
+  group('membersAfterRemoval — نفس شروط القواعد', () {
+    const owner = 'Kmpv0000owner';
+    const members = [owner, 'l9u8n5PTphone', 'G7IWAicAstranger'];
+
+    test('المالك يُخرج عضواً', () {
+      expect(
+        PharmacyService.membersAfterRemoval(
+          members: members,
+          ownerUid: owner,
+          requester: owner,
+          target: 'G7IWAicAstranger',
+        ),
+        [owner, 'l9u8n5PTphone'],
+      );
+    });
+
+    test('غير المالك لا يُخرج أحداً', () {
+      expect(
+        () => PharmacyService.membersAfterRemoval(
+          members: members,
+          ownerUid: owner,
+          requester: 'l9u8n5PTphone',
+          target: 'G7IWAicAstranger',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('المالك لا يُخرج نفسه، ولا غير عضو', () {
+      expect(
+        () => PharmacyService.membersAfterRemoval(
+          members: members,
+          ownerUid: owner,
+          requester: owner,
+          target: owner,
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => PharmacyService.membersAfterRemoval(
+          members: members,
+          ownerUid: owner,
+          requester: owner,
+          target: 'nobody',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('المعرّف القصير', () {
+      expect(PharmacyService.shortId('G7IWAicA12345'), 'G7IWAicA…');
+      expect(PharmacyService.shortId('abc'), 'abc');
+    });
+  });
 }

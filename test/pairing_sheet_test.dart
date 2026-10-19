@@ -180,4 +180,9 @@ void main() {
       expect(find.text('الرمز غير صحيح.'), findsOneWidget);
     });
   });
+
+  test('طلب الموافقة يسمّي الجهاز الطالب', () {
+    expect(approvalPrompt('G7IWAicA12345'), contains('G7IWAicA…'));
+    expect(approvalPrompt(null), contains('جهاز آخر'));
+  });
 }

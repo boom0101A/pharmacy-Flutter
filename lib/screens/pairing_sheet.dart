@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -46,10 +48,32 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
   String? _error;
   bool _responding = false;
 
+  /// آخر حالة رآها البث — رمز لم ينضمّ به أحد يُلغى عند إغلاق الشاشة.
+  PairingStatus? _lastStatus;
+
+  /// يعيد بناء الشاشة لحظة انتهاء الرمز: البث لا يصدر حدثاً عند الانتهاء،
+  /// فكانت «بانتظار الجهاز الآخر…» تبقى بعد موت الرمز.
+  Timer? _expiryTimer;
+
   @override
   void initState() {
     super.initState();
     _generate();
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    final code = _code;
+    // رمز مفتوح بعد إغلاق الشاشة يبقى صالحاً لدقائق ولا أحد يراقب طلباته
+    if (code != null && _lastStatus != PairingStatus.joined) {
+      unawaited(
+        PharmacyService.instance
+            .cancelPairingCode(code)
+            .catchError((Object _) {}),
+      );
+    }
+    super.dispose();
   }
 
   Future<void> _generate() async {
@@ -71,6 +95,15 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
 
     final code = await PharmacyService.instance.createPairingCode(pid);
     if (!mounted) return;
+    _expiryTimer?.cancel();
+    if (code != null) {
+      _expiryTimer = Timer(
+        PharmacyService.pairingTtl + const Duration(seconds: 1),
+        () {
+          if (mounted) setState(() {});
+        },
+      );
+    }
     setState(() {
       _loading = false;
       _code = code;
@@ -88,8 +121,9 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
       }
       if (mounted) setState(() => _error = null);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'تعذّر إتمام الطلب — حاول مرة أخرى.');
+      }
     } finally {
       if (mounted) setState(() => _responding = false);
     }
@@ -151,6 +185,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
         final status = data == null
             ? PairingStatus.open
             : PharmacyService.statusOf(data, DateTime.now());
+        _lastStatus = status;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +213,10 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
             ),
             const SizedBox(height: 16),
             switch (status) {
-              PairingStatus.requested => _buildApproval(code),
+              PairingStatus.requested => _buildApproval(
+                code,
+                data?['joinerUid'] as String?,
+              ),
               PairingStatus.joined => _buildJoined(),
               PairingStatus.expired => _buildExpired(),
               _ => _buildWaiting(),
@@ -211,12 +249,17 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
     ],
   );
 
-  Widget _buildApproval(String code) => Column(
+  Widget _buildApproval(String code, String? joinerUid) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      Text(
+        approvalPrompt(joinerUid),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 4),
       const Text(
-        'جهاز آخر يطلب الانضمام — هل توافق؟',
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        'وافق فقط إن كان الجهاز أمامك الآن وأنت من أعطاه الرمز.',
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
       const SizedBox(height: 10),
       Row(
@@ -496,3 +539,10 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
     );
   }
 }
+
+/// نص طلب الموافقة — يسمّي الجهاز بمعرّفه القصير ليطابقه المستخدم مع ما يظهر
+/// في «الأجهزة المرتبطة» لاحقاً.
+@visibleForTesting
+String approvalPrompt(String? joinerUid) => joinerUid == null
+    ? 'جهاز آخر يطلب الانضمام — هل توافق؟'
+    : 'الجهاز ${PharmacyService.shortId(joinerUid)} يطلب الانضمام — هل توافق؟';

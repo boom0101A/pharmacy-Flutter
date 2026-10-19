@@ -13,6 +13,7 @@ import '../services/image_store.dart';
 import '../services/notification_service.dart';
 import '../services/pharmacy_service.dart';
 import '../services/sync_service.dart';
+import '../util/number_parse.dart';
 
 enum QuickFilter {
   lowStock,
@@ -36,7 +37,12 @@ class _SectionFilters {
   SortField sortField = SortField.date;
   bool sortAscending = false;
 
+  /// يزيد مع كل إعادة تعيين — حقول النطاق في الواجهة تُبنى من جديد به فلا
+  /// تبقى أرقام قديمة ظاهرة بعد إلغاء الفلتر.
+  int resetCount = 0;
+
   void resetFilters() {
+    resetCount++;
     quickFilters.clear();
     priceMin = priceMax = null;
     qtyMin = qtyMax = null;
@@ -157,6 +163,7 @@ class MedicineStore extends ChangeNotifier {
   double? get priceMax => _f.priceMax;
   int? get qtyMin => _f.qtyMin;
   int? get qtyMax => _f.qtyMax;
+  int get filterResetCount => _f.resetCount;
   SortField get sortField => _f.sortField;
   bool get sortAscending => _f.sortAscending;
 
@@ -504,7 +511,7 @@ class MedicineStore extends ChangeNotifier {
   // ---------- البحث والفلاتر ----------
 
   void setKeyword(String value) {
-    _f.keyword = value.trim();
+    _f.keyword = normalizeDigits(value).trim();
     notifyListeners();
   }
 
@@ -559,7 +566,7 @@ class MedicineStore extends ChangeNotifier {
     list.sort((a, b) {
       final cmp = switch (f.sortField) {
         SortField.date => a.createdAt.compareTo(b.createdAt),
-        SortField.name => a.name.compareTo(b.name),
+        SortField.name => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
         SortField.price => a.price.compareTo(b.price),
         SortField.quantity => a.quantity.compareTo(b.quantity),
       };

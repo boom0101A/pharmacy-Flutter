@@ -10,6 +10,7 @@ import '../services/notification_service.dart';
 import '../services/sync_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../util/number_parse.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
 import 'form_screen.dart';
@@ -388,7 +389,14 @@ class _HomeScreenState extends State<HomeScreen>
     final items = store.visibleFor(sectionType);
 
     if (items.isEmpty) {
-      return _emptyState(sectionType);
+      // السحب للتحديث يعمل في القسم الفارغ أيضاً — أول تشغيل بعد الانضمام
+      // لمخزون مشترك يبدأ فارغاً تماماً
+      return RefreshIndicator(
+        onRefresh: () => store.refreshFromCloud(manual: true),
+        color: AppColors.primary,
+        backgroundColor: AppColors.bgCard,
+        child: _emptyState(sectionType),
+      );
     }
 
     return RefreshIndicator(
@@ -618,21 +626,25 @@ class _HomeScreenState extends State<HomeScreen>
             const SizedBox(height: 14),
             const _SectionLabel('💰 نطاق السعر (د.ع)'),
             _RangeRow(
-              // مفتاح لكل قسم: حقول النطاق تُبنى من جديد عند تبديل التبويب
-              // فلا تعرض قيمة القسم الآخر
-              key: ValueKey('price-${type.code}'),
+              // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
+              // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
+              key: ValueKey('price-${type.code}-${store.filterResetCount}'),
+              initialMin: _fmt(store.priceMin),
+              initialMax: _fmt(store.priceMax),
               onChanged: (min, max) => store.setPriceRange(
-                min == null ? null : double.tryParse(min),
-                max == null ? null : double.tryParse(max),
+                min == null ? null : parseLocalizedNumber(min),
+                max == null ? null : parseLocalizedNumber(max),
               ),
             ),
             const SizedBox(height: 14),
             const _SectionLabel('📦 نطاق الكمية'),
             _RangeRow(
-              key: ValueKey('qty-${type.code}'),
+              key: ValueKey('qty-${type.code}-${store.filterResetCount}'),
+              initialMin: _fmt(store.qtyMin),
+              initialMax: _fmt(store.qtyMax),
               onChanged: (min, max) => store.setQuantityRange(
-                min == null ? null : int.tryParse(min),
-                max == null ? null : int.tryParse(max),
+                min == null ? null : parseLocalizedInt(min),
+                max == null ? null : parseLocalizedInt(max),
               ),
             ),
             const SizedBox(height: 14),
@@ -661,6 +673,10 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
   }
+
+  static String? _fmt(num? v) => v == null
+      ? null
+      : (v == v.roundToDouble() ? v.toInt().toString() : v.toString());
 
   Widget _chip(String label, QuickFilter filter) {
     final selected = store.quickFilters.contains(filter);
@@ -771,9 +787,11 @@ class _HomeScreenState extends State<HomeScreen>
           Text(
             filtered
                 ? 'جرّب تغيير البحث أو الفلاتر'
+                : supplies && AppSettings.instance.hasGeminiKey
+                ? 'اضغط «فاتورة ذكية» لإضافة موادها دفعة واحدة'
                 : supplies
-                ? 'اضغط "قراءة فاتورة" لإضافة موادها دفعة واحدة'
-                : 'اضغط "مسح باركود" للبدء',
+                ? 'اضغط «+» لإضافة أول مستلزم'
+                : 'اضغط «مسح باركود» للبدء',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary),
           ),
@@ -953,17 +971,24 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _RangeRow extends StatefulWidget {
-  const _RangeRow({super.key, required this.onChanged});
+  const _RangeRow({
+    super.key,
+    required this.onChanged,
+    this.initialMin,
+    this.initialMax,
+  });
 
   final void Function(String? min, String? max) onChanged;
+  final String? initialMin;
+  final String? initialMax;
 
   @override
   State<_RangeRow> createState() => _RangeRowState();
 }
 
 class _RangeRowState extends State<_RangeRow> {
-  final _min = TextEditingController();
-  final _max = TextEditingController();
+  late final _min = TextEditingController(text: widget.initialMin);
+  late final _max = TextEditingController(text: widget.initialMax);
 
   @override
   void dispose() {

@@ -252,6 +252,96 @@ void main() {
       expect(find.text('لا توجد نتائج مطابقة'), findsOneWidget);
       expect(find.text('لا توجد أدوية بعد'), findsNothing);
     });
+
+    testWidgets('السحب للتحديث متاح في القسم الفارغ', (tester) async {
+      store.seed([_item(id: 'm1', name: 'Panadol')]);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('مستلزم طبي'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.ancestor(
+          of: find.text('لا توجد مستلزمات بعد'),
+          matching: find.byType(RefreshIndicator),
+        ),
+        findsOneWidget,
+      );
+      // بلا مفتاح Gemini لا يُدعى المستخدم لزر غير موجود
+      expect(find.textContaining('فاتورة'), findsNothing);
+      expect(find.text('اضغط «+» لإضافة أول مستلزم'), findsOneWidget);
+    });
+  });
+
+  group('البحث والفلاتر بأرقام عربية', () {
+    testWidgets('باركود مكتوب بأرقام عربية يجد المادة', (tester) async {
+      store.seed([
+        Medicine(
+          id: 'b1',
+          barcode: '6281234567890',
+          name: 'Rennie',
+          price: 100,
+          quantity: 3,
+          createdAt: 1,
+          updatedAt: 1,
+        ),
+        _item(id: 'm2', name: 'Aspirin'),
+      ]);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, '٦٢٨١٢٣');
+      await tester.pumpAndSettle();
+      expect(store.visible.map((m) => m.id), ['b1']);
+    });
+
+    testWidgets('نطاق السعر يقبل أرقاماً عربية ويُمسح عند إعادة التعيين', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(420, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      store.seed([
+        _item(id: 'm1', name: 'Panadol'),
+        Medicine(
+          id: 'm2',
+          barcode: '',
+          name: 'Gold',
+          price: 5000,
+          quantity: 3,
+          createdAt: 2,
+          updatedAt: 2,
+        ),
+      ]);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.filter_alt_outlined));
+      await tester.pumpAndSettle();
+
+      final minPrice = find.widgetWithText(TextField, 'من').first;
+      await tester.enterText(minPrice, '١٠٠٠');
+      await tester.pumpAndSettle();
+      expect(store.priceMin, 1000);
+      expect(store.visible.map((m) => m.id), ['m2']);
+
+      await tester.ensureVisible(find.text('إعادة تعيين الفلاتر'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('إعادة تعيين الفلاتر'));
+      await tester.pumpAndSettle();
+      expect(store.priceMin, isNull);
+      expect(find.text('١٠٠٠'), findsNothing);
+    });
+
+    test('الترتيب بالاسم لا يتأثر بحالة الأحرف', () {
+      final s = _TestStore()
+        ..seed([
+          _item(id: 'a', name: 'zinc'),
+          _item(id: 'b', name: 'Aspirin'),
+          _item(id: 'c', name: 'bepanthen'),
+        ])
+        ..setSort(SortField.name);
+      expect(s.visible.map((m) => m.name), ['Aspirin', 'bepanthen', 'zinc']);
+    });
   });
 
   group('التراجع عن الحذف (فحص أخير)', () {

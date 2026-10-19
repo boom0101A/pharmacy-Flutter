@@ -189,6 +189,71 @@ class PharmacyService {
     await db.collection(_pairing).doc(code).delete();
   }
 
+  /// أعضاء صيدلية هذا الجهاز، أو null إن تعذّر (بلا اتصال أو بلا صيدلية).
+  Future<PharmacyMembers?> fetchMembers() async {
+    final db = _db;
+    final pid = AppSettings.instance.pharmacyId;
+    if (db == null || pid == null) return null;
+    try {
+      final snap = await db.collection(_pharmacies).doc(pid).get();
+      final data = snap.data();
+      if (data == null) return null;
+      return PharmacyMembers(
+        ownerUid: data['ownerUid'] as String? ?? '',
+        memberUids: List<String>.from(
+          (data['memberUids'] as List?) ?? const [],
+        ),
+      );
+    } catch (e) {
+      debugPrint('تعذّرت قراءة أعضاء الصيدلية: $e');
+      return null;
+    }
+  }
+
+  /// المالك يُخرج جهازاً من المخزون المشترك — يفقد فوراً أي قراءة أو كتابة
+  /// (القواعد تتحقق من العضوية في كل طلب). يرمي عند الفشل.
+  Future<void> removeMember(String uid) async {
+    final db = _db;
+    final me = _uid;
+    final pid = AppSettings.instance.pharmacyId;
+    if (db == null || me == null || pid == null) {
+      throw StateError('المزامنة غير مفعّلة');
+    }
+    final ref = db.collection(_pharmacies).doc(pid);
+    final data = (await ref.get()).data() ?? const {};
+    final next = membersAfterRemoval(
+      members: List<String>.from((data['memberUids'] as List?) ?? const []),
+      ownerUid: data['ownerUid'] as String? ?? '',
+      requester: me,
+      target: uid,
+    );
+    await ref.update({'memberUids': next});
+  }
+
+  /// قائمة الأعضاء بعد إخراج [target] — نفس شروط firestore.rules حرفياً حتى
+  /// تُرفض المحاولة محلياً برسالة واضحة قبل أن ترفضها القواعد.
+  @visibleForTesting
+  static List<String> membersAfterRemoval({
+    required List<String> members,
+    required String ownerUid,
+    required String requester,
+    required String target,
+  }) {
+    if (requester != ownerUid) {
+      throw StateError('فقط صاحب المخزون يُخرج الأجهزة');
+    }
+    if (target == ownerUid) throw StateError('لا يمكن إخراج صاحب المخزون');
+    if (!members.contains(target)) throw StateError('الجهاز ليس عضواً');
+    return [...members]..remove(target);
+  }
+
+  /// معرّف قصير يُعرض للمستخدم ليميّز الأجهزة («G7IWAicA…»).
+  static String shortId(String uid) =>
+      uid.length <= 8 ? uid : '${uid.substring(0, 8)}…';
+
+  /// مدة صلاحية رمز الاقتران — تحتاجها الواجهة لتحديث العرض عند انتهائه.
+  static Duration get pairingTtl => _ttl;
+
   /// حالة رمز الاقتران كما يجب أن تعرضها الواجهة — دالة صِرفة بلا شبكة،
   /// تأخذ في الحسبان انتهاء الصلاحية حتى لو لم يُحدَّث الحقل `status` بعد.
   /// تُستعمل من `pairing_sheet.dart` مباشرة، وليست حصراً للاختبار.
@@ -220,4 +285,12 @@ class PharmacyService {
     final min = pow(10, _codeLength - 1).toInt();
     return (min + rng.nextInt(min * 9)).toString();
   }
+}
+
+/// أعضاء صيدلية مشتركة كما في مستند `pharmacies`.
+class PharmacyMembers {
+  const PharmacyMembers({required this.ownerUid, required this.memberUids});
+
+  final String ownerUid;
+  final List<String> memberUids;
 }

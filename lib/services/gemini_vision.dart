@@ -91,8 +91,8 @@ class InvoiceResult {
       InvoiceResult._(false, const [], reason);
 }
 
-/// عميل Google Gemini للفواتير — الصورة تُرسَل إلى endpoint نموذج
-/// `gemini-2.0-flash` مع مخطط JSON صارم يجبر النموذج على إعادة أسطر منظّمة
+/// عميل Google Gemini للفواتير — الصورة تُرسَل إلى endpoint النموذج [_model]
+/// مع مخطط JSON صارم يجبر النموذج على إعادة أسطر منظّمة
 /// بدل نص حرّ يحتاج تحليلاً هشّاً.
 ///
 /// **لا يرمي استثناء أبداً:** كل حالات الفشل تُعاد كـ `InvoiceResult.failure`
@@ -141,14 +141,12 @@ class GeminiVision {
     }
 
     try {
-      final key = AppSettings.instance.geminiKey;
-      final url = Uri.parse('$_endpoint?key=$key');
       final body = jsonEncode(_buildRequest(bytes));
 
       final response = await http
           .post(
-            url,
-            headers: const {'Content-Type': 'application/json'},
+            requestUri,
+            headers: requestHeaders(AppSettings.instance.geminiKey),
             body: body,
           )
           .timeout(_timeout);
@@ -167,6 +165,35 @@ class GeminiVision {
     }
   }
 
+  /// عنوان الطلب **بلا المفتاح**: المفتاح في رابط الطلب كان يظهر داخل رسائل
+  /// خطأ الاتصال (`ClientException` تطبع الرابط) فيُعرض على الشاشة.
+  @visibleForTesting
+  static Uri get requestUri => Uri.parse(_endpoint);
+
+  @visibleForTesting
+  static Map<String, String> requestHeaders(String key) => {
+    'Content-Type': 'application/json',
+    'x-goog-api-key': key,
+  };
+
+  /// نوع الصورة من أول بايتاتها — صورة PNG من المعرض كانت تُرسَل كـ JPEG.
+  @visibleForTesting
+  static String mimeTypeOf(Uint8List b) {
+    if (b.length >= 4 &&
+        b[0] == 0x89 &&
+        b[1] == 0x50 &&
+        b[2] == 0x4E &&
+        b[3] == 0x47) {
+      return 'image/png';
+    }
+    if (b.length >= 12 &&
+        String.fromCharCodes(b.sublist(0, 4)) == 'RIFF' &&
+        String.fromCharCodes(b.sublist(8, 12)) == 'WEBP') {
+      return 'image/webp';
+    }
+    return 'image/jpeg';
+  }
+
   /// يبني حمولة الطلب لـ Gemini بمخطط JSON structured output.
   static Map<String, Object?> _buildRequest(Uint8List bytes) => {
     'contents': [
@@ -174,7 +201,7 @@ class GeminiVision {
         'parts': [
           {
             'inline_data': {
-              'mime_type': 'image/jpeg',
+              'mime_type': mimeTypeOf(bytes),
               'data': base64Encode(bytes),
             },
           },
@@ -249,9 +276,23 @@ class GeminiVision {
       if (candidates == null || candidates.isEmpty) {
         return InvoiceResult.failure('لم تُرجع الخدمة أي محتوى.');
       }
-      final parts =
-          ((candidates.first as Map)['content'] as Map)['parts'] as List;
-      final raw = (parts.first as Map)['text'] as String;
+      final first = candidates.first as Map;
+      // ردّ مقطوع عند حدّ التوكنات = JSON ناقص لا يُفهم؛ رسالة صريحة أنفع
+      if (first['finishReason'] == 'MAX_TOKENS') {
+        return InvoiceResult.failure(
+          'الصفحة طويلة جداً فانقطع الرد — صوّرها على جزأين.',
+        );
+      }
+      final parts = ((first['content'] as Map?)?['parts'] as List?) ?? const [];
+      // نماذج «التفكير» قد تسبق الجواب بأجزاء تفكير — الجواب أول نص غيرها
+      final raw = parts
+          .whereType<Map>()
+          .where((p) => p['thought'] != true && p['text'] is String)
+          .map((p) => p['text'] as String)
+          .firstOrNull;
+      if (raw == null) {
+        return InvoiceResult.failure('لم تُرجع الخدمة أي محتوى.');
+      }
       return parseInvoiceJson(raw);
     } catch (e) {
       return InvoiceResult.failure('تعذّر فهم ردّ الخدمة: $e');

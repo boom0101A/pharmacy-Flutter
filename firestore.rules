@@ -60,14 +60,23 @@ service cloud.firestore {
         && request.resource.data.memberUids == [request.auth.uid]
         && request.resource.data.ownerUid == request.auth.uid;
 
-      // التحديث: فقط عضو حالي يضيف عضواً واحداً جديداً — لا حذف، لا استبدال.
-      // هذا ما يمنع الانضمام بلا موافقة: الجهاز الجديد ليس عضواً فلا يستطيع
-      // كتابة هذا المستند بنفسه أصلاً.
+      // التحديث حالتان فقط، وكلتاهما تغيّر memberUids وحدها:
+      //  (أ) عضو حالي يضيف عضواً واحداً جديداً — هذا ما يمنع الانضمام بلا
+      //      موافقة: الجهاز الجديد ليس عضواً فلا يستطيع كتابة المستند بنفسه.
+      //  (ب) صاحب الصيدلية وحده يُخرج عضواً واحداً، ولا يُخرج نفسه أبداً —
+      //      شاشة «الأجهزة المرتبطة» لإخراج جهاز مجهول انضمّ برمز مشارَك.
       allow update: if signedIn()
-        && request.auth.uid in resource.data.memberUids
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids'])
-        && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
-        && request.resource.data.memberUids.hasAll(resource.data.memberUids);
+        && (
+          (request.auth.uid in resource.data.memberUids
+            && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
+            && request.resource.data.memberUids.hasAll(resource.data.memberUids))
+          ||
+          (resource.data.ownerUid == request.auth.uid
+            && request.resource.data.memberUids.size() == resource.data.memberUids.size() - 1
+            && resource.data.memberUids.hasAll(request.resource.data.memberUids)
+            && resource.data.ownerUid in request.resource.data.memberUids)
+        );
 
       allow delete: if false;
     }

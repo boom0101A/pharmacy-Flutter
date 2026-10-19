@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +45,29 @@ void main() {
       final c = BackupService.parse(_validJson);
       expect(c.ok, isTrue);
       expect(c.items.map((m) => m.id), ['m1', 'm2']);
+    });
+
+    test('لا تبقى داخل التطبيق إلا أحدث 5 نسخ', () async {
+      final dir = Directory.systemTemp.createTempSync('bk_prune');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      for (var i = 1; i <= 8; i++) {
+        File(
+          '${dir.path}/saydaliyati-backup-2026-10-1${i}T09-00-00.json',
+        ).writeAsStringSync('{}');
+      }
+      File('${dir.path}/other.json').writeAsStringSync('{}');
+
+      await BackupService.pruneOld(dir);
+
+      final left = dir.listSync().map((e) => e.uri.pathSegments.last).toList()
+        ..sort();
+      expect(left.length, 6);
+      expect(left, contains('other.json'));
+      expect(
+        left,
+        isNot(contains('saydaliyati-backup-2026-10-11T09-00-00.json')),
+      );
+      expect(left, contains('saydaliyati-backup-2026-10-18T09-00-00.json'));
     });
 
     test('نص ليس نسخة احتياطية يعيد خطأً لا استثناءً', () {
@@ -138,6 +163,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(pickCalls, 1);
+      expect(store.imported, isNull);
+    });
+
+    testWidgets('فشل قراءة الملف يظهر رسالة بدل أن يبتلعه الزر', (
+      tester,
+    ) async {
+      tall(tester);
+      BackupActions.pickJson = () async => throw const FormatException('bad');
+      await openSettings(tester);
+      await tester.tap(find.text('استرجاع'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('تعذّر الاسترجاع'), findsOneWidget);
+      expect(store.imported, isNull);
+    });
+
+    testWidgets('ملف غير نسخة احتياطية يُرفض برسالة', (tester) async {
+      tall(tester);
+      pickResult = '\u0000\u0001 PNG garbage';
+      await openSettings(tester);
+      await tester.tap(find.text('استرجاع'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('تعذّرت قراءة الملف'), findsOneWidget);
       expect(store.imported, isNull);
     });
   });

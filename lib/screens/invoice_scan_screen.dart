@@ -215,7 +215,41 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       return;
     }
     if (!mounted) return;
+    setState(() => _leaving = true);
     Navigator.of(context).pop(result);
+  }
+
+  /// يُرفع قبل الخروج المقصود (حفظ، أو تأكيد الخروج) فيتخطّى سؤال التأكيد.
+  bool _leaving = false;
+
+  /// زر الرجوع بعد قراءة الأسطر كان يُسقط الفاتورة كلها بلا سؤال — قراءة
+  /// صفحات من جديد تكلّف دقائق وطلبات Gemini.
+  Future<void> _confirmLeave() async {
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: const Text('الخروج بلا حفظ؟'),
+        content: Text(
+          'ستضيع ${_lines.length} سطراً مقروءاً من هذه الفاتورة.',
+          style: const TextStyle(fontSize: 13, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('البقاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            child: const Text('خروج بلا حفظ'),
+          ),
+        ],
+      ),
+    );
+    if (leave != true || !mounted) return;
+    setState(() => _leaving = true);
+    Navigator.of(context).pop();
   }
 
   String? _orNull(String s) => s.trim().isEmpty ? null : s.trim();
@@ -250,6 +284,16 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   @override
   Widget build(BuildContext context) {
     final named = _lines.where((l) => l.name.text.trim().isNotEmpty).length;
+    return PopScope(
+      canPop: _lines.isEmpty || _leaving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: _scaffold(named),
+    );
+  }
+
+  Widget _scaffold(int named) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('🧾 فاتورة ذكية'),

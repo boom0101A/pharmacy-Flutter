@@ -252,26 +252,45 @@ class NotificationService extends ChangeNotifier {
 
     try {
       final scheduled = _nextInstanceOf(_dailyHour, _dailyMinute);
-      await _plugin.zonedSchedule(
-        id: _dailyId,
-        title: '🔔 صيدليتي — يحتاج مراجعة',
-        body: summary,
-        scheduledDate: scheduled,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            _channelId,
-            _channelName,
-            channelDescription: _channelDesc,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
+      await scheduleWithFallback(
+        (mode) => _plugin.zonedSchedule(
+          id: _dailyId,
+          title: '🔔 صيدليتي — يحتاج مراجعة',
+          body: summary,
+          scheduledDate: scheduled,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              _channelId,
+              _channelName,
+              channelDescription: _channelDesc,
+              importance: Importance.defaultImportance,
+              priority: Priority.defaultPriority,
+            ),
           ),
+          payload: payload,
+          androidScheduleMode: mode,
+          matchDateTimeComponents: DateTimeComponents.time,
         ),
-        payload: payload,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
       );
     } catch (e) {
       debugPrint('تعذّرت جدولة الإشعار اليومي: $e');
+    }
+  }
+
+  /// الجدولة الدقيقة أولاً، ثم غير الدقيقة إن رُفضت.
+  ///
+  /// من رفض إذن «المنبّهات الدقيقة» (أندرويد 12+) كانت كل جدولة ترمي
+  /// `exact_alarms_not_permitted` فلا يصله أي إشعار يومي إطلاقاً — إشعار
+  /// متأخر بضع دقائق أفضل بكثير من لا إشعار.
+  @visibleForTesting
+  static Future<void> scheduleWithFallback(
+    Future<void> Function(AndroidScheduleMode mode) schedule,
+  ) async {
+    try {
+      await schedule(AndroidScheduleMode.exactAllowWhileIdle);
+    } catch (e) {
+      debugPrint('الجدولة الدقيقة مرفوضة — جدولة غير دقيقة: $e');
+      await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
     }
   }
 

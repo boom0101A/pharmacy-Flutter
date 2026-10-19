@@ -8,7 +8,9 @@ import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/smooth_route.dart';
 import 'duplicates_screen.dart';
+import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
 
 /// لوحة الإعدادات — تُفتح من أيقونة الترس في الترويسة.
@@ -85,7 +87,7 @@ class _SettingsSheet extends StatelessWidget {
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   subtitle: const Text(
-                    'إشعار عند فتح التطبيق إذا كان هناك أدوية منتهية أو '
+                    'إشعار يومي الساعة 9 صباحاً إذا كانت هناك مواد منتهية أو '
                     'قاربت الانتهاء أو مخزون منخفض/نافد.',
                     style: TextStyle(
                       fontSize: 12,
@@ -269,7 +271,17 @@ class _SettingsSheet extends StatelessWidget {
     }
   }
 
+  /// أي فشل (ملف غير نصي، إذن مرفوض، قاعدة مقفلة) يصل للمستخدم كرسالة —
+  /// كان يُرمى بلا التقاط فيبدو الزر وكأنه لا يفعل شيئاً.
   Future<void> _import(BuildContext context) async {
+    try {
+      await _runImport(context);
+    } catch (e) {
+      if (context.mounted) _toast(context, 'تعذّر الاسترجاع: $e');
+    }
+  }
+
+  Future<void> _runImport(BuildContext context) async {
     final local = await BackupActions.latestLocal();
     if (!context.mounted) return;
 
@@ -392,8 +404,17 @@ class _SettingsSheet extends StatelessWidget {
       SizedBox(
         width: double.infinity,
         child: OutlinedButton.icon(
+          onPressed: () => showLinkedDevicesSheet(context),
+          icon: const Icon(Icons.devices, size: 18),
+          label: const Text('الأجهزة المرتبطة'),
+        ),
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
           onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
+            SmoothPageRoute<void>(
               builder: (_) => DuplicatesScreen(store: store),
             ),
           ),
