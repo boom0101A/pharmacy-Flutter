@@ -311,6 +311,17 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     // باركود موجود يدوياً (بلا مسح، وبلا ضغط «تم» فلا يعمل _autoFill) كانت
     // تمحو الدواء القديم بكميته وسعره وتضع مكانه السجل الجديد بلا أي تحذير.
     // الفحص هنا هو ما يمنع ذلك — القيد وحده لا «يحمي»، بل يحذف بصمت.
+    // وعند التعديل أيضاً: تغيير باركود مادة إلى باركود مادة أخرى يحذف الأخرى
+    // بالطريقة نفسها. هنا لا نتبنّاها (تضيع تعديلات المستخدم) بل نرفض بتنبيه.
+    if (_target != null && typedBarcode.isNotEmpty) {
+      final owner = await widget.store.findByBarcode(typedBarcode);
+      if (!mounted) return;
+      if (owner != null && owner.id != _target!.id) {
+        await _showBarcodeTaken(owner);
+        return;
+      }
+    }
+
     if (_target == null && typedBarcode.isNotEmpty) {
       final byBarcode = await widget.store.findByBarcode(typedBarcode);
       if (!mounted) return;
@@ -421,6 +432,30 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('تعديل الموجود'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// تنبيه عند تعديل باركود مادة إلى باركود تملكه مادة أخرى — لا حفظ.
+  Future<void> _showBarcodeTaken(Medicine owner) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: const Text('⚠️ الباركود مسجَّل لمادة أخرى'),
+        content: Text(
+          'الباركود «${owner.barcode}» يخص «${owner.name}» — الكمية '
+          '${owner.quantity} بسعر ${formatPrice(owner.price)} د.ع.\n\n'
+          'لا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين '
+          'من «مراجعة التكرارات» في الإعدادات.',
+          style: const TextStyle(fontSize: 13, height: 1.6),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('حسناً'),
           ),
         ],
       ),

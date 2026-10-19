@@ -178,17 +178,25 @@ class SyncService extends ChangeNotifier {
 
   /// كل مواد صيدلية هذا الجهاز كما في السحابة، بلا أي كتابة — لشاشة مراجعة
   /// التكرارات (مجموعات الباركود المكرّر لا تُرى محلياً). null إن تعذّر.
+  ///
+  /// المستندات التي لها شاهد حذف تُستبعد: جهاز قديم أو سباق مزامنة قد يعيد
+  /// رفع مادة محذوفة، والمزامنة تتجاهلها — فدمجها كان يضيف كمية مادة محذوفة.
   Future<List<Medicine>?> fetchPharmacyItems() async {
     final db = _db;
+    final uid = _uid;
     final pharmacyId = AppSettings.instance.pharmacyId;
-    if (db == null || !isEnabled || pharmacyId == null) return null;
+    if (db == null || !isEnabled || uid == null || pharmacyId == null) {
+      return null;
+    }
     try {
       final snapshot = await db
           .collection(_collection)
           .where('pharmacyId', isEqualTo: pharmacyId)
           .get();
+      final deleted = await _tombstoneIds(db, pharmacyId, uid);
       final items = <Medicine>[];
       for (final doc in snapshot.docs) {
+        if (deleted.contains(doc.id)) continue;
         try {
           items.add(
             Medicine.fromMap(
@@ -248,35 +256,7 @@ class SyncService extends ChangeNotifier {
         }
       }
 
-      // شواهد الحذف: ما حُذف على أي جهاز من أعضاء الصيدلية يُحذف هنا ولا
-      // يُعاد رفعه — بالوسم بـ pharmacyId بدل ownerUid تصل شواهد حذف أي
-      // عضو إلى بقية الأعضاء، لا صاحبها فقط.
-      final deletedIds = <String>{};
-      try {
-        final tombs = await db
-            .collection(_tombstones)
-            .where('pharmacyId', isEqualTo: pharmacyId)
-            .get();
-        for (final t in tombs.docs) {
-          deletedIds.add(t.id);
-        }
-      } catch (e) {
-        debugPrint('تعذّرت قراءة شواهد الحذف: $e');
-      }
-
-      // شواهد قديمة من قبل هجرة الصيدلية المشتركة تحمل ownerUid فقط بلا
-      // pharmacyId. بلا هذا الاستعلام تظل غير مرئية للأبد فيعود ما حُذف عبرها.
-      try {
-        final legacyTombs = await db
-            .collection(_tombstones)
-            .where('ownerUid', isEqualTo: uid)
-            .get();
-        for (final t in legacyTombs.docs) {
-          deletedIds.add(t.id);
-        }
-      } catch (e) {
-        debugPrint('تعذّرت قراءة شواهد الحذف القديمة: $e');
-      }
+      final deletedIds = await _tombstoneIds(db, pharmacyId, uid);
 
       // حماية: أي معرّف ما زال في طابور الحذف المحلي (لأن الحذف السحابي فشل
       // ولم يُثبَّت شاهد بعد) يُعامَل كمحذوف لهذه المزامنة — بلا هذا يظل
@@ -345,6 +325,12 @@ class SyncService extends ChangeNotifier {
         }
       }
 
+      // `local` لُقط في بداية الدورة؛ مادة حذفها المستخدم أثناءها دخلت الطابور
+      // بعد ذلك. بلا قراءة ثانية هنا يُعاد رفعها فتصير «زومبي» في السحابة.
+      dropQueuedDeletes(
+        pending,
+        await MedicineDb.instance.peekPendingDeletes(),
+      );
       await _commitInChunks(db, pending);
 
       _setStatus(
@@ -367,6 +353,49 @@ class SyncService extends ChangeNotifier {
       _setStatus(SyncStatus.error, error: e.toString());
       return false;
     }
+  }
+
+  /// يُسقط من دفعة الرفع كل معرّف دخل طابور الحذف.
+  @visibleForTesting
+  static void dropQueuedDeletes(
+    Map<String, Object?> pending,
+    Iterable<String> queued,
+  ) {
+    for (final id in queued) {
+      pending.remove(id);
+    }
+  }
+
+  /// معرّفات كل شواهد الحذف المرئية لهذا الجهاز.
+  ///
+  /// شواهد الصيدلية: ما حذفه أي عضو يصل لبقية الأعضاء. وشواهد قديمة من قبل
+  /// هجرة الصيدلية المشتركة تحمل ownerUid فقط — بلا استعلامها تظل غير مرئية
+  /// للأبد فيعود ما حُذف عبرها. فشل أحد الاستعلامين لا يُسقط الآخر.
+  Future<Set<String>> _tombstoneIds(
+    FirebaseFirestore db,
+    String pharmacyId,
+    String uid,
+  ) async {
+    final ids = <String>{};
+    try {
+      final tombs = await db
+          .collection(_tombstones)
+          .where('pharmacyId', isEqualTo: pharmacyId)
+          .get();
+      ids.addAll(tombs.docs.map((t) => t.id));
+    } catch (e) {
+      debugPrint('تعذّرت قراءة شواهد الحذف: $e');
+    }
+    try {
+      final legacy = await db
+          .collection(_tombstones)
+          .where('ownerUid', isEqualTo: uid)
+          .get();
+      ids.addAll(legacy.docs.map((t) => t.id));
+    } catch (e) {
+      debugPrint('تعذّرت قراءة شواهد الحذف القديمة: $e');
+    }
+    return ids;
   }
 
   /// استحواذ لمرة واحدة على السجلات التي رُفعت قبل وجود المصادقة.

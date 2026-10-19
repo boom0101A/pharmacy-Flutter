@@ -830,4 +830,67 @@ void main() {
       expect(store.saved.single.price, 900);
     });
   });
+
+  // تعديل باركود مادة إلى باركود مادة أخرى كان يمرّ بلا أي فحص (الفحص كان
+  // للإضافة فقط)، فيحذف upsert المادة الأخرى بصمت.
+  group('تعديل باركود إلى باركود مادة أخرى', () {
+    testWidgets('يُرفض بتنبيه ولا يُحفظ شيء', (tester) async {
+      useTallSurface(tester);
+      const other = Medicine(
+        id: 'o1',
+        barcode: '6281234567890',
+        name: 'بنادول',
+        price: 1500,
+        quantity: 30,
+        createdAt: 1,
+        updatedAt: 1,
+      );
+      const editing = Medicine(
+        id: 'e1',
+        barcode: '',
+        name: 'رني',
+        price: 2000,
+        quantity: 5,
+        createdAt: 1,
+        updatedAt: 1,
+      );
+      store.byBarcode[other.barcode] = other;
+      await tester.pumpWidget(
+        host(MedicineFormScreen(store: store, existing: editing)),
+      );
+      await tester.pump();
+
+      await tester.enterText(barcodeField(), '6281234567890');
+      await tester.pump();
+      await tapSave(tester);
+
+      expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsOneWidget);
+      expect(find.textContaining('بنادول'), findsWidgets);
+      expect(store.saved, isEmpty);
+    });
+
+    testWidgets('إبقاء باركود المادة نفسها يُحفظ عادياً', (tester) async {
+      useTallSurface(tester);
+      const editing = Medicine(
+        id: 'e1',
+        barcode: '6281234567890',
+        name: 'رني',
+        price: 2000,
+        quantity: 5,
+        createdAt: 1,
+        updatedAt: 1,
+      );
+      store.byBarcode[editing.barcode] = editing;
+      await tester.pumpWidget(
+        host(MedicineFormScreen(store: store, existing: editing)),
+      );
+      await tester.pump();
+
+      await tester.enterText(quantityField(), '9');
+      await tester.pump();
+      await tapSave(tester);
+
+      expect(store.saved.single.quantity, 9);
+    });
+  });
 }

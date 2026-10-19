@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _Store extends MedicineStore {
   final saved = <Medicine>[];
   final deleted = <String>[];
+  final keptImages = <String>[];
 
   @override
   Future<void> load() async {}
@@ -21,15 +22,25 @@ class _Store extends MedicineStore {
   Future<void> save(Medicine medicine) async => saved.add(medicine);
 
   @override
-  Future<void> delete(Medicine medicine) async => deleted.add(medicine.id);
+  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
+    deleted.add(medicine.id);
+    if (keepImage) keptImages.add(medicine.id);
+  }
 }
 
-Medicine m(String id, String name, {int qty = 1, int updated = 1}) => Medicine(
+Medicine m(
+  String id,
+  String name, {
+  int qty = 1,
+  int updated = 1,
+  String? image,
+}) => Medicine(
   id: id,
   barcode: '',
   name: name,
   price: 500,
   quantity: qty,
+  imagePath: image,
   type: ItemType.supply,
   createdAt: 1,
   updatedAt: updated,
@@ -117,5 +128,25 @@ void main() {
       ),
     );
     expect(button.onPressed, isNull);
+  });
+
+  // السحابة لا تحمل مسار الصورة: الدمج كان يحفظ الباقية بلا صورة، وتنظيف
+  // الصور اليتيمة يحذف الملف بعد ساعة.
+  testWidgets('الدمج يُبقي صورة المادة المحذوفة إن لم تكن للباقية صورة', (
+    tester,
+  ) async {
+    cloud = [
+      m('a', 'لزقة خافض حرارة', qty: 20, updated: 200),
+      m('b', 'لزقة خافض حرارة', qty: 70, updated: 100, image: 'b.jpg'),
+    ];
+    await open(tester);
+    await tester.tap(find.textContaining('دمج (الكمية 90)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ادمج'));
+    await tester.pumpAndSettle();
+
+    expect(store.saved.single.id, 'a');
+    expect(store.saved.single.imagePath, 'b.jpg');
+    expect(store.keptImages, ['b']);
   });
 }

@@ -79,7 +79,7 @@ void main() {
       db = null;
     });
 
-    test('إدراج سجل جديد بباركود موجود يحذف السجل القديم صامتاً', () async {
+    test('إدراج سجل جديد بباركود موجود يُرفض ولا يحذف القديم', () async {
       await MedicineDb.instance.upsert(
         const Medicine(
           id: 'old1',
@@ -92,8 +92,9 @@ void main() {
         ),
       );
 
-      // سجل جديد بمعرّف مختلف لكن بنفس الباركود
-      await MedicineDb.instance.upsert(
+      // سجل جديد بمعرّف مختلف لكن بنفس الباركود — كان replace يحذف القديم
+      // صامتاً (200 وحدة تضيع بلا خطأ). الآن يُرفض ويبقى القديم.
+      final attempt = MedicineDb.instance.upsert(
         const Medicine(
           id: 'new1',
           barcode: '1234567890123',
@@ -105,11 +106,12 @@ void main() {
         ),
       );
 
+      await expectLater(attempt, throwsA(isA<BarcodeConflictException>()));
+
       final all = await MedicineDb.instance.getAll();
-      // هذا هو جوهر الخطر: لم يُرمَ خطأ، ولم يبقَ السجلان — القديم اختفى
       expect(all.length, 1);
-      expect(all.single.id, 'new1');
-      expect(all.single.quantity, 5, reason: '200 وحدة ضاعت بلا أي خطأ');
+      expect(all.single.id, 'old1');
+      expect(all.single.quantity, 200);
     });
   });
 

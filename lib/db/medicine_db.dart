@@ -216,28 +216,42 @@ class MedicineDb {
     return rows.isEmpty ? null : Medicine.fromMap(rows.first);
   }
 
-  Future<void> upsert(Medicine medicine) async {
-    final db = await database;
-    await db.insert(
-      _table,
-      medicine.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  /// حفظ مادة. يرمي [BarcodeConflictException] إن كان باركودها لمادة أخرى.
+  ///
+  /// `replace` وحده عند تعارض الفهرس الفريد **يحذف الصف الآخر** بصمت — تعديل
+  /// باركود مادة إلى باركود مادة ثانية كان يمحو الثانية بكميتها وسعرها.
+  Future<void> upsert(Medicine medicine) => upsertAll([medicine]);
 
-  /// إدراج دفعة واحدة — أسطر فاتورة مراجَعة. أسرع بكثير من upsert متكرر.
+  /// إدراج دفعة واحدة (أسطر فاتورة، دمج). كلها أو لا شيء: أي تعارض باركود
+  /// مع مادة أخرى يرمي [BarcodeConflictException] ولا يُكتب شيء من الدفعة.
   Future<void> upsertAll(List<Medicine> items) async {
     if (items.isEmpty) return;
     final db = await database;
-    final batch = db.batch();
-    for (final item in items) {
-      batch.insert(
-        _table,
-        item.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      for (final item in items) {
+        if (item.barcode.isNotEmpty) {
+          final clash = await txn.query(
+            _table,
+            columns: ['id'],
+            where: 'barcode = ? AND id != ?',
+            whereArgs: [item.barcode, item.id],
+            limit: 1,
+          );
+          if (clash.isNotEmpty) {
+            throw BarcodeConflictException(
+              barcode: item.barcode,
+              incomingId: item.id,
+              existingId: clash.first['id'].toString(),
+            );
+          }
+        }
+        await txn.insert(
+          _table,
+          item.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   /// كتابة دفعة قد تحمل باركوداً موجوداً تحت معرّف آخر (مزامنة، استرجاع نسخة).
@@ -430,4 +444,20 @@ class MedicineDb {
   }
 
   static int _asInt(Object? v) => (v as num?)?.toInt() ?? 0;
+}
+
+/// باركود مادة محفوظة يملكه سجل آخر — الحفظ رُفض بدل حذف السجل الآخر.
+class BarcodeConflictException implements Exception {
+  const BarcodeConflictException({
+    required this.barcode,
+    required this.incomingId,
+    required this.existingId,
+  });
+
+  final String barcode;
+  final String incomingId;
+  final String existingId;
+
+  @override
+  String toString() => 'الباركود $barcode مسجَّل لمادة أخرى';
 }

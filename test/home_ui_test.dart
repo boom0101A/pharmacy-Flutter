@@ -21,7 +21,7 @@ class _TestStore extends MedicineStore {
   Future<void> refreshFromCloud({bool manual = false}) async {}
 
   @override
-  Future<void> delete(Medicine medicine) async {
+  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
     deletedIds.add(medicine.id);
     all.removeWhere((m) => m.id == medicine.id);
     notifyListeners();
@@ -343,21 +343,20 @@ void main() {
       expect(find.text('تراجع'), findsNothing);
     });
 
-    testWidgets(
-      'مهلة الشريط الفعلية مضبوطة على 4 ثوانٍ ولا يبقى ثابتاً',
-      (tester) async {
-        await tester.pumpWidget(_app(store));
-        await tester.pumpAndSettle();
+    testWidgets('مهلة الشريط الفعلية مضبوطة على 4 ثوانٍ ولا يبقى ثابتاً', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
 
-        await tester.tap(deleteButtonFor(tester, 'Panadol'));
-        await tester.pumpAndSettle();
+      await tester.tap(deleteButtonFor(tester, 'Panadol'));
+      await tester.pumpAndSettle();
 
-        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-        expect(snackBar.duration, const Duration(seconds: 4));
-        // زر «تراجع» يجعل الشريط ثابتاً افتراضياً في Flutter الحديث
-        expect(snackBar.persist, isFalse);
-      },
-    );
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.duration, const Duration(seconds: 4));
+      // زر «تراجع» يجعل الشريط ثابتاً افتراضياً في Flutter الحديث
+      expect(snackBar.persist, isFalse);
+    });
 
     // الشريط الثابت لم يكن يُغلق، والحذف الحقيقي يحدث عند إغلاقه فقط —
     // فكانت المادة تُخفى من الشاشة دون أن تُحذف، وتعود بعد أي تحديث.

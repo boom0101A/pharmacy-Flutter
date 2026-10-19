@@ -48,7 +48,7 @@ List<DuplicateGroup> findDuplicateGroups(
         union(i, j);
       }
     }
-    final code = _canonicalBarcode(m.barcode);
+    final code = Gs1Parser.canonicalKey(m.barcode);
     if (code != null) {
       final j = byCode[code];
       if (j == null) {
@@ -75,15 +75,6 @@ List<DuplicateGroup> findDuplicateGroups(
   ].where((g) => !dismissed.contains(g.key)).toList();
 }
 
-/// الصيغ المكافئة (EAN-13 مقابل GTIN-14 بصفر بادئ) تُختزل لمفتاح واحد.
-String? _canonicalBarcode(String raw) {
-  final s = raw.trim();
-  if (s.isEmpty) return null;
-  if (!RegExp(r'^\d+$').hasMatch(s)) return s;
-  final stripped = s.replaceFirst(RegExp(r'^0+'), '');
-  return stripped.isEmpty ? null : stripped;
-}
-
 /// دمج مجموعة في المادة [keeperId]:
 /// - الكمية = المجموع (الكميات تُجمع في المخزون).
 /// - السعر = سعر الأحدث تعديلاً من بين الأسعار غير الصفرية.
@@ -108,7 +99,15 @@ Medicine mergeGroup(List<Medicine> group, String keeperId, DateTime now) {
       .map((m) => m.barcode.trim())
       .firstWhere(Gs1Parser.isValidGtin, orElse: () => '');
 
+  // صورة الباقية، وإلا أول صورة في المجموعة — لا تضيع صورة بالدمج
+  final image =
+      keeper.imagePath ??
+      group
+          .map((m) => m.imagePath)
+          .firstWhere((p) => p != null, orElse: () => null);
+
   return keeper.copyWith(
+    imagePath: image,
     quantity: group.fold<int>(0, (n, m) => n + m.quantity),
     price: price,
     expiryDate: expiry,
@@ -116,4 +115,44 @@ Medicine mergeGroup(List<Medicine> group, String keeperId, DateTime now) {
     barcode: barcode,
     updatedAt: now.millisecondsSinceEpoch,
   );
+}
+
+/// قائمة المراجعة: نسخ السحابة (ترى المكرَّر بالباركود الذي لا يُحفظ محلياً)
+/// مصحَّحة بما على هذا الهاتف.
+///
+/// - [deleted] (طابور الحذف المحلي) مستبعد: حُذف هنا ولم يصل حذفه بعد.
+/// - النسخة المحلية الأحدث تفوز: تعديل لم يُرفع بعد لا يُدمج بقيمته القديمة.
+/// - مسار الصورة يؤخذ من المحلي دائماً — السحابة لا تحمله، وحفظ نسخة سحابية
+///   كما هي كان يمحو صورة المادة.
+/// - المواد المحلية التي لم تُرفع بعد تُضاف.
+List<Medicine> reconcileReviewItems({
+  required List<Medicine> cloud,
+  required List<Medicine> local,
+  Set<String> deleted = const {},
+}) {
+  final localById = {for (final m in local) m.id: m};
+  final out = <Medicine>[];
+  final seen = <String>{};
+  for (final remote in cloud) {
+    if (deleted.contains(remote.id) || !seen.add(remote.id)) continue;
+    final mine = localById[remote.id];
+    if (mine == null) {
+      out.add(remote);
+    } else if (mine.updatedAt >= remote.updatedAt) {
+      out.add(mine);
+    } else {
+      out.add(
+        remote.copyWith(
+          imagePath: mine.imagePath,
+          clearImage: mine.imagePath == null,
+          updatedAt: remote.updatedAt,
+        ),
+      );
+    }
+  }
+  for (final mine in local) {
+    if (deleted.contains(mine.id) || !seen.add(mine.id)) continue;
+    out.add(mine);
+  }
+  return out;
 }

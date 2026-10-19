@@ -355,4 +355,73 @@ void main() {
       expect(sooner.items.single.expiryDate, 1700000000000);
     });
   });
+
+  // سطران بباركود واحد واسمين مختلفين: كانا يُنتجان سجلّين بنفس المعرّف (تضيع
+  // كمية الأول) أو سجلّين جديدين بنفس الباركود (يحذف الثاني الأول محلياً
+  // ويُرفعان كلاهما للسحابة — أصل مجموعات الباركود المكرّرة).
+  group('سطران بنفس الباركود واسمين مختلفين', () {
+    const stocked = Medicine(
+      id: 'e1',
+      barcode: '6285128013338',
+      name: 'Klamoks',
+      price: 3000,
+      quantity: 6,
+      type: ItemType.supply,
+      createdAt: 0,
+      updatedAt: 0,
+    );
+
+    test('مادة موجودة → سجل واحد بكل الكمية', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft('Klamoks Fort', quantity: 10, barcode: '6285128013338'),
+          _draft('KLAMOKS 312', quantity: 5, barcode: '06285128013338'),
+        ],
+        store: _TestStore()..seed([stocked]),
+        now: now,
+      );
+      expect(r.items.length, 1);
+      expect(r.items.single.id, 'e1');
+      expect(r.items.single.quantity, 21);
+    });
+
+    test('مادة جديدة → سجل جديد واحد لا سجلان', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft('Gauze A', quantity: 10, price: 500, barcode: '6285128013338'),
+          _draft('Gauze B', quantity: 4, barcode: '6285128013338'),
+        ],
+        store: _TestStore()..seed([]),
+        now: now,
+      );
+      expect(r.items.length, 1);
+      expect(r.items.single.quantity, 14);
+      expect(r.items.single.price, 500);
+      expect(r.addedNew, 1);
+      expect(r.mergedWithinInvoice, 1);
+    });
+
+    test('سطر بالباركود وآخر بالاسم يطابقان المادة نفسها → سجل واحد', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft('Other name', quantity: 10, barcode: '6285128013338'),
+          _draft('klamoks', quantity: 2),
+        ],
+        store: _TestStore()..seed([stocked]),
+        now: now,
+      );
+      expect(r.items.length, 1);
+      expect(r.items.single.quantity, 18);
+    });
+
+    test('كمية أو سعر سالب لا يُنقص الرصيد', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [_draft('X', quantity: -5, price: -100)],
+        store: _TestStore()..seed([]),
+        now: now,
+      );
+      expect(r.items.single.quantity, 0);
+      expect(r.items.single.price, 0);
+    });
+  });
 }

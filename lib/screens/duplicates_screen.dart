@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/medicine.dart';
 import '../services/duplicates.dart';
-import '../services/sync_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 
@@ -50,11 +49,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      final load =
-          widget.loadItems ??
-          () async =>
-              await SyncService.instance.fetchPharmacyItems() ??
-              widget.store.all;
+      final load = widget.loadItems ?? widget.store.itemsForDuplicateReview;
       final pendingFn =
           widget.pendingCloudDeletes ?? widget.store.pendingCloudDeleteCount;
       final items = await load();
@@ -124,7 +119,11 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     // الحذف قبل الحفظ: يُحرّر الباركود من المادة المحذوفة محلياً قبل أن تحمله
     // المادة الباقية، فلا يصطدم بالفهرس الفريد.
     for (final m in losers) {
-      await widget.store.delete(m);
+      // صورة انتقلت للمادة الباقية لا تُحذف مع صاحبتها الأصلية
+      await widget.store.delete(
+        m,
+        keepImage: m.imagePath != null && m.imagePath == merged.imagePath,
+      );
     }
     await widget.store.save(merged);
     if (!mounted) return;

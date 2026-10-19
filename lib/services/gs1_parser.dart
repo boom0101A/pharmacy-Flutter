@@ -243,6 +243,16 @@ class Gs1Parser {
     return variants.toList();
   }
 
+  /// مفتاح واحد لكل الصيغ المكافئة (EAN-13 مقابل GTIN-14 بصفر بادئ) — للمقارنة
+  /// والتجميع فقط، لا للتخزين. null للفارغ.
+  static String? canonicalKey(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    if (!_isDigits(s)) return s;
+    final stripped = s.replaceFirst(RegExp(r'^0+'), '');
+    return stripped.isEmpty ? null : stripped;
+  }
+
   /// التحقق من خانة المراجعة وفق معيار GS1 (mod-10).
   static bool isValidGtin(String s) {
     if (!RegExp(r'^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$').hasMatch(s)) {

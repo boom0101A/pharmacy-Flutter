@@ -11,6 +11,7 @@ Medicine m(
   int qty = 1,
   int? expiry,
   int updated = 1,
+  String? image,
 }) => Medicine(
   id: id,
   barcode: barcode,
@@ -18,6 +19,7 @@ Medicine m(
   price: price,
   quantity: qty,
   expiryDate: expiry,
+  imagePath: image,
   type: type,
   createdAt: 1,
   updatedAt: updated,
@@ -126,6 +128,53 @@ void main() {
         m('d', name: 'لزقة', barcode: '6285128013338'),
       ];
       expect(mergeGroup(withValid, 'a', now).barcode, '6285128013338');
+    });
+  });
+
+  group('mergeGroup والصور', () {
+    final now = DateTime(2026, 10, 19);
+    test('صورة الباقية تبقى', () {
+      final r = mergeGroup(
+        [m('a', image: 'a.jpg'), m('b', image: 'b.jpg')],
+        'a',
+        now,
+      );
+      expect(r.imagePath, 'a.jpg');
+    });
+    test('بلا صورة للباقية تُؤخذ صورة أخرى من المجموعة', () {
+      final r = mergeGroup([m('a'), m('b', image: 'b.jpg')], 'a', now);
+      expect(r.imagePath, 'b.jpg');
+    });
+  });
+
+  group('reconcileReviewItems', () {
+    test('المحذوف محلياً (طابور الحذف) مستبعد', () {
+      final r = reconcileReviewItems(
+        cloud: [m('a'), m('b')],
+        local: [m('a')],
+        deleted: {'b'},
+      );
+      expect(r.map((x) => x.id), ['a']);
+    });
+    test('النسخة المحلية الأحدث تفوز', () {
+      final r = reconcileReviewItems(
+        cloud: [m('a', qty: 5, updated: 1)],
+        local: [m('a', qty: 9, updated: 2)],
+      );
+      expect(r.single.quantity, 9);
+    });
+    test('السحابية الأحدث تأخذ صورة الهاتف وختمها كما هو', () {
+      final r = reconcileReviewItems(
+        cloud: [m('a', qty: 5, updated: 3)],
+        local: [m('a', qty: 9, updated: 2, image: 'a.jpg')],
+      );
+      expect(r.single.quantity, 5);
+      expect(r.single.imagePath, 'a.jpg');
+      expect(r.single.updatedAt, 3);
+    });
+    test('مادة محلية لم تُرفع بعد تُضاف، والسحابية وحدها تبقى', () {
+      final r = reconcileReviewItems(cloud: [m('c')], local: [m('l')]);
+      expect(r.map((x) => x.id), unorderedEquals(['c', 'l']));
     });
   });
 }

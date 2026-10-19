@@ -466,7 +466,7 @@ void main() {
       expect(all.first.id, 'new');
     });
 
-    test('حفظ مادة جديدة بباركود موجود يستبدل ولا يضاعف', () async {
+    test('حفظ مادة جديدة بباركود موجود يُرفض ولا يضاعف ولا يحذف', () async {
       await MedicineDb.instance.upsert(
         const Medicine(
           id: 'a',
@@ -478,7 +478,7 @@ void main() {
           updatedAt: 0,
         ),
       );
-      await MedicineDb.instance.upsert(
+      final attempt = MedicineDb.instance.upsert(
         const Medicine(
           id: 'b',
           barcode: '777',
@@ -490,12 +490,11 @@ void main() {
         ),
       );
 
-      // القيد الفريد + ConflictAlgorithm.replace ⇒ سجل واحد لا سجلان.
-      // الواجهة تمنع الوصول إلى هنا أصلاً (النموذج يتبنّى السجل الموجود)،
-      // وهذا خط الدفاع الأخير ضد التكرار القادم من المزامنة.
+      // خط الدفاع الأخير: لا سجلان بباركود واحد، ولا حذف صامت للأول.
+      await expectLater(attempt, throwsA(isA<BarcodeConflictException>()));
       final all = await MedicineDb.instance.getAll();
       expect(all.length, 1);
-      expect(all.first.name, 'ثانٍ بنفس الباركود');
+      expect(all.first.name, 'أول');
     });
 
     test('تعديل نفس السجل بنفس الباركود مسموح', () async {

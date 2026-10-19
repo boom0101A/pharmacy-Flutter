@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/medicine.dart';
 import '../services/gemini_vision.dart';
+import '../services/gs1_parser.dart';
 import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
 import '../theme.dart';
@@ -888,19 +889,54 @@ InvoiceSaveResult buildInvoiceSaveItems({
 }) {
   // مرحلة 1: دمج التكرار داخل الفاتورة نفسها بمفتاح (نوع + اسم مُطبَّع).
   // الترتيب الأصلي (`order`) يُحفَظ حتى يبقى ظهور المواد في نفس تسلسل الفاتورة.
+  //
+  // المطابقة بالباركود أولاً (سطران بباركود واحد واسمين مختلفين مادة واحدة)،
+  // ثم بالاسم — إلا إن حمل السطران باركودين مختلفين فهما منتجان مختلفان.
   final byKey = <String, InvoiceLineDraft>{};
   final mergedWithinFlags = <String, bool>{};
   final order = <String>[];
+  final keyByCode = <String, String>{};
+  final keyByName = <String, String>{};
 
-  for (final d in drafts) {
-    if (d.name.trim().isEmpty) continue;
-    final key = '${d.type.name}::${MedicineStore.normalizeName(d.name)}';
-    final prev = byKey[key];
+  for (final raw in drafts) {
+    if (raw.name.trim().isEmpty) continue;
+    final d = InvoiceLineDraft(
+      name: raw.name,
+      type: raw.type,
+      price: raw.price < 0 ? 0 : raw.price,
+      quantity: raw.quantity < 0 ? 0 : raw.quantity,
+      barcode: raw.barcode.trim(),
+      category: raw.category,
+      expiryDate: raw.expiryDate,
+    );
+    final code = Gs1Parser.canonicalKey(d.barcode);
+    final nameKey = '${d.type.name}::${MedicineStore.normalizeName(d.name)}';
+
+    var key = code == null ? null : keyByCode[code];
+    if (key == null) {
+      final byName = keyByName[nameKey];
+      final other = byName == null ? null : byKey[byName]!.barcode;
+      final compatible =
+          other == null ||
+          code == null ||
+          other.isEmpty ||
+          Gs1Parser.canonicalKey(other) == code;
+      if (byName != null && compatible) key = byName;
+    }
+
+    final prev = key == null ? null : byKey[key];
     if (prev == null) {
-      byKey[key] = d;
-      order.add(key);
+      // اسم مستعمل لسطر بباركود آخر — مفتاح مستقل لهذا المنتج المختلف
+      final fresh = byKey.containsKey(nameKey) ? '$nameKey::$code' : nameKey;
+      byKey[fresh] = d;
+      order.add(fresh);
+      if (code != null) keyByCode[code] = fresh;
+      keyByName.putIfAbsent(nameKey, () => fresh);
     } else {
-      byKey[key] = InvoiceLineDraft(
+      final k = key!;
+      if (code != null) keyByCode[code] = k;
+      keyByName.putIfAbsent(nameKey, () => k);
+      byKey[k] = InvoiceLineDraft(
         name: prev.name,
         type: prev.type,
         price: d.price > 0 ? d.price : prev.price,
@@ -909,7 +945,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
         category: prev.category ?? d.category,
         expiryDate: _earlier(prev.expiryDate, d.expiryDate),
       );
-      mergedWithinFlags[key] = true;
+      mergedWithinFlags[k] = true;
     }
   }
 
@@ -918,6 +954,9 @@ InvoiceSaveResult buildInvoiceSaveItems({
   var mergedExisting = 0;
   var mergedWithinInvoice = 0;
   final items = <Medicine>[];
+  // مادة موجودة تطابقها مجموعتان (واحدة بالباركود وأخرى بالاسم) — تُجمع في
+  // عنصر واحد، وإلا حمل الحفظ نفس المعرّف مرتين وبقي الأخير وحده.
+  final indexById = <String, int>{};
 
   for (final key in order) {
     final d = byKey[key]!;
@@ -929,8 +968,19 @@ InvoiceSaveResult buildInvoiceSaveItems({
     final byBarcode = store.findExistingByBarcode(d.barcode);
     final existing = byBarcode ?? store.findExistingByName(d.name, d.type);
     final ts = now.millisecondsSinceEpoch;
-    if (existing != null) {
+    final already = existing == null ? null : indexById[existing.id];
+    if (already != null) {
+      final prev = items[already];
+      items[already] = prev.copyWith(
+        price: d.price > 0 ? d.price : prev.price,
+        quantity: prev.quantity + d.quantity,
+        expiryDate: _earlier(prev.expiryDate, d.expiryDate),
+        updatedAt: ts,
+      );
+      mergedWithinInvoice++;
+    } else if (existing != null) {
       mergedExisting++;
+      indexById[existing.id] = items.length;
       // مطابقة الباركود لا تنقل المادة لقسم آخر بسبب تصنيف الفاتورة الجماعي
       final type = byBarcode != null ? existing.type : d.type;
       final expiry = _earlier(existing.expiryDate, d.expiryDate);

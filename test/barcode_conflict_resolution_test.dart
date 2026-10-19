@@ -118,6 +118,26 @@ void main() {
     expect((await dbi.getAll()).any((m) => m.id == 'gone'), isFalse);
   });
 
+  test('importBackup يمسح اسم صورة غير موجودة على هذا الجهاز', () async {
+    final store = _TestStore();
+    await store.load();
+    await store.importBackup([
+      Medicine(
+        id: 'p1',
+        barcode: '',
+        name: 'x',
+        price: 0,
+        quantity: 1,
+        imagePath: 'from-other-phone.jpg',
+        createdAt: 1,
+        updatedAt: 1,
+      ),
+    ]);
+    final saved = (await dbi.getAll()).single;
+    expect(saved.imagePath, isNull);
+    expect(saved.hasImage, isFalse);
+  });
+
   test('importBackup بباركود محلي أحدث لا يمحو المحلي', () async {
     await dbi.upsert(med(id: 'a1', barcode: '123', qty: 200, updatedAt: 300));
     final store = _TestStore();
@@ -165,5 +185,50 @@ void main() {
     final all = await dbi.getAll();
     expect(all.map((m) => m.id), ['e1']);
     expect(all.single.quantity, 15);
+  });
+
+  // شبكة الأمان: الحفظ العادي (النموذج، الفاتورة، الدمج) بباركود تملكه مادة
+  // أخرى كان يحذفها بصمت عبر INSERT OR REPLACE. الآن يُرفض ولا يُحذف شيء.
+  group('upsert لا يحذف مادة أخرى بنفس الباركود', () {
+    test('upsert يرمي BarcodeConflictException ويُبقي الأصل', () async {
+      await dbi.upsert(med(id: 'a1', barcode: '123', qty: 50));
+      await expectLater(
+        dbi.upsert(med(id: 'b1', barcode: '123', qty: 1)),
+        throwsA(
+          isA<BarcodeConflictException>().having(
+            (e) => e.existingId,
+            'existingId',
+            'a1',
+          ),
+        ),
+      );
+      final all = await dbi.getAll();
+      expect(all.single.id, 'a1');
+      expect(all.single.quantity, 50);
+    });
+
+    test('upsertAll يرمي ولا يكتب شيئاً من الدفعة', () async {
+      await dbi.upsert(med(id: 'a1', barcode: '123', qty: 50));
+      await expectLater(
+        dbi.upsertAll([
+          med(id: 'n1', barcode: '', qty: 3),
+          med(id: 'b1', barcode: '123', qty: 1),
+        ]),
+        throwsA(isA<BarcodeConflictException>()),
+      );
+      final all = await dbi.getAll();
+      expect(all.map((m) => m.id), ['a1']);
+    });
+
+    test('تعديل المادة نفسها بباركودها يبقى مسموحاً', () async {
+      await dbi.upsert(med(id: 'a1', barcode: '123', qty: 50));
+      await dbi.upsert(med(id: 'a1', barcode: '123', qty: 70, updatedAt: 2));
+      expect((await dbi.getAll()).single.quantity, 70);
+    });
+
+    test('مادتان بلا باركود لا تتعارضان', () async {
+      await dbi.upsertAll([med(id: 'a1'), med(id: 'b1')]);
+      expect((await dbi.getAll()).length, 2);
+    });
   });
 }

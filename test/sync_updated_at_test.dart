@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/services/sync_service.dart';
 
 /// حارس ضد عودة عطل «المزامنة تزوّر ختم الوقت».
 ///
@@ -109,5 +110,12 @@ void main() {
       );
       expect(stored.imagePath, 'mine.jpg');
     });
+  });
+
+  // مادة حُذفت أثناء دورة مزامنة كانت تُرفع ثانية من لقطة البداية.
+  test('دفعة الرفع تُسقط ما دخل طابور الحذف أثناء الدورة', () {
+    final pending = <String, Object?>{'a': 1, 'b': 2, 'c': 3};
+    SyncService.dropQueuedDeletes(pending, ['b', 'zz']);
+    expect(pending.keys, ['a', 'c']);
   });
 }

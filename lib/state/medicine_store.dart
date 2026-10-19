@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -6,6 +7,7 @@ import '../db/medicine_db.dart';
 import '../models/medicine.dart';
 import '../services/app_settings.dart';
 import '../services/barcode_registry.dart';
+import '../services/duplicates.dart';
 import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
 import '../services/notification_service.dart';
@@ -321,7 +323,12 @@ class MedicineStore extends ChangeNotifier {
     final toWrite = <Medicine>[];
     var added = 0, updated = 0, skipped = 0;
 
-    for (final item in incoming) {
+    for (final raw in incoming) {
+      // نسخة من جهاز آخر تحمل أسماء صور غير موجودة هنا — مادة «لديها صورة»
+      // بلا ملف تخدع الفلتر وتفتح صورة مكسورة
+      final item = raw.hasImage && !_imageExists(raw.imagePath)
+          ? raw.copyWith(clearImage: true, updatedAt: raw.updatedAt)
+          : raw;
       final mine = byId[item.id];
       if (deleted.contains(item.id)) {
         skipped++;
@@ -360,6 +367,11 @@ class MedicineStore extends ChangeNotifier {
     return (added: added, updated: updated, skipped: skipped);
   }
 
+  static bool _imageExists(String? fileName) {
+    final path = ImageStore.fullPathSync(fileName);
+    return path != null && File(path).existsSync();
+  }
+
   /// حفظ أسطر فاتورة مراجَعة دفعة واحدة.
   ///
   /// بعض العناصر مواد جديدة، وبعضها **تحديث** لمادة موجودة اختار المستخدم
@@ -384,9 +396,10 @@ class MedicineStore extends ChangeNotifier {
     _scheduleDigestIfEnabled();
   }
 
-  Future<void> delete(Medicine medicine) async {
+  /// [keepImage]: صورة المادة انتقلت لمادة أخرى (دمج التكرارات) فلا تُحذف.
+  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
     await _db.delete(medicine.id);
-    await ImageStore.deleteFile(medicine.imagePath);
+    if (!keepImage) await ImageStore.deleteFile(medicine.imagePath);
     _all.removeWhere((m) => m.id == medicine.id);
     notifyListeners();
 
@@ -434,6 +447,18 @@ class MedicineStore extends ChangeNotifier {
 
   Future<Medicine?> findByBarcode(String barcode) =>
       _db.findByAnyBarcode(Gs1Parser.lookupVariants(barcode));
+
+  /// مواد شاشة مراجعة التكرارات: السحابة مصحَّحة بالمحلي (راجع
+  /// [reconcileReviewItems]). بلا اتصال تبقى المواد المحلية وحدها.
+  Future<List<Medicine>> itemsForDuplicateReview() async {
+    final cloud = await SyncService.instance.fetchPharmacyItems();
+    final deleted = {...await _db.peekPendingDeletes(), ..._pendingDeleteIds};
+    return reconcileReviewItems(
+      cloud: cloud ?? const [],
+      local: _all,
+      deleted: deleted,
+    );
+  }
 
   /// عدد عمليات الحذف التي لم تصل للسحابة بعد — غير صفري يعني أن الحذف
   /// السحابي يفشل حالياً (شبكة أو صلاحيات).
