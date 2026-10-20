@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class _Store extends MedicineStore {
   final saved = <Medicine>[];
   final deleted = <String>[];
-  final keptImages = <String>[];
+
+  /// يحاكي فشل الدمج (تعارض باركود مع مادة خارج المجموعة).
+  Object? mergeError;
 
   @override
   Future<void> load() async {}
@@ -22,9 +24,11 @@ class _Store extends MedicineStore {
   Future<void> save(Medicine medicine) async => saved.add(medicine);
 
   @override
-  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
-    deleted.add(medicine.id);
-    if (keepImage) keptImages.add(medicine.id);
+  Future<void> mergeDuplicates(Medicine keeper, List<Medicine> losers) async {
+    final e = mergeError;
+    if (e != null) throw e;
+    saved.add(keeper);
+    deleted.addAll(losers.map((m) => m.id));
   }
 }
 
@@ -147,6 +151,17 @@ void main() {
 
     expect(store.saved.single.id, 'a');
     expect(store.saved.single.imagePath, 'b.jpg');
-    expect(store.keptImages, ['b']);
+  });
+
+  testWidgets('فشل الدمج يظهر رسالة ولا يغيّر شيئاً', (tester) async {
+    store.mergeError = Exception('الباركود مسجَّل لمادة أخرى');
+    await open(tester);
+    await tester.tap(find.textContaining('دمج (الكمية 90)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ادمج'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('تعذّر الدمج'), findsOneWidget);
+    expect(find.text('لزقة خافض حرارة'), findsNWidgets(2));
   });
 }

@@ -403,10 +403,9 @@ class MedicineStore extends ChangeNotifier {
     _scheduleDigestIfEnabled();
   }
 
-  /// [keepImage]: صورة المادة انتقلت لمادة أخرى (دمج التكرارات) فلا تُحذف.
-  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
+  Future<void> delete(Medicine medicine) async {
     await _db.delete(medicine.id);
-    if (!keepImage) await ImageStore.deleteFile(medicine.imagePath);
+    await ImageStore.deleteFile(medicine.imagePath);
     _all.removeWhere((m) => m.id == medicine.id);
     notifyListeners();
 
@@ -417,6 +416,37 @@ class MedicineStore extends ChangeNotifier {
     await _db.enqueuePendingDelete(medicine.id);
     unawaited(_tryCloudDelete(medicine.id));
 
+    _scheduleDigestIfEnabled();
+  }
+
+  /// دمج مكرّرات: الحذف والحفظ في معاملة واحدة ([MedicineDb.mergeInto]).
+  ///
+  /// كان الدمج حذفاً ثم حفظاً منفصلين — فشل الحفظ يُضيّع كميات المحذوفة.
+  /// يرمي قبل أي تغيير إن تعذّر (مثلاً تعارض باركود)، فلا يُحذف شيء.
+  Future<void> mergeDuplicates(Medicine keeper, List<Medicine> losers) async {
+    await _db.mergeInto(
+      keeper: keeper,
+      loserIds: [for (final m in losers) m.id],
+    );
+
+    final ids = losers.map((m) => m.id).toSet();
+    _all.removeWhere((m) => ids.contains(m.id));
+    final i = _all.indexWhere((m) => m.id == keeper.id);
+    if (i >= 0) {
+      _all[i] = keeper;
+    } else {
+      _all.insert(0, keeper);
+    }
+    notifyListeners();
+
+    for (final m in losers) {
+      // صورة انتقلت للمادة الباقية لا تُحذف مع صاحبتها الأصلية
+      if (m.imagePath != null && m.imagePath != keeper.imagePath) {
+        await ImageStore.deleteFile(m.imagePath);
+      }
+      unawaited(_tryCloudDelete(m.id));
+    }
+    unawaited(SyncService.instance.pushMedicine(keeper));
     _scheduleDigestIfEnabled();
   }
 

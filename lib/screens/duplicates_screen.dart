@@ -117,16 +117,13 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     );
     if (ok != true || !mounted) return;
 
-    // الحذف قبل الحفظ: يُحرّر الباركود من المادة المحذوفة محلياً قبل أن تحمله
-    // المادة الباقية، فلا يصطدم بالفهرس الفريد.
-    for (final m in losers) {
-      // صورة انتقلت للمادة الباقية لا تُحذف مع صاحبتها الأصلية
-      await widget.store.delete(
-        m,
-        keepImage: m.imagePath != null && m.imagePath == merged.imagePath,
-      );
+    // عملية واحدة: إن فشلت لا يُحذف شيء ولا تضيع كمية
+    try {
+      await widget.store.mergeDuplicates(merged, losers);
+    } catch (e) {
+      if (mounted) _toast('تعذّر الدمج — لم يتغيّر شيء: $e');
+      return;
     }
-    await widget.store.save(merged);
     if (!mounted) return;
     setState(() {
       final loserIds = losers.map((m) => m.id).toSet();
@@ -147,12 +144,25 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         if (m.id != keeperId && m.barcode.isNotEmpty)
           m.copyWith(barcode: '', updatedAt: now),
     ];
-    for (final m in cleared) {
-      await widget.store.save(m);
+    try {
+      for (final m in cleared) {
+        await widget.store.save(m);
+      }
+    } catch (e) {
+      if (mounted) _toast('تعذّر فصل الباركود: $e');
+      return;
     }
     if (!mounted) return;
     final byId = {for (final m in cleared) m.id: m};
     setState(() => _items = [for (final m in _items) byId[m.id] ?? m]);
+  }
+
+  void _toast(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+      );
   }
 
   @override

@@ -21,7 +21,7 @@ class _TestStore extends MedicineStore {
   Future<void> refreshFromCloud({bool manual = false}) async {}
 
   @override
-  Future<void> delete(Medicine medicine, {bool keepImage = false}) async {
+  Future<void> delete(Medicine medicine) async {
     deletedIds.add(medicine.id);
     all.removeWhere((m) => m.id == medicine.id);
     notifyListeners();

@@ -187,6 +187,56 @@ void main() {
     expect(all.single.quantity, 15);
   });
 
+  // الدمج كان حذفاً ثم حفظاً منفصلين: فشل الحفظ (أو إغلاق التطبيق بينهما)
+  // يترك المحذوفة محذوفة والباقية بلا كمياتها. الآن عملية واحدة.
+  group('mergeInto ذرّي', () {
+    test(
+      'الحالة العادية: الخاسرة تُحذف وتُدرج للسحابة والباقية بالمجموع',
+      () async {
+        await dbi.upsertAll([
+          med(id: 'k', barcode: '123', qty: 5),
+          med(id: 'l', qty: 7),
+        ]);
+        await dbi.mergeInto(
+          keeper: med(id: 'k', barcode: '123', qty: 12, updatedAt: 2),
+          loserIds: ['l'],
+        );
+        final all = await dbi.getAll();
+        expect(all.single.id, 'k');
+        expect(all.single.quantity, 12);
+        expect(await dbi.peekPendingDeletes(), ['l']);
+      },
+    );
+
+    test('الباركود يعود من الخاسرة للباقية بلا تعارض', () async {
+      await dbi.upsertAll([med(id: 'k', qty: 5), med(id: 'l', barcode: '123')]);
+      await dbi.mergeInto(
+        keeper: med(id: 'k', barcode: '123', qty: 6, updatedAt: 2),
+        loserIds: ['l'],
+      );
+      expect((await dbi.getAll()).single.barcode, '123');
+    });
+
+    test('تعارض مع مادة خارج المجموعة: يُرمى ولا يُحذف شيء', () async {
+      await dbi.upsertAll([
+        med(id: 'k', qty: 5),
+        med(id: 'l', qty: 7),
+        med(id: 'other', barcode: '999', qty: 40),
+      ]);
+      await expectLater(
+        dbi.mergeInto(
+          keeper: med(id: 'k', barcode: '999', qty: 12, updatedAt: 2),
+          loserIds: ['l'],
+        ),
+        throwsA(isA<BarcodeConflictException>()),
+      );
+      final ids = (await dbi.getAll()).map((m) => m.id).toSet();
+      expect(ids, {'k', 'l', 'other'});
+      expect((await dbi.getAll()).firstWhere((m) => m.id == 'k').quantity, 5);
+      expect(await dbi.peekPendingDeletes(), isEmpty);
+    });
+  });
+
   // شبكة الأمان: الحفظ العادي (النموذج، الفاتورة، الدمج) بباركود تملكه مادة
   // أخرى كان يحذفها بصمت عبر INSERT OR REPLACE. الآن يُرفض ولا يُحذف شيء.
   group('upsert لا يحذف مادة أخرى بنفس الباركود', () {

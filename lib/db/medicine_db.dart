@@ -229,29 +229,57 @@ class MedicineDb {
     final db = await database;
     await db.transaction((txn) async {
       for (final item in items) {
-        if (item.barcode.isNotEmpty) {
-          final clash = await txn.query(
-            _table,
-            columns: ['id'],
-            where: 'barcode = ? AND id != ?',
-            whereArgs: [item.barcode, item.id],
-            limit: 1,
-          );
-          if (clash.isNotEmpty) {
-            throw BarcodeConflictException(
-              barcode: item.barcode,
-              incomingId: item.id,
-              existingId: clash.first['id'].toString(),
-            );
-          }
-        }
-        await txn.insert(
-          _table,
-          item.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await _writeChecked(txn, item);
       }
     });
+  }
+
+  /// دمج مكرّرات في عملية واحدة: حذف [loserIds] وإدراجها في طابور الحذف
+  /// السحابي وكتابة [keeper] — كلها أو لا شيء.
+  ///
+  /// كانت حذفاً ثم حفظاً منفصلين: فشل الحفظ (تعارض باركود) أو إغلاق التطبيق
+  /// بينهما يترك المحذوفة محذوفة والباقية بلا كمياتها. الحذف أولاً داخل
+  /// المعاملة يحرّر باركود الخاسرة قبل أن تحمله الباقية.
+  Future<void> mergeInto({
+    required Medicine keeper,
+    required List<String> loserIds,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final id in loserIds) {
+        await txn.delete(_table, where: 'id = ?', whereArgs: [id]);
+        await txn.insert(_pendingDeletes, {
+          'id': id,
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+      await _writeChecked(txn, keeper);
+    });
+  }
+
+  /// يكتب [item] بعد التأكد أن باركوده لا تملكه مادة أخرى، وإلا يرمي
+  /// [BarcodeConflictException] فتتراجع المعاملة كلها.
+  static Future<void> _writeChecked(Transaction txn, Medicine item) async {
+    if (item.barcode.isNotEmpty) {
+      final clash = await txn.query(
+        _table,
+        columns: ['id'],
+        where: 'barcode = ? AND id != ?',
+        whereArgs: [item.barcode, item.id],
+        limit: 1,
+      );
+      if (clash.isNotEmpty) {
+        throw BarcodeConflictException(
+          barcode: item.barcode,
+          incomingId: item.id,
+          existingId: clash.first['id'].toString(),
+        );
+      }
+    }
+    await txn.insert(
+      _table,
+      item.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   /// كتابة دفعة قد تحمل باركوداً موجوداً تحت معرّف آخر (مزامنة، استرجاع نسخة).
