@@ -391,9 +391,24 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     final shown = _flaggedOnly
         ? _lines.where((l) => l.issues.isNotEmpty).toList()
         : _lines;
+    // سبب فشل كل صفحة ظاهر بلا ضغط — كان مخفياً خلف الصورة المصغّرة فلا يرى
+    // المستخدم إلا إطاراً أحمر و«لم تُقرأ أي أسطر بعد»
+    final failures = [
+      for (final p in _pages)
+        if (p.state == _PageState.failed)
+          'تعذّرت قراءة الصفحة ${_pageNumber(p)}: ${p.error ?? 'خطأ غير معروف'}',
+    ];
+    final failureText = failures.isEmpty
+        ? null
+        : '${failures.join('\n')}\nاضغط «إعادة المحاولة» على الصفحة.';
     return Column(
       children: [
         _pageStrip(),
+        if (failureText != null && _lines.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _errorBox(failureText),
+          ),
         if (_lines.isNotEmpty) _summary(flagged),
         if (_lines.isNotEmpty) _bulkHeader(),
         if (_error != null)
@@ -404,11 +419,21 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         Expanded(
           child: _lines.isEmpty
               ? Center(
-                  child: Text(
-                    _anyReading
-                        ? 'جاري قراءة الفاتورة…'
-                        : 'لم تُقرأ أي أسطر بعد',
-                    style: const TextStyle(color: AppColors.textSecondary),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: _anyReading
+                        ? const Text(
+                            'جاري قراءة الفاتورة… قد تستغرق حتى دقيقة '
+                            'للصفحات الكثيفة',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.textSecondary),
+                          )
+                        : failureText != null
+                        ? _errorBox(failureText)
+                        : const Text(
+                            'لم تُقرأ أي أسطر بعد',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
                   ),
                 )
               : ListView.builder(

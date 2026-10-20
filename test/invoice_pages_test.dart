@@ -94,6 +94,11 @@ void main() {
 
     expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
     expect(find.text('إعادة المحاولة'), findsOneWidget);
+    // السبب ظاهر مباشرة — كان مخفياً حتى يضغط المستخدم على الصورة المصغّرة
+    expect(
+      find.textContaining('تعذّرت قراءة الصفحة 2: انتهت المهلة'),
+      findsOneWidget,
+    );
 
     results['page2.jpg'] = InvoiceResult.success([
       InvoiceLine(name: 'Panadol', price: 500, quantity: 10),
@@ -102,6 +107,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, 'Panadol'), findsOneWidget);
     expect(find.text('إعادة المحاولة'), findsNothing);
+    expect(find.textContaining('تعذّرت قراءة الصفحة'), findsNothing);
+  });
+
+  testWidgets('كل الصفحات فشلت ← السبب مكان «لم تُقرأ أي أسطر»', (
+    tester,
+  ) async {
+    results['page1.jpg'] = InvoiceResult.failure(
+      'استغرقت القراءة وقتاً طويلاً',
+    );
+    await pump(tester);
+
+    expect(find.text('لم تُقرأ أي أسطر بعد'), findsNothing);
+    expect(
+      find.textContaining('تعذّرت قراءة الصفحة 1: استغرقت القراءة'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('حذف صفحة يحذف أسطرها', (tester) async {

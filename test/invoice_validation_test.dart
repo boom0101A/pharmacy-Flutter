@@ -129,4 +129,13 @@ void main() {
       );
     });
   });
+
+  // فاتورة كثيفة كانت تتجاوز 90 ثانية بتفكير النموذج الافتراضي → TimeoutException.
+  test('الطلب يخفّض التفكير ويرفع سقف الرد', () {
+    final req = GeminiVision.buildRequest(Uint8List.fromList([0xFF, 0xD8, 0]));
+    final cfg = req['generationConfig']! as Map;
+    expect((cfg['thinkingConfig']! as Map)['thinkingLevel'], 'low');
+    expect(cfg['maxOutputTokens'], 65536);
+    expect(GeminiVision.requestUri.path, contains('gemini-3.6-flash'));
+  });
 }

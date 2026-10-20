@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -112,8 +113,9 @@ class GeminiVision {
   /// عادية أقل من 2MB. نمنع تصعيد أي صورة كبيرة عرضاً كي لا يفشل الطلب.
   static const _maxBytes = 7 * 1024 * 1024;
 
-  /// 90 ثانية سقف — يكفي فواتير طويلة مع توكنات التفكير قبل الاستخراج.
-  static const Duration _timeout = Duration(seconds: 90);
+  /// سقف أمان فقط: مع التفكير المنخفض تُقرأ الصفحة عادةً في ثوانٍ. كان 90
+  /// ثانية مع التفكير الافتراضي فتنقطع الفواتير الكثيفة بـ TimeoutException.
+  static const Duration _timeout = Duration(seconds: 180);
 
   static bool get isConfigured => AppSettings.instance.hasGeminiKey;
 
@@ -141,7 +143,7 @@ class GeminiVision {
     }
 
     try {
-      final body = jsonEncode(_buildRequest(bytes));
+      final body = jsonEncode(buildRequest(bytes));
 
       final response = await http
           .post(
@@ -156,6 +158,11 @@ class GeminiVision {
       }
 
       return parseResponse(response.body);
+    } on TimeoutException {
+      return InvoiceResult.failure(
+        'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على '
+        'جزأين إن كانت طويلة جداً.',
+      );
     } on SocketException {
       return InvoiceResult.failure('لا يوجد اتصال بالإنترنت.');
     } on http.ClientException catch (e) {
@@ -195,7 +202,8 @@ class GeminiVision {
   }
 
   /// يبني حمولة الطلب لـ Gemini بمخطط JSON structured output.
-  static Map<String, Object?> _buildRequest(Uint8List bytes) => {
+  @visibleForTesting
+  static Map<String, Object?> buildRequest(Uint8List bytes) => {
     'contents': [
       {
         'parts': [
@@ -211,6 +219,12 @@ class GeminiVision {
     ],
     'generationConfig': {
       'temperature': 0.05,
+      // النموذج «يفكّر» قبل الرد افتراضياً: على فاتورة كثيفة تجاوز التفكير مع
+      // الإخراج 90 ثانية. «low» قِيس: 7.7ث ← 2.4ث، ويُبقي تفكيراً كافياً
+      // لقراءة الأعمدة (minimal أسرع قليلاً لكنه يُلغيه تقريباً).
+      'thinkingConfig': {'thinkingLevel': 'low'},
+      // حدّ النموذج الفعلي — فاتورة بعشرات الأسطر لا تُقطع في منتصف الـ JSON
+      'maxOutputTokens': 65536,
       'response_mime_type': 'application/json',
       'response_schema': _invoiceSchema,
     },
