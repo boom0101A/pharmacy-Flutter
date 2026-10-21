@@ -144,20 +144,23 @@ class GeminiVision {
 
     try {
       final body = jsonEncode(buildRequest(bytes));
+      final headers = requestHeaders(AppSettings.instance.geminiKey);
 
-      final response = await http
-          .post(
-            requestUri,
-            headers: requestHeaders(AppSettings.instance.geminiKey),
-            body: body,
-          )
-          .timeout(_timeout);
+      // خوادم Google تردّ 503 «ضغط عالٍ» على فترات (قيس فعلياً: خمس مرات
+      // متتالية قبل النجاح). نعيد المحاولة على الأخطاء العابرة وحدها؛ خطأ
+      // دائم (مفتاح خاطئ، طلب مرفوض) يفشل فوراً بلا تكرار.
+      var attempt = 0;
+      while (true) {
+        final response = await _post(requestUri, headers, body);
+        if (response.statusCode == 200) return parseResponse(response.body);
 
-      if (response.statusCode != 200) {
-        return InvoiceResult.failure(_explainHttpError(response));
+        final transient = _transientStatuses.contains(response.statusCode);
+        if (!transient || attempt >= retryDelays.length) {
+          return InvoiceResult.failure(_explainHttpError(response));
+        }
+        await sleep(retryDelays[attempt]);
+        attempt++;
       }
-
-      return parseResponse(response.body);
     } on TimeoutException {
       return InvoiceResult.failure(
         'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على '
@@ -170,6 +173,43 @@ class GeminiVision {
     } catch (e) {
       return InvoiceResult.failure('خطأ غير متوقع: $e');
     }
+  }
+
+  /// حالات عابرة تستحق إعادة المحاولة: ضغط على الخادم أو أخطاؤه، أو طلبات
+  /// كثيرة في وقت قصير.
+  static const _transientStatuses = {429, 500, 502, 503, 504};
+
+  /// الانتظار قبل كل إعادة محاولة — ثلاث محاولات إجمالاً.
+  @visibleForTesting
+  static List<Duration> retryDelays = _defaultRetryDelays;
+  static const _defaultRetryDelays = [
+    Duration(seconds: 3),
+    Duration(seconds: 8),
+  ];
+
+  /// قابلان للاستبدال في الاختبار فقط: عميل HTTP وهمي، وانتظار بلا تأخير.
+  @visibleForTesting
+  static http.Client? httpClient;
+  @visibleForTesting
+  static Future<void> Function(Duration) sleep = Future.delayed;
+
+  @visibleForTesting
+  static void resetTransport() {
+    httpClient = null;
+    sleep = Future.delayed;
+    retryDelays = _defaultRetryDelays;
+  }
+
+  static Future<http.Response> _post(
+    Uri url,
+    Map<String, String> headers,
+    String body,
+  ) {
+    final client = httpClient;
+    final request = client == null
+        ? http.post(url, headers: headers, body: body)
+        : client.post(url, headers: headers, body: body);
+    return request.timeout(_timeout);
   }
 
   /// عنوان الطلب **بلا المفتاح**: المفتاح في رابط الطلب كان يظهر داخل رسائل
@@ -384,6 +424,13 @@ class GeminiVision {
   }
 
   static String _explainHttpError(http.Response r) {
+    // بعد استنفاد المحاولات: رسالة عربية بما يفعله المستخدم، لا نص Google الخام
+    if (r.statusCode == 429) {
+      return 'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.';
+    }
+    if (_transientStatuses.contains(r.statusCode)) {
+      return 'خدمة Google مزدحمة حالياً — انتظر دقيقة ثم اضغط «إعادة المحاولة».';
+    }
     // Gemini يعيد رسالة الخطأ داخل حقل `error.message` عادةً.
     try {
       final body = jsonDecode(r.body) as Map<String, Object?>;
