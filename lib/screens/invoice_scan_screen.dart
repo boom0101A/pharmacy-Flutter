@@ -443,7 +443,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             color: AppColors.bgCard,
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: _badge(
-              '⚡ قُرئت بالنموذج البديل (حصة النموذج الأساسي انتهت) — راجع '
+              '⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع '
               'الأسطر بانتباه',
               AppColors.warning,
             ),

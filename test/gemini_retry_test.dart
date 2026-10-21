@@ -11,11 +11,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// إعادة المحاولة والنموذج البديل.
 ///
 /// خوادم Google ترد 503 «ضغط عالٍ» على فترات (قيس: خمس مرات متتالية)، والخطة
-/// المجانية تحدّ gemini-3.6-flash بعشرين قراءة يومياً. عند نفاد حصته أو بقاء
-/// الضغط ينتقل التطبيق إلى gemini-3.5-flash-lite (28/28 على فاتورة حقيقية).
+/// المجانية تحدّ كل نموذج بحصة يومية منفصلة. الأساسي gemini-3.5-flash-lite
+/// (اختيار المستخدم: 28/28 في 6.4ث)؛ عند نفاد حصته أو بقاء الضغط ينتقل
+/// التطبيق إلى gemini-3.6-flash.
 void main() {
-  const primary = 'gemini-3.6-flash';
-  const fallback = 'gemini-3.5-flash-lite';
+  const primary = 'gemini-3.5-flash-lite';
+  const fallback = 'gemini-3.6-flash';
   final image = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0]);
   late List<Duration> waited;
   late Map<String, List<int>> calls;
@@ -137,7 +138,7 @@ void main() {
     });
   });
 
-  group('النموذج البديل gemini-3.5-flash-lite', () {
+  group('النموذج البديل gemini-3.6-flash', () {
     test('حصة الأساسي اليومية نفدت ← طلب واحد له ثم البديل ينجح', () async {
       serve({
         primary: [(429, daily)],
@@ -212,6 +213,25 @@ void main() {
       expect(result.error, contains('انتهت القراءات المجانية'));
       expect(result.error, contains('30 دقيقة'));
     });
+  });
+
+  // بعد تبديل النموذجين: موعد حظر محفوظ بالمفتاح القديم يخص gemini-3.6-flash
+  // (الأساسي السابق). لو قُرئ كحظر للأساسي الجديد لتخطّى التطبيق flash-lite
+  // بلا سبب حتى ذلك الموعد.
+  test('حظر محفوظ بالمفتاح القديم لا يمنع الأساسي الجديد', () async {
+    SharedPreferences.setMockInitialValues({
+      'gemini_primary_blocked_until': clock
+          .add(const Duration(hours: 5))
+          .millisecondsSinceEpoch,
+    });
+    serve({
+      primary: [(200, ok())],
+    });
+    final result = await GeminiVision.readInvoiceBytes(image);
+    expect(result.ok, isTrue);
+    expect(result.usedFallback, isFalse);
+    expect(calls[primary]!.length, 1);
+    expect(calls[fallback], isEmpty);
   });
 
   test('quotaInfo يقرأ النوع والمدة من الرد الحقيقي', () {

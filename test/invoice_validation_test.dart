@@ -87,7 +87,7 @@ void main() {
 
     test('المفتاح في الترويسة لا في الرابط، والنموذج كما هو', () {
       expect(GeminiVision.requestUri.query, isEmpty);
-      expect(GeminiVision.requestUri.path, contains('gemini-3.6-flash'));
+      expect(GeminiVision.requestUri.path, contains('gemini-3.5-flash-lite'));
       expect(GeminiVision.requestHeaders('K')['x-goog-api-key'], 'K');
     });
 
@@ -136,6 +136,6 @@ void main() {
     final cfg = req['generationConfig']! as Map;
     expect((cfg['thinkingConfig']! as Map)['thinkingLevel'], 'low');
     expect(cfg['maxOutputTokens'], 65536);
-    expect(GeminiVision.requestUri.path, contains('gemini-3.6-flash'));
+    expect(GeminiVision.requestUri.path, contains('gemini-3.5-flash-lite'));
   });
 }
