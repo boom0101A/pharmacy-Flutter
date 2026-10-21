@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/medicine.dart';
 import 'app_settings.dart';
@@ -80,17 +81,41 @@ class ValidatedLine {
 
 /// نتيجة قراءة صورة فاتورة.
 class InvoiceResult {
-  const InvoiceResult._(this.ok, this.lines, this.error);
+  const InvoiceResult._(
+    this.ok,
+    this.lines,
+    this.error, {
+    this.usedFallback = false,
+  });
 
   final bool ok;
   final List<InvoiceLine> lines;
   final String? error;
 
-  factory InvoiceResult.success(List<InvoiceLine> lines) =>
-      InvoiceResult._(true, lines, null);
+  /// قُرئت بالنموذج البديل لأن الأساسي نفدت حصته أو بقي مزدحماً — تُنبَّه
+  /// الواجهة لمراجعة الأسطر بانتباه أكبر.
+  final bool usedFallback;
+
+  factory InvoiceResult.success(
+    List<InvoiceLine> lines, {
+    bool usedFallback = false,
+  }) => InvoiceResult._(true, lines, null, usedFallback: usedFallback);
   factory InvoiceResult.failure(String reason) =>
       InvoiceResult._(false, const [], reason);
+
+  InvoiceResult _viaFallback() =>
+      ok ? InvoiceResult.success(lines, usedFallback: true) : this;
 }
+
+/// سبب فشل القراءة بنموذج واحد — يقرّر الانتقال إلى البديل.
+enum _Failure { none, dailyQuota, busy, other }
+
+/// نتيجة قراءة بنموذج واحد مع سبب الفشل وموعد تجدد الحصة إن عُرف.
+typedef _ModelRead = ({
+  InvoiceResult result,
+  _Failure failure,
+  Duration? retryAfter,
+});
 
 /// عميل Google Gemini للفواتير — الصورة تُرسَل إلى endpoint النموذج [_model]
 /// مع مخطط JSON صارم يجبر النموذج على إعادة أسطر منظّمة
@@ -106,8 +131,19 @@ class GeminiVision {
   /// الرد فيبطئ الاستجابة إلى 6-10 ثوانٍ للفاتورة الواحدة — مقبول لأن
   /// المستخدم يلتقط صورة ثم ينتظر مرة واحدة، لا يكرّرها في كل ضغطة.
   static const _model = 'gemini-3.6-flash';
-  static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent';
+
+  /// البديل الاحتياطي فقط: عند نفاد حصة الأساسي اليومية أو بقائه مزدحماً.
+  /// حصته المجانية مستقلة. اختير بقياس على فاتورة حقيقية (28 سطراً): 28/28
+  /// صحيحة في 6.4 ثانية — 3.7/3.8-flash دقيقان لكن 150–290 ثانية،
+  /// و3.1-flash-lite أهمل الأسعار كلها.
+  static const _fallbackModel = 'gemini-3.5-flash-lite';
+
+  static const _apiBase =
+      'https://generativelanguage.googleapis.com/v1beta/models';
+
+  /// موعد تجدد حصة الأساسي — يُحفظ فيبقى بعد إغلاق التطبيق، فلا تُهدر
+  /// محاولة على نموذج نعرف أن حصته منتهية.
+  static const _kPrimaryBlockedUntil = 'gemini_primary_blocked_until';
 
   /// الحد الأقصى لحجم الصورة المرسلة — Gemini يقبل حتى 20MB لكن صورة فاتورة
   /// عادية أقل من 2MB. نمنع تصعيد أي صورة كبيرة عرضاً كي لا يفشل الطلب.
@@ -142,42 +178,127 @@ class GeminiVision {
       );
     }
 
-    try {
-      final body = jsonEncode(buildRequest(bytes));
-      final headers = requestHeaders(AppSettings.instance.geminiKey);
+    final body = jsonEncode(buildRequest(bytes));
+    final headers = requestHeaders(AppSettings.instance.geminiKey);
 
-      // خوادم Google تردّ 503 «ضغط عالٍ» على فترات (قيس فعلياً: خمس مرات
-      // متتالية قبل النجاح). نعيد المحاولة على الأخطاء العابرة وحدها؛ خطأ
-      // دائم (مفتاح خاطئ، طلب مرفوض) يفشل فوراً بلا تكرار.
+    // حصة الأساسي معروفة النفاد حتى موعد تجددها — مباشرة إلى البديل
+    final blockedUntil = await _primaryBlockedUntil();
+    if (blockedUntil != null && now().isBefore(blockedUntil)) {
+      final r = await _readWith(_fallbackModel, headers, body);
+      if (r.failure == _Failure.dailyQuota) {
+        return InvoiceResult.failure(
+          _quotaMessage(_nearer(r.retryAfter, blockedUntil.difference(now()))),
+        );
+      }
+      return r.result._viaFallback();
+    }
+
+    final first = await _readWith(_model, headers, body);
+    if (first.failure != _Failure.dailyQuota &&
+        first.failure != _Failure.busy) {
+      return first.result;
+    }
+    if (first.failure == _Failure.dailyQuota) {
+      await _setPrimaryBlockedUntil(
+        now().add(first.retryAfter ?? const Duration(hours: 24)),
+      );
+    }
+
+    final second = await _readWith(_fallbackModel, headers, body);
+    if (second.failure == _Failure.dailyQuota &&
+        first.failure == _Failure.dailyQuota) {
+      return InvoiceResult.failure(
+        _quotaMessage(_nearer(first.retryAfter, second.retryAfter)),
+      );
+    }
+    // نجاح البديل، أو فشله لسبب آخر — رسالته هي الأصدق عن حال الخدمة الآن
+    return second.result._viaFallback();
+  }
+
+  /// قراءة بنموذج واحد مع إعادة المحاولة على الأخطاء العابرة.
+  ///
+  /// خوادم Google تردّ 503 «ضغط عالٍ» على فترات (قيس فعلياً: خمس مرات
+  /// متتالية قبل النجاح). نعيد المحاولة على العابر وحده؛ خطأ دائم (مفتاح
+  /// خاطئ، طلب مرفوض) يفشل فوراً، ونفاد الحصة اليومية لا يُعاد أبداً.
+  static Future<_ModelRead> _readWith(
+    String model,
+    Map<String, String> headers,
+    String body,
+  ) async {
+    try {
       var attempt = 0;
       while (true) {
-        final response = await _post(requestUri, headers, body);
-        if (response.statusCode == 200) return parseResponse(response.body);
+        final response = await _post(requestUriFor(model), headers, body);
+        if (response.statusCode == 200) {
+          return (
+            result: parseResponse(response.body),
+            failure: _Failure.none,
+            retryAfter: null,
+          );
+        }
 
-        // نفاد الحصة اليومية (20 طلباً في الخطة المجانية) لا يزول بثوانٍ —
-        // كل إعادة تُهدر بلا فائدة
-        final dailyQuota =
-            response.statusCode == 429 && quotaInfo(response.body).daily;
-        final transient =
-            _transientStatuses.contains(response.statusCode) && !dailyQuota;
+        if (response.statusCode == 429) {
+          final quota = quotaInfo(response.body);
+          if (quota.daily) {
+            return (
+              result: InvoiceResult.failure(_explainHttpError(response)),
+              failure: _Failure.dailyQuota,
+              retryAfter: quota.retryAfter,
+            );
+          }
+        }
+        final transient = _transientStatuses.contains(response.statusCode);
         if (!transient || attempt >= retryDelays.length) {
-          return InvoiceResult.failure(_explainHttpError(response));
+          return (
+            result: InvoiceResult.failure(_explainHttpError(response)),
+            failure: transient ? _Failure.busy : _Failure.other,
+            retryAfter: null,
+          );
         }
         await sleep(retryDelays[attempt]);
         attempt++;
       }
     } on TimeoutException {
-      return InvoiceResult.failure(
+      return _otherFailure(
         'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على '
         'جزأين إن كانت طويلة جداً.',
       );
     } on SocketException {
-      return InvoiceResult.failure('لا يوجد اتصال بالإنترنت.');
+      return _otherFailure('لا يوجد اتصال بالإنترنت.');
     } on http.ClientException catch (e) {
-      return InvoiceResult.failure('تعذّر الاتصال بخدمة القراءة: ${e.message}');
+      return _otherFailure('تعذّر الاتصال بخدمة القراءة: ${e.message}');
     } catch (e) {
-      return InvoiceResult.failure('خطأ غير متوقع: $e');
+      return _otherFailure('خطأ غير متوقع: $e');
     }
+  }
+
+  static _ModelRead _otherFailure(String message) => (
+    result: InvoiceResult.failure(message),
+    failure: _Failure.other,
+    retryAfter: null,
+  );
+
+  static Duration? _nearer(Duration? a, Duration? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a < b ? a : b;
+  }
+
+  static Future<DateTime?> _primaryBlockedUntil() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ms = prefs.getInt(_kPrimaryBlockedUntil);
+      return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _setPrimaryBlockedUntil(DateTime until) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kPrimaryBlockedUntil, until.millisecondsSinceEpoch);
+    } catch (_) {}
   }
 
   /// حالات عابرة تستحق إعادة المحاولة: ضغط على الخادم أو أخطاؤه، أو طلبات
@@ -198,11 +319,16 @@ class GeminiVision {
   @visibleForTesting
   static Future<void> Function(Duration) sleep = Future.delayed;
 
+  /// الساعة — قابلة للاستبدال في الاختبار لمحاكاة تجدد الحصة.
+  @visibleForTesting
+  static DateTime Function() now = DateTime.now;
+
   @visibleForTesting
   static void resetTransport() {
     httpClient = null;
     sleep = Future.delayed;
     retryDelays = _defaultRetryDelays;
+    now = DateTime.now;
   }
 
   static Future<http.Response> _post(
@@ -220,7 +346,11 @@ class GeminiVision {
   /// عنوان الطلب **بلا المفتاح**: المفتاح في رابط الطلب كان يظهر داخل رسائل
   /// خطأ الاتصال (`ClientException` تطبع الرابط) فيُعرض على الشاشة.
   @visibleForTesting
-  static Uri get requestUri => Uri.parse(_endpoint);
+  static Uri get requestUri => requestUriFor(_model);
+
+  @visibleForTesting
+  static Uri requestUriFor(String model) =>
+      Uri.parse('$_apiBase/$model:generateContent');
 
   @visibleForTesting
   static Map<String, String> requestHeaders(String key) => {
@@ -452,6 +582,10 @@ class GeminiVision {
     return (daily: daily, retryAfter: retryAfter);
   }
 
+  static String _quotaMessage(Duration? wait) =>
+      'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — '
+      '${wait == null ? 'تتجدد غداً' : 'تتجدد بعد نحو ${_arabicDuration(wait)}'}.';
+
   /// «ساعة و29 دقيقة» / «12 دقيقة».
   static String _arabicDuration(Duration d) {
     final h = d.inHours, m = d.inMinutes % 60;
@@ -464,11 +598,7 @@ class GeminiVision {
     // بعد استنفاد المحاولات: رسالة عربية بما يفعله المستخدم، لا نص Google الخام
     if (r.statusCode == 429) {
       final q = quotaInfo(r.body);
-      if (q.daily) {
-        final wait = q.retryAfter;
-        return 'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — '
-            '${wait == null ? 'تتجدد غداً' : 'تتجدد بعد نحو ${_arabicDuration(wait)}'}.';
-      }
+      if (q.daily) return _quotaMessage(q.retryAfter);
       return 'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.';
     }
     if (_transientStatuses.contains(r.statusCode)) {

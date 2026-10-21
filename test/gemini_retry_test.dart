@@ -6,12 +6,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:saydaliyati/services/gemini_vision.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// خوادم Google ترد 503 «ضغط عالٍ» على فترات — قيس فعلياً: خمس محاولات 503
-/// متتالية قبل أن تنجح السادسة. كانت الصفحة تفشل من أول 503 برسالة خام.
+/// إعادة المحاولة والنموذج البديل.
+///
+/// خوادم Google ترد 503 «ضغط عالٍ» على فترات (قيس: خمس مرات متتالية)، والخطة
+/// المجانية تحدّ gemini-3.6-flash بعشرين قراءة يومياً. عند نفاد حصته أو بقاء
+/// الضغط ينتقل التطبيق إلى gemini-3.5-flash-lite (28/28 على فاتورة حقيقية).
 void main() {
+  const primary = 'gemini-3.6-flash';
+  const fallback = 'gemini-3.5-flash-lite';
   final image = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0]);
   late List<Duration> waited;
+  late Map<String, List<int>> calls;
+  late DateTime clock;
+
+  const jsonHeaders = {'content-type': 'application/json; charset=utf-8'};
 
   String ok() => jsonEncode({
     'candidates': [
@@ -26,76 +36,9 @@ void main() {
     ],
   });
 
-  /// يرد بالحالات بالترتيب، ويعدّ الطلبات.
-  ({MockClient client, List<int> calls}) replies(List<int> statuses) {
-    final calls = <int>[];
-    final client = MockClient((_) async {
-      final status = statuses[calls.length];
-      calls.add(status);
-      return http.Response(
-        status == 200
-            ? ok()
-            : '{"error":{"message":"This model is currently experiencing high demand."}}',
-        status,
-        headers: {'content-type': 'application/json; charset=utf-8'},
-      );
-    });
-    return (client: client, calls: calls);
-  }
+  const busy =
+      '{"error":{"message":"This model is currently experiencing high demand."}}';
 
-  setUp(() {
-    dotenv.testLoad(fileInput: 'GEMINI_API_KEY=test-key');
-    waited = [];
-    GeminiVision.sleep = (d) async => waited.add(d);
-  });
-
-  tearDown(GeminiVision.resetTransport);
-
-  test('503 مرتين ثم 200 ← ينجح بعد 3 طلبات بانتظار 3ث ثم 8ث', () async {
-    final r = replies([503, 503, 200]);
-    GeminiVision.httpClient = r.client;
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.ok, isTrue);
-    expect(result.lines.single.name, 'Rennie');
-    expect(r.calls.length, 3);
-    expect(waited, [const Duration(seconds: 3), const Duration(seconds: 8)]);
-  });
-
-  test('503 ثلاث مرات ← رسالة عربية واضحة بعد 3 طلبات فقط', () async {
-    final r = replies([503, 503, 503]);
-    GeminiVision.httpClient = r.client;
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.ok, isFalse);
-    expect(result.error, contains('خدمة Google مزدحمة'));
-    expect(r.calls.length, 3);
-  });
-
-  test('429 ثم 200 ← ينجح بعد طلبين', () async {
-    final r = replies([429, 200]);
-    GeminiVision.httpClient = r.client;
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.ok, isTrue);
-    expect(r.calls.length, 2);
-  });
-
-  test('429 حتى النهاية ← رسالة «طلبات كثيرة»', () async {
-    final r = replies([429, 429, 429]);
-    GeminiVision.httpClient = r.client;
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.error, contains('طلبات كثيرة'));
-  });
-
-  test('400 ← فشل فوري بطلب واحد بلا انتظار', () async {
-    final r = replies([400]);
-    GeminiVision.httpClient = r.client;
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.ok, isFalse);
-    expect(r.calls.length, 1);
-    expect(waited, isEmpty);
-  });
-
-  // الحصة المجانية اليومية (20 طلباً) — ردّ Google الفعلي. إعادة المحاولة هنا
-  // تهدر بلا فائدة: الانتظار ساعات لا ثوانٍ.
   String quota(String quotaId, String delay) => jsonEncode({
     'error': {
       'code': 429,
@@ -116,52 +59,163 @@ void main() {
     },
   });
 
-  test(
-    'الحصة اليومية نفدت ← طلب واحد بلا إعادة ورسالة بالوقت المتبقي',
-    () async {
-      var calls = 0;
-      GeminiVision.httpClient = MockClient((_) async {
-        calls++;
-        return http.Response(
-          quota('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '5358s'),
-          429,
-          headers: {'content-type': 'application/json; charset=utf-8'},
-        );
+  final daily = quota(
+    'GenerateRequestsPerDayPerProjectPerModel-FreeTier',
+    '5358s',
+  );
+
+  /// ردود كل نموذج بالترتيب: (الحالة، الجسم). نموذج بلا ردود متبقية يفشل
+  /// الاختبار — فطلب غير متوقع (للبديل مثلاً) يُكشف.
+  void serve(Map<String, List<(int, String)>> byModel) {
+    calls = {primary: [], fallback: []};
+    GeminiVision.httpClient = MockClient((req) async {
+      final model = req.url.path.contains(fallback) ? fallback : primary;
+      final queue = byModel[model] ?? const [];
+      final n = calls[model]!.length;
+      if (n >= queue.length) fail('طلب غير متوقع رقم ${n + 1} إلى $model');
+      final (status, body) = queue[n];
+      calls[model]!.add(status);
+      return http.Response(body, status, headers: jsonHeaders);
+    });
+  }
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    dotenv.testLoad(fileInput: 'GEMINI_API_KEY=test-key');
+    waited = [];
+    clock = DateTime(2026, 10, 21, 10);
+    GeminiVision.sleep = (d) async => waited.add(d);
+    GeminiVision.now = () => clock;
+  });
+
+  tearDown(GeminiVision.resetTransport);
+
+  group('إعادة المحاولة على النموذج الأساسي', () {
+    test('503 مرتين ثم 200 ← ينجح بعد 3 طلبات بانتظار 3ث ثم 8ث', () async {
+      serve({
+        primary: [(503, busy), (503, busy), (200, ok())],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isTrue);
+      expect(result.usedFallback, isFalse);
+      expect(calls[primary]!.length, 3);
+      expect(calls[fallback], isEmpty);
+      expect(waited, [const Duration(seconds: 3), const Duration(seconds: 8)]);
+    });
+
+    test('حدّ الدقيقة ← يُعاد على الأساسي لا ينتقل للبديل', () async {
+      serve({
+        primary: [
+          (429, quota('GenerateRequestsPerMinutePerProjectPerModel', '20s')),
+          (200, ok()),
+        ],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isTrue);
+      expect(result.usedFallback, isFalse);
+      expect(calls[primary]!.length, 2);
+    });
+
+    test('الأساسي ينجح ← البديل لا يُستدعى أبداً', () async {
+      serve({
+        primary: [(200, ok())],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.usedFallback, isFalse);
+      expect(calls[fallback], isEmpty);
+    });
+
+    test('400 ← فشل فوري بلا إعادة ولا بديل', () async {
+      serve({
+        primary: [(400, '{"error":{"message":"bad"}}')],
       });
       final result = await GeminiVision.readInvoiceBytes(image);
       expect(result.ok, isFalse);
-      expect(calls, 1);
+      expect(calls[primary]!.length, 1);
+      expect(calls[fallback], isEmpty);
       expect(waited, isEmpty);
-      expect(result.error, contains('انتهت القراءات المجانية'));
-      expect(result.error, contains('ساعة'));
-    },
-  );
-
-  test('حدّ الدقيقة ← يُعاد كما في الضغط العابر', () async {
-    var calls = 0;
-    GeminiVision.httpClient = MockClient((_) async {
-      calls++;
-      return calls == 1
-          ? http.Response(
-              quota('GenerateRequestsPerMinutePerProjectPerModel', '20s'),
-              429,
-              headers: {'content-type': 'application/json; charset=utf-8'},
-            )
-          : http.Response(
-              ok(),
-              200,
-              headers: {'content-type': 'application/json; charset=utf-8'},
-            );
     });
-    final result = await GeminiVision.readInvoiceBytes(image);
-    expect(result.ok, isTrue);
-    expect(calls, 2);
+  });
+
+  group('النموذج البديل gemini-3.5-flash-lite', () {
+    test('حصة الأساسي اليومية نفدت ← طلب واحد له ثم البديل ينجح', () async {
+      serve({
+        primary: [(429, daily)],
+        fallback: [(200, ok())],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isTrue);
+      expect(result.usedFallback, isTrue);
+      expect(result.lines.single.name, 'Rennie');
+      expect(calls[primary]!.length, 1);
+      expect(calls[fallback]!.length, 1);
+      expect(waited, isEmpty);
+    });
+
+    test('بعدها مباشرة: لا طلب للأساسي حتى تتجدد حصته', () async {
+      serve({
+        primary: [(429, daily)],
+        fallback: [(200, ok()), (200, ok())],
+      });
+      await GeminiVision.readInvoiceBytes(image);
+      clock = clock.add(const Duration(minutes: 30));
+      final second = await GeminiVision.readInvoiceBytes(image);
+      expect(second.usedFallback, isTrue);
+      expect(calls[primary]!.length, 1, reason: 'الثانية تتخطّى الأساسي');
+      expect(calls[fallback]!.length, 2);
+    });
+
+    test('بعد تجدد الحصة يعود إلى الأساسي', () async {
+      serve({
+        primary: [(429, daily), (200, ok())],
+        fallback: [(200, ok())],
+      });
+      await GeminiVision.readInvoiceBytes(image);
+      clock = clock.add(const Duration(seconds: 5358 + 60));
+      final later = await GeminiVision.readInvoiceBytes(image);
+      expect(later.usedFallback, isFalse);
+      expect(calls[primary]!.length, 2);
+    });
+
+    test('الأساسي مزدحم بعد محاولاته الثلاث ← البديل يقرأ', () async {
+      serve({
+        primary: [(503, busy), (503, busy), (503, busy)],
+        fallback: [(200, ok())],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isTrue);
+      expect(result.usedFallback, isTrue);
+    });
+
+    test('الاثنان مزدحمان ← «خدمة Google مزدحمة»', () async {
+      serve({
+        primary: [(503, busy), (503, busy), (503, busy)],
+        fallback: [(503, busy), (503, busy), (503, busy)],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isFalse);
+      expect(result.error, contains('خدمة Google مزدحمة'));
+    });
+
+    test('حصة الاثنين نفدت ← رسالة الحصة بالوقت الأقرب', () async {
+      serve({
+        primary: [(429, daily)],
+        fallback: [
+          (
+            429,
+            quota('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '1800s'),
+          ),
+        ],
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isFalse);
+      expect(result.error, contains('انتهت القراءات المجانية'));
+      expect(result.error, contains('30 دقيقة'));
+    });
   });
 
   test('quotaInfo يقرأ النوع والمدة من الرد الحقيقي', () {
-    final q = GeminiVision.quotaInfo(
-      quota('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '5358s'),
-    );
+    final q = GeminiVision.quotaInfo(daily);
     expect(q.daily, isTrue);
     expect(q.retryAfter, const Duration(seconds: 5358));
     expect(GeminiVision.quotaInfo('not json').daily, isFalse);

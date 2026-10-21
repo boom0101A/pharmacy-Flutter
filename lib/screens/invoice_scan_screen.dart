@@ -53,6 +53,9 @@ class _InvoicePage {
   final File image;
   _PageState state = _PageState.reading;
   String? error;
+
+  /// قرأها النموذج البديل (حصة الأساسي انتهت أو بقي مزدحماً).
+  bool usedFallback = false;
 }
 
 class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
@@ -164,6 +167,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     }
     setState(() {
       page.state = _PageState.done;
+      page.usedFallback = result.usedFallback;
       _lines = [..._lines, ...added];
     });
   }
@@ -432,6 +436,17 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: _errorBox(failureText),
+          ),
+        if (_lines.isNotEmpty && _pages.any((p) => p.usedFallback))
+          Container(
+            width: double.infinity,
+            color: AppColors.bgCard,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _badge(
+              '⚡ قُرئت بالنموذج البديل (حصة النموذج الأساسي انتهت) — راجع '
+              'الأسطر بانتباه',
+              AppColors.warning,
+            ),
           ),
         if (_lines.isNotEmpty) _summary(flagged),
         if (_lines.isNotEmpty) _bulkHeader(),

@@ -180,4 +180,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
   });
+
+  testWidgets('صفحة قرأها النموذج البديل تُعلَّم لمراجعة أدق', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+    ], usedFallback: true);
+    await pump(tester);
+    expect(find.textContaining('قُرئت بالنموذج البديل'), findsOneWidget);
+  });
+
+  testWidgets('قراءة بالنموذج الأساسي بلا علامة', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+    ]);
+    await pump(tester);
+    expect(find.textContaining('قُرئت بالنموذج البديل'), findsNothing);
+  });
 }
