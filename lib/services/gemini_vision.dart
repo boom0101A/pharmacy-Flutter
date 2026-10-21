@@ -154,7 +154,12 @@ class GeminiVision {
         final response = await _post(requestUri, headers, body);
         if (response.statusCode == 200) return parseResponse(response.body);
 
-        final transient = _transientStatuses.contains(response.statusCode);
+        // نفاد الحصة اليومية (20 طلباً في الخطة المجانية) لا يزول بثوانٍ —
+        // كل إعادة تُهدر بلا فائدة
+        final dailyQuota =
+            response.statusCode == 429 && quotaInfo(response.body).daily;
+        final transient =
+            _transientStatuses.contains(response.statusCode) && !dailyQuota;
         if (!transient || attempt >= retryDelays.length) {
           return InvoiceResult.failure(_explainHttpError(response));
         }
@@ -423,9 +428,47 @@ class GeminiVision {
     return num.tryParse(v.toString().trim());
   }
 
+  /// نوع حدّ 429 ومدة الانتظار كما في ردّ Google:
+  /// `QuotaFailure.violations[].quotaId` (يحوي PerDay للحصة اليومية)
+  /// و`RetryInfo.retryDelay` (مثل "5358s"). لا يرمي.
+  @visibleForTesting
+  static ({bool daily, Duration? retryAfter}) quotaInfo(String body) {
+    var daily = false;
+    Duration? retryAfter;
+    try {
+      final err = (jsonDecode(body) as Map)['error'] as Map?;
+      for (final d in (err?['details'] as List?) ?? const []) {
+        if (d is! Map) continue;
+        for (final v in (d['violations'] as List?) ?? const []) {
+          if (v is Map && '${v['quotaId']}'.contains('PerDay')) daily = true;
+        }
+        final delay = d['retryDelay'];
+        if (delay is String && delay.endsWith('s')) {
+          final secs = double.tryParse(delay.substring(0, delay.length - 1));
+          if (secs != null) retryAfter = Duration(seconds: secs.round());
+        }
+      }
+    } catch (_) {}
+    return (daily: daily, retryAfter: retryAfter);
+  }
+
+  /// «ساعة و29 دقيقة» / «12 دقيقة».
+  static String _arabicDuration(Duration d) {
+    final h = d.inHours, m = d.inMinutes % 60;
+    if (h == 0) return '${m < 1 ? 1 : m} دقيقة';
+    final hours = h == 1 ? 'ساعة' : (h == 2 ? 'ساعتين' : '$h ساعات');
+    return m == 0 ? hours : '$hours و$m دقيقة';
+  }
+
   static String _explainHttpError(http.Response r) {
     // بعد استنفاد المحاولات: رسالة عربية بما يفعله المستخدم، لا نص Google الخام
     if (r.statusCode == 429) {
+      final q = quotaInfo(r.body);
+      if (q.daily) {
+        final wait = q.retryAfter;
+        return 'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — '
+            '${wait == null ? 'تتجدد غداً' : 'تتجدد بعد نحو ${_arabicDuration(wait)}'}.';
+      }
       return 'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.';
     }
     if (_transientStatuses.contains(r.statusCode)) {

@@ -62,55 +62,56 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> addPage(WidgetTester tester) async {
-    await tester.tap(find.byTooltip('إضافة صفحة بالكاميرا'));
+  Future<void> retake(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('تصوير من جديد'));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('صفحتان ← أسطرهما مجتمعة مع رقم الصفحة', (tester) async {
+  // صفحة واحدة في كل مرة (طلب المستخدم): لا «+ صفحة» تُلحق أسطراً بأخرى.
+  testWidgets('لا زر لإضافة صفحة ثانية — صفحة واحدة فقط', (tester) async {
     results['page1.jpg'] = InvoiceResult.success([
       InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
     ]);
-    results['page2.jpg'] = InvoiceResult.success([
-      InvoiceLine(name: 'Panadol', price: 500, quantity: 10),
-    ]);
     await pump(tester);
-    await addPage(tester);
 
     expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'Panadol'), findsOneWidget);
-    expect(find.text('صفحة 2'), findsOneWidget);
+    expect(find.text('+ صفحة'), findsNothing);
+    expect(find.text('تصوير من جديد'), findsOneWidget);
   });
 
-  testWidgets('فشل صفحة لا يُسقط الأخرى، ويظهر «إعادة المحاولة»', (
+  testWidgets('«تصوير من جديد» يستبدل الصفحة وأسطرها بعد التأكيد', (
     tester,
   ) async {
     results['page1.jpg'] = InvoiceResult.success([
       InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
     ]);
-    results['page2.jpg'] = InvoiceResult.failure('انتهت المهلة');
-    await pump(tester);
-    await addPage(tester);
-
-    expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
-    expect(find.text('إعادة المحاولة'), findsOneWidget);
-    // السبب ظاهر مباشرة — كان مخفياً حتى يضغط المستخدم على الصورة المصغّرة
-    expect(
-      find.textContaining('تعذّرت قراءة الصفحة 2: انتهت المهلة'),
-      findsOneWidget,
-    );
-
     results['page2.jpg'] = InvoiceResult.success([
       InvoiceLine(name: 'Panadol', price: 500, quantity: 10),
     ]);
-    await tester.tap(find.text('إعادة المحاولة'));
+    await pump(tester);
+    await retake(tester);
+    expect(find.text('استبدال الصفحة؟'), findsOneWidget);
+    await tester.tap(find.text('استبدال'));
     await tester.pumpAndSettle();
+
     expect(find.widgetWithText(TextField, 'Panadol'), findsOneWidget);
-    expect(find.text('إعادة المحاولة'), findsNothing);
-    expect(find.textContaining('تعذّرت قراءة الصفحة'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Rennie'), findsNothing);
   });
 
-  testWidgets('كل الصفحات فشلت ← السبب مكان «لم تُقرأ أي أسطر»', (
+  testWidgets('إلغاء الاستبدال يُبقي الأسطر ولا يفتح الكاميرا', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+    ]);
+    await pump(tester);
+    await retake(tester);
+    await tester.tap(find.text('إلغاء'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
+    expect(picks, ['page2.jpg', 'page3.jpg']);
+  });
+
+  testWidgets('فشل الصفحة يظهر سببه مباشرة، و«إعادة المحاولة» تقرأها', (
     tester,
   ) async {
     results['page1.jpg'] = InvoiceResult.failure(
@@ -120,25 +121,17 @@ void main() {
 
     expect(find.text('لم تُقرأ أي أسطر بعد'), findsNothing);
     expect(
-      find.textContaining('تعذّرت قراءة الصفحة 1: استغرقت القراءة'),
+      find.textContaining('تعذّرت قراءة الصفحة: استغرقت القراءة'),
       findsOneWidget,
     );
-  });
 
-  testWidgets('حذف صفحة يحذف أسطرها', (tester) async {
     results['page1.jpg'] = InvoiceResult.success([
-      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
-    ]);
-    results['page2.jpg'] = InvoiceResult.success([
       InvoiceLine(name: 'Panadol', price: 500, quantity: 10),
     ]);
-    await pump(tester);
-    await addPage(tester);
-
-    await tester.tap(find.byTooltip('حذف الصفحة 2'));
+    await tester.tap(find.text('إعادة المحاولة'));
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(TextField, 'Panadol'), findsNothing);
-    expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Panadol'), findsOneWidget);
+    expect(find.textContaining('تعذّرت قراءة الصفحة'), findsNothing);
   });
 
   testWidgets('السطر المشكوك فيه معلَّم والملخّص يعدّه', (tester) async {

@@ -20,9 +20,8 @@ typedef InvoicePageReader = Future<InvoiceResult> Function(File image);
 /// قراءة فاتورة مجهّز بالذكاء الاصطناعي (Gemini) → مراجعة الأسطر مع تحرير
 /// كامل → حفظها دفعة واحدة عبر `MedicineStore.saveAll`.
 ///
-/// **صفحات متعددة:** كل صفحة تُقرأ في طلب مستقل وتُلحق أسطرها، ففشل صفحة لا
-/// يُسقط البقية ويمكن إعادة محاولتها وحدها. الأسطر المكرّرة بين الصفحات تُدمج
-/// عند الحفظ في [buildInvoiceSaveItems].
+/// **صفحة واحدة في كل مرة** (طلب المستخدم): صورة جديدة تستبدل السابقة. الأسطر
+/// المكرّرة داخل الصفحة تُدمج عند الحفظ في [buildInvoiceSaveItems].
 ///
 /// **يعمل فقط عند وجود مفتاح Gemini في ملف `.env`** — الزر الذي يفتح هذه
 /// الشاشة يختفي تلقائياً في `home_screen.dart` عند غياب المفتاح.
@@ -94,9 +93,39 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     return picked == null ? null : File(picked.path);
   }
 
+  /// صفحة واحدة فقط في كل مرة (طلب المستخدم): صورة جديدة تستبدل السابقة
+  /// وأسطرها — بتأكيد إن كانت هناك أسطر مقروءة ستضيع.
   Future<void> _addPage({required bool camera}) async {
+    if (_lines.isNotEmpty) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.bgCard,
+          title: const Text('استبدال الصفحة؟'),
+          content: Text(
+            'ستُحذف ${_lines.length} سطراً مقروءاً من الصفحة الحالية وتُقرأ '
+            'الصورة الجديدة مكانها.',
+            style: const TextStyle(fontSize: 13, height: 1.6),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('استبدال'),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !mounted) return;
+    }
     final file = await _pick(camera: camera);
     if (file == null || !mounted) return;
+    for (final old in List.of(_pages)) {
+      _removePage(old);
+    }
     final page = _InvoicePage(file);
     setState(() {
       _error = null;
@@ -172,8 +201,6 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       }
     });
   }
-
-  int _pageNumber(_InvoicePage page) => _pages.indexOf(page) + 1;
 
   Future<void> _save() async {
     final drafts = <InvoiceLineDraft>[
@@ -357,8 +384,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'تُقرأ الأسطر تلقائياً وتظهر لك للمراجعة قبل الحفظ. الفاتورة الطويلة؟ '
-          'أضف صفحاتها واحدة تلو الأخرى.',
+          'تُقرأ أسطر الصفحة وتُملأ الحقول تلقائياً (الاسم، الكمية، السعر، '
+          'الصلاحية) لتراجعها قبل الحفظ.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12,
@@ -391,16 +418,13 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     final shown = _flaggedOnly
         ? _lines.where((l) => l.issues.isNotEmpty).toList()
         : _lines;
-    // سبب فشل كل صفحة ظاهر بلا ضغط — كان مخفياً خلف الصورة المصغّرة فلا يرى
+    // سبب الفشل ظاهر بلا ضغط — كان مخفياً خلف الصورة المصغّرة فلا يرى
     // المستخدم إلا إطاراً أحمر و«لم تُقرأ أي أسطر بعد»
-    final failures = [
-      for (final p in _pages)
-        if (p.state == _PageState.failed)
-          'تعذّرت قراءة الصفحة ${_pageNumber(p)}: ${p.error ?? 'خطأ غير معروف'}',
-    ];
-    final failureText = failures.isEmpty
+    final failed = _pages.where((p) => p.state == _PageState.failed);
+    final failureText = failed.isEmpty
         ? null
-        : '${failures.join('\n')}\nاضغط «إعادة المحاولة» على الصفحة.';
+        : 'تعذّرت قراءة الصفحة: ${failed.first.error ?? 'خطأ غير معروف'}\n'
+              'اضغط «إعادة المحاولة» على الصفحة.';
     return Column(
       children: [
         _pageStrip(),
@@ -446,7 +470,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     );
   }
 
-  /// شريط الصفحات: مصغّرة لكل صفحة بحالتها، وزرّا إضافة صفحة.
+  /// شريط الصفحة: مصغّرتها بحالتها، وزرّا تصوير/اختيار صورة بديلة.
   Widget _pageStrip() => Container(
     color: AppColors.bgCard,
     height: 112,
@@ -457,12 +481,12 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         for (final page in _pages) _pageTile(page),
         _addPageButton(
           icon: Icons.photo_camera,
-          tooltip: 'إضافة صفحة بالكاميرا',
+          label: 'تصوير من جديد',
           camera: true,
         ),
         _addPageButton(
           icon: Icons.photo_library,
-          tooltip: 'إضافة صفحة من المعرض',
+          label: 'من المعرض',
           camera: false,
         ),
       ],
@@ -471,17 +495,17 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
 
   Widget _addPageButton({
     required IconData icon,
-    required String tooltip,
+    required String label,
     required bool camera,
   }) => Padding(
     padding: const EdgeInsetsDirectional.only(end: 8),
     child: Tooltip(
-      message: tooltip,
+      message: label,
       child: InkWell(
         onTap: _saving ? null : () => _addPage(camera: camera),
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          width: 64,
+          width: 76,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.border),
@@ -491,7 +515,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             children: [
               Icon(icon, color: AppColors.primary),
               const SizedBox(height: 4),
-              const Text('+ صفحة', style: TextStyle(fontSize: 11)),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11),
+              ),
             ],
           ),
         ),
@@ -500,7 +528,6 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   );
 
   Widget _pageTile(_InvoicePage page) {
-    final n = _pageNumber(page);
     final color = switch (page.state) {
       _PageState.reading => AppColors.primary,
       _PageState.done => AppColors.success,
@@ -542,18 +569,13 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                       ),
                     ),
                   PositionedDirectional(
-                    bottom: 2,
-                    start: 2,
-                    child: _miniLabel('$n', color),
-                  ),
-                  PositionedDirectional(
                     top: 0,
                     end: 0,
                     child: SizedBox(
                       width: 28,
                       height: 28,
                       child: IconButton(
-                        tooltip: 'حذف الصفحة $n',
+                        tooltip: 'حذف الصفحة',
                         padding: EdgeInsets.zero,
                         iconSize: 18,
                         icon: const Icon(Icons.cancel, color: AppColors.danger),
@@ -584,18 +606,6 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       ),
     );
   }
-
-  Widget _miniLabel(String text, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(
-      text,
-      style: const TextStyle(fontSize: 10, color: Colors.white),
-    ),
-  );
 
   /// الصفحة مكبّرة للمقارنة مع الأسطر، مع سبب الفشل إن فشلت.
   void _viewPage(_InvoicePage page) {
@@ -727,14 +737,6 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: _typeChip(line)),
-                if (_pages.length > 1)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 4),
-                    child: _badge(
-                      'صفحة ${_pageNumber(line.page)}',
-                      AppColors.textMuted,
-                    ),
-                  ),
                 IconButton(
                   icon: const Icon(
                     Icons.delete_outline,

@@ -93,4 +93,77 @@ void main() {
     expect(r.calls.length, 1);
     expect(waited, isEmpty);
   });
+
+  // الحصة المجانية اليومية (20 طلباً) — ردّ Google الفعلي. إعادة المحاولة هنا
+  // تهدر بلا فائدة: الانتظار ساعات لا ثوانٍ.
+  String quota(String quotaId, String delay) => jsonEncode({
+    'error': {
+      'code': 429,
+      'status': 'RESOURCE_EXHAUSTED',
+      'message': 'You exceeded your current quota',
+      'details': [
+        {
+          '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+          'violations': [
+            {'quotaId': quotaId, 'quotaValue': '20'},
+          ],
+        },
+        {
+          '@type': 'type.googleapis.com/google.rpc.RetryInfo',
+          'retryDelay': delay,
+        },
+      ],
+    },
+  });
+
+  test(
+    'الحصة اليومية نفدت ← طلب واحد بلا إعادة ورسالة بالوقت المتبقي',
+    () async {
+      var calls = 0;
+      GeminiVision.httpClient = MockClient((_) async {
+        calls++;
+        return http.Response(
+          quota('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '5358s'),
+          429,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      });
+      final result = await GeminiVision.readInvoiceBytes(image);
+      expect(result.ok, isFalse);
+      expect(calls, 1);
+      expect(waited, isEmpty);
+      expect(result.error, contains('انتهت القراءات المجانية'));
+      expect(result.error, contains('ساعة'));
+    },
+  );
+
+  test('حدّ الدقيقة ← يُعاد كما في الضغط العابر', () async {
+    var calls = 0;
+    GeminiVision.httpClient = MockClient((_) async {
+      calls++;
+      return calls == 1
+          ? http.Response(
+              quota('GenerateRequestsPerMinutePerProjectPerModel', '20s'),
+              429,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            )
+          : http.Response(
+              ok(),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+    });
+    final result = await GeminiVision.readInvoiceBytes(image);
+    expect(result.ok, isTrue);
+    expect(calls, 2);
+  });
+
+  test('quotaInfo يقرأ النوع والمدة من الرد الحقيقي', () {
+    final q = GeminiVision.quotaInfo(
+      quota('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '5358s'),
+    );
+    expect(q.daily, isTrue);
+    expect(q.retryAfter, const Duration(seconds: 5358));
+    expect(GeminiVision.quotaInfo('not json').daily, isFalse);
+  });
 }
