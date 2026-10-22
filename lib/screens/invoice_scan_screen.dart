@@ -74,8 +74,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   void initState() {
     super.initState();
     _bulkType = widget.initialType;
-    // نبدأ فور الفتح — الكاميرا هي التدفّق الطبيعي
-    WidgetsBinding.instance.addPostFrameCallback((_) => _addPage(camera: true));
+    // لا تصوير تلقائي عند الفتح (طلب المستخدم): صفحة الاختيار تظهر أولاً
+    // ويختار هو «كاميرا» أو «معرض».
   }
 
   @override

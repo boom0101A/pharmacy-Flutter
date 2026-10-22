@@ -29,13 +29,20 @@ void main() {
   late List<String> picks;
   late Map<String, InvoiceResult> results;
 
+  /// قيمة `camera` لكل اختيار صورة — كاميرا أم معرض.
+  late List<bool> pickedWithCamera;
+  late int reads;
+
   setUp(() {
     store = _Store();
     picks = ['page1.jpg', 'page2.jpg', 'page3.jpg'];
     results = {};
+    pickedWithCamera = [];
+    reads = 0;
   });
 
-  Future<void> pump(WidgetTester tester) async {
+  /// يفتح الشاشة فقط — صفحة الاختيار، بلا أي تصوير تلقائي.
+  Future<void> open(WidgetTester tester) async {
     tester.view.physicalSize = const Size(420, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -51,16 +58,53 @@ void main() {
         ],
         home: InvoiceScanScreen(
           store: store,
-          pickPage: ({required bool camera}) async =>
-              picks.isEmpty ? null : File(picks.removeAt(0)),
-          readPage: (file) async =>
-              results[file.path.split(RegExp(r'[\\/]')).last] ??
-              InvoiceResult.failure('no fixture'),
+          pickPage: ({required bool camera}) async {
+            pickedWithCamera.add(camera);
+            return picks.isEmpty ? null : File(picks.removeAt(0));
+          },
+          readPage: (file) async {
+            reads++;
+            return results[file.path.split(RegExp(r'[\\/]')).last] ??
+                InvoiceResult.failure('no fixture');
+          },
         ),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  /// يفتح الشاشة ثم يختار «كاميرا» — مسار التصوير المعتاد.
+  Future<void> pump(WidgetTester tester) async {
+    await open(tester);
+    await tester.tap(find.text('كاميرا'));
+    await tester.pumpAndSettle();
+  }
+
+  // الكاميرا لم تعد تُفتح تلقائياً: يختار المستخدم بين الكاميرا والمعرض.
+  testWidgets('الفتح يعرض صفحة الاختيار بلا تصوير تلقائي', (tester) async {
+    await open(tester);
+    expect(find.text('صوّر الفاتورة أو اخترها من المعرض'), findsOneWidget);
+    expect(find.text('كاميرا'), findsOneWidget);
+    expect(find.text('معرض'), findsOneWidget);
+    expect(pickedWithCamera, isEmpty);
+    expect(reads, 0);
+  });
+
+  testWidgets('«معرض» يختار صورة من المعرض ويقرأها', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+    ]);
+    await open(tester);
+    await tester.tap(find.text('معرض'));
+    await tester.pumpAndSettle();
+    expect(pickedWithCamera, [false]);
+    expect(find.widgetWithText(TextField, 'Rennie'), findsOneWidget);
+  });
+
+  testWidgets('«كاميرا» تصوّر بالكاميرا', (tester) async {
+    await pump(tester);
+    expect(pickedWithCamera, [true]);
+  });
 
   Future<void> retake(WidgetTester tester) async {
     await tester.tap(find.byTooltip('تصوير من جديد'));
