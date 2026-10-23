@@ -49,3 +49,6 @@ app.*.map.json
 /android/key.properties
 
 .superpowers/
+
+# مخلفات بناء Kotlin
+/android/.kotlin/
