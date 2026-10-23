@@ -10,6 +10,7 @@ import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
@@ -500,13 +501,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     final imagePath = ImageStore.fullPathSync(_imageFileName);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: GlassAppBar(
         title: Text(
           _isEdit
               ? (_isSupply ? 'تعديل مستلزم' : 'تعديل دواء')
               : (_isSupply ? 'إضافة مستلزم جديد' : 'إضافة دواء جديد'),
         ),
-        backgroundColor: AppColors.bgCard,
       ),
       body: AbsorbPointer(
         absorbing: _looking || _saving,
@@ -546,20 +546,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  SizedBox(
-                    height: 52,
-                    width: 52,
-                    child: FilledButton(
-                      onPressed: _scan,
-                      style: FilledButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        backgroundColor: AppColors.primary,
-                      ),
-                      child: const Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 26,
-                      ),
-                    ),
+                  GlassSquareButton(
+                    filled: true,
+                    onPressed: _scan,
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 26),
                   ),
                 ],
               ),
@@ -589,12 +579,18 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               // ----- الصورة -----
               const SizedBox(height: 20),
               _Label(_isSupply ? '📷 صورة المستلزم' : '📷 صورة الدواء'),
+              // صندوق الصورة: توهّج تيل خفيف وحدّ لامع (`.photo-box` في ملف التصميم)
               Container(
                 height: 180,
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  gradient: const RadialGradient(
+                    center: Alignment(-0.4, -0.6),
+                    radius: 1.2,
+                    colors: [Color(0x332DD4BF), Color(0x0AFFFFFF)],
+                    stops: [0, .7],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.borderHi, width: 1.5),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
@@ -772,33 +768,40 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               ),
 
               const SizedBox(height: 28),
-              SizedBox(
-                height: 52,
-                child: FilledButton.icon(
-                  // تعطيل مرئي فوري — يمنع نافذة الضغط المزدوج بلا انتظار
-                  // إعادة بناء الإطار التالي، بالإضافة إلى حارس _saving
-                  // الداخلي في _save() نفسها (دفاع مزدوج).
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.check_rounded),
-                  label: Text(
-                    _isEdit
-                        ? 'حفظ التعديلات'
-                        : (_isSupply ? 'حفظ المستلزم' : 'حفظ الدواء'),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              GradientFilled(
+                gradient: AppGradients.success,
+                foreground: const Color(0xFF032B1E),
+                radius: 27,
+                glow: const Color(0x4D10B981),
+                enabled: !_saving,
+                child: SizedBox(
+                  height: 54,
+                  child: FilledButton.icon(
+                    // تعطيل مرئي فوري — يمنع نافذة الضغط المزدوج بلا انتظار
+                    // إعادة بناء الإطار التالي، بالإضافة إلى حارس _saving
+                    // الداخلي في _save() نفسها (دفاع مزدوج).
+                    onPressed: _saving ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_rounded),
+                    label: Text(
+                      _isEdit
+                          ? 'حفظ التعديلات'
+                          : (_isSupply ? 'حفظ المستلزم' : 'حفظ الدواء'),
+                    ),
+                    style: FilledButton.styleFrom(
+                      textStyle: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

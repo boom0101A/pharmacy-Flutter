@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/pharmacy_service.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 
 /// الأجهزة المرتبطة بالمخزون المشترك — وصاحبه وحده يُخرج منها ما لا يعرفه.
 ///
@@ -14,13 +15,8 @@ Future<void> showLinkedDevicesSheet(
   Future<void> Function(String uid)? removeMember,
   String? myUid,
 }) {
-  return showModalBottomSheet(
+  return showGlassSheet(
     context: context,
-    backgroundColor: AppColors.bgCard,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (_) => LinkedDevicesSheet(
       loadMembers: loadMembers ?? PharmacyService.instance.fetchMembers,
       removeMember: removeMember ?? PharmacyService.instance.removeMember,

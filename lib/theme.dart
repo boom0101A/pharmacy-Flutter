@@ -129,7 +129,10 @@ ThemeData buildAppTheme() {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onGradient,
         shape: pill,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Cairo',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -138,14 +141,20 @@ ThemeData buildAppTheme() {
         backgroundColor: const Color(0x0FFFFFFF),
         side: const BorderSide(color: AppColors.border),
         shape: pill,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Cairo',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
         shape: pill,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Cairo',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
@@ -174,7 +183,11 @@ ThemeData buildAppTheme() {
       selectedColor: const Color(0x332DD4BF),
       side: const BorderSide(color: AppColors.border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      labelStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+      labelStyle: const TextStyle(
+        fontFamily: 'Cairo',
+        color: AppColors.textPrimary,
+        fontSize: 12,
+      ),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),

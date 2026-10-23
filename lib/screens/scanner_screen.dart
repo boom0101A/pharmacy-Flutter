@@ -85,6 +85,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Row(
                   children: [
                     IconButton(
+                      style: _glassCircle,
                       icon: const Icon(
                         Icons.close_rounded,
                         color: Colors.white,
@@ -94,6 +95,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     ),
                     const Spacer(),
                     IconButton(
+                      style: _glassCircle,
                       icon: Icon(
                         _torchOn
                             ? Icons.flash_on_rounded
@@ -109,6 +111,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       },
                     ),
                     IconButton(
+                      style: _glassCircle,
                       icon: const Icon(
                         Icons.cameraswitch_rounded,
                         color: Colors.white,
@@ -144,6 +147,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
 }
 
 /// إطار المسح مع تعتيم ما حوله.
+/// أزرار الماسح العلوية: دوائر زجاجية فوق صورة الكاميرا.
+final _glassCircle = IconButton.styleFrom(
+  backgroundColor: const Color(0x33000000),
+  side: const BorderSide(color: Color(0x33FFFFFF)),
+);
+
 class _ScanOverlay extends StatelessWidget {
   const _ScanOverlay();
 

@@ -10,6 +10,7 @@ import '../services/gs1_parser.dart';
 import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 
 /// يختار صورة صفحة (كاميرا أو معرض) — قابل للحقن في الاختبار.
 typedef InvoicePagePicker = Future<File?> Function({required bool camera});
@@ -326,9 +327,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
 
   Widget _scaffold(int named) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: GlassAppBar(
         title: const Text('🧾 فاتورة ذكية'),
-        backgroundColor: AppColors.bgCard,
         actions: [
           if (_lines.isNotEmpty && !_saving && !_anyReading)
             TextButton.icon(
@@ -353,18 +353,26 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _addPage(camera: true),
-                        icon: const Icon(Icons.photo_camera_rounded),
-                        label: const Text('كاميرا'),
+                      child: GradientFilled(
+                        child: SizedBox(
+                          height: 48,
+                          child: FilledButton.icon(
+                            onPressed: () => _addPage(camera: true),
+                            icon: const Icon(Icons.photo_camera_rounded),
+                            label: const Text('كاميرا'),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _addPage(camera: false),
-                        icon: const Icon(Icons.photo_library_rounded),
-                        label: const Text('معرض'),
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _addPage(camera: false),
+                          icon: const Icon(Icons.photo_library_rounded),
+                          label: const Text('معرض'),
+                        ),
                       ),
                     ),
                   ],
@@ -440,7 +448,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         if (_lines.isNotEmpty && _pages.any((p) => p.usedFallback))
           Container(
             width: double.infinity,
-            color: AppColors.bgCard,
+            color: AppColors.glass,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: _badge(
               '⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع '
@@ -486,9 +495,20 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   }
 
   /// شريط الصفحة: مصغّرتها بحالتها، وزرّا تصوير/اختيار صورة بديلة.
+  // لوحة زجاجية متصلة: شريط الصفحة أعلاها، ثم الملخّص، ثم نوع الأسطر أسفلها
+  // (`.pages` و`.inv-summary` و`.bulk` في ملف التصميم).
   Widget _pageStrip() => Container(
-    color: AppColors.bgCard,
-    height: 112,
+    decoration: const BoxDecoration(
+      color: AppColors.glass,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      border: Border(
+        top: BorderSide(color: AppColors.border),
+        left: BorderSide(color: AppColors.border),
+        right: BorderSide(color: AppColors.border),
+      ),
+    ),
+    margin: const EdgeInsets.fromLTRB(10, 4, 10, 0),
+    height: 116,
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     child: ListView(
       scrollDirection: Axis.horizontal,
@@ -671,7 +691,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     final existing = named.where((l) => _existingMatchFor(l) != null).length;
     final total = named.length;
     return Container(
-      color: AppColors.bgCard,
+      color: AppColors.glass,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: Row(
         children: [
@@ -700,8 +721,17 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   }
 
   Widget _bulkHeader() => Container(
-    color: AppColors.bgCard,
-    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+    decoration: const BoxDecoration(
+      color: AppColors.glass,
+      borderRadius: BorderRadius.vertical(bottom: Radius.circular(22)),
+      border: Border(
+        bottom: BorderSide(color: AppColors.border),
+        left: BorderSide(color: AppColors.border),
+        right: BorderSide(color: AppColors.border),
+      ),
+    ),
+    margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
     child: Row(
       children: [
         const Text('نوع كل الأسطر:', style: TextStyle(fontSize: 13)),
@@ -729,27 +759,37 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       // الحذف فيربط حقول السطر التالي بحالة السطر المحذوف.
       key: ObjectKey(line),
       margin: const EdgeInsets.only(bottom: 10),
+      // المشكوك فيه: حدّ برتقالي وتعبئة دافئة (`.line.flagged`)
+      color: flagged ? const Color(0x1AFBBF24) : AppColors.glass,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: flagged
-            ? const BorderSide(color: AppColors.warning, width: 1.5)
-            : BorderSide.none,
+        borderRadius: BorderRadius.circular(22),
+        side: BorderSide(
+          color: flagged ? const Color(0x99FBBF24) : AppColors.border,
+          width: flagged ? 1.5 : 1,
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                // نقطة رقم متدرّجة (`.num-dot`)
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    gradient: AppGradients.brand,
+                    shape: BoxShape.circle,
+                  ),
                   child: Text(
                     '${i + 1}',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onGradient,
                     ),
                   ),
                 ),

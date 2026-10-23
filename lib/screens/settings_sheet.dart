@@ -8,6 +8,7 @@ import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
 import 'duplicates_screen.dart';
 import 'linked_devices_sheet.dart';
@@ -15,13 +16,8 @@ import 'pairing_sheet.dart';
 
 /// لوحة الإعدادات — تُفتح من أيقونة الترس في الترويسة.
 Future<void> showSettingsSheet(BuildContext context, MedicineStore store) {
-  return showModalBottomSheet(
+  return showGlassSheet(
     context: context,
-    backgroundColor: AppColors.bgCard,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (_) => _SettingsSheet(store: store),
   );
 }
@@ -48,25 +44,21 @@ class _SettingsSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.textMuted,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
+                const SheetHandle(),
                 const SizedBox(height: 18),
                 const Text(
                   '⚙️ الإعدادات',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
 
                 SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tileColor: const Color(0x0AFFFFFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
                   value: settings.stockNotificationsEnabled,
                   onChanged: (value) async {
                     await settings.setStockNotificationsEnabled(value);
@@ -99,7 +91,12 @@ class _SettingsSheet extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tileColor: const Color(0x0AFFFFFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
                   value: settings.contributeToRegistry,
                   onChanged: settings.setContributeToRegistry,
                   activeThumbColor: AppColors.success,
@@ -122,7 +119,7 @@ class _SettingsSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.bgDark,
+                    color: const Color(0x0DFFFFFF),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -158,12 +155,12 @@ class _SettingsSheet extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 22),
-                const Divider(color: AppColors.border),
+                const GlassDivider(),
                 const SizedBox(height: 10),
                 _backupSection(context),
 
                 const SizedBox(height: 22),
-                const Divider(color: AppColors.border),
+                const GlassDivider(),
                 const SizedBox(height: 10),
                 _sharingSection(context, store),
 
@@ -197,11 +194,15 @@ class _SettingsSheet extends StatelessWidget {
       Row(
         children: [
           Expanded(
-            child: FilledButton.icon(
-              onPressed: () => _export(context),
-              icon: const Icon(Icons.save_alt_rounded, size: 18),
-              label: const Text('حفظ نسخة'),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.success),
+            child: GradientFilled(
+              gradient: AppGradients.success,
+              foreground: const Color(0xFF032B1E),
+              glow: const Color(0x4D10B981),
+              child: FilledButton.icon(
+                onPressed: () => _export(context),
+                icon: const Icon(Icons.save_alt_rounded, size: 18),
+                label: const Text('حفظ نسخة'),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -384,10 +385,12 @@ class _SettingsSheet extends StatelessWidget {
       Row(
         children: [
           Expanded(
-            child: FilledButton.icon(
-              onPressed: () => showSharePairingSheet(context),
-              icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-              label: const Text('مشاركة مع جهاز آخر'),
+            child: GradientFilled(
+              child: FilledButton.icon(
+                onPressed: () => showSharePairingSheet(context),
+                icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                label: const Text('مشاركة مع جهاز آخر'),
+              ),
             ),
           ),
           const SizedBox(width: 10),

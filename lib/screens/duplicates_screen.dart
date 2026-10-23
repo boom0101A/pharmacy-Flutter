@@ -5,6 +5,7 @@ import '../models/medicine.dart';
 import '../services/duplicates.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 
 /// مراجعة المواد المكرّرة ودمجها.
@@ -168,9 +169,8 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: GlassAppBar(
         title: const Text('🔍 مراجعة التكرارات'),
-        backgroundColor: AppColors.bgCard,
         actions: [
           IconButton(
             tooltip: 'تحديث',
@@ -248,7 +248,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       key: ValueKey(g.key),
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -269,13 +269,38 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
               },
               child: Column(
                 children: [
+                  // الصف المختار بخلفية تيل خفيفة وحدّ (`.radio.on`)
                   for (final m in g.items)
-                    RadioListTile<String>(
-                      value: m.id,
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(m.name),
-                      subtitle: Text(_details(m)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: RadioListTile<String>(
+                        value: m.id,
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                        ),
+                        tileColor: m.id == keeper
+                            ? const Color(0x1A2DD4BF)
+                            : Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: m.id == keeper
+                                ? const Color(0x592DD4BF)
+                                : Colors.transparent,
+                          ),
+                        ),
+                        title: Text(
+                          m.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          _details(m),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -284,10 +309,13 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
               spacing: 8,
               runSpacing: 6,
               children: [
-                FilledButton.icon(
-                  onPressed: locked ? null : () => _merge(g),
-                  icon: const Icon(Icons.merge_type_rounded, size: 18),
-                  label: Text('دمج (الكمية $total)'),
+                GradientFilled(
+                  enabled: !locked,
+                  child: FilledButton.icon(
+                    onPressed: locked ? null : () => _merge(g),
+                    icon: const Icon(Icons.merge_type_rounded, size: 18),
+                    label: Text('دمج (الكمية $total)'),
+                  ),
                 ),
                 OutlinedButton(
                   onPressed: () => _dismiss(g),

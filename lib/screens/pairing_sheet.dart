@@ -7,30 +7,21 @@ import '../services/app_settings.dart';
 import '../services/pharmacy_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../widgets/glass.dart';
 
 /// الجهاز الذي يملك المخزون فعلاً يفتح هذه الشاشة لتوليد رمز اقتران
 /// والموافقة على طلب انضمام جهاز آخر.
 Future<void> showSharePairingSheet(BuildContext context) {
-  return showModalBottomSheet(
+  return showGlassSheet(
     context: context,
-    backgroundColor: AppColors.bgCard,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (_) => const _SharePairingSheet(),
   );
 }
 
 /// الجهاز الجديد يفتح هذه الشاشة ويُدخل رمزاً ظاهراً على الجهاز الآخر.
 Future<void> showJoinPairingSheet(BuildContext context, MedicineStore store) {
-  return showModalBottomSheet(
+  return showGlassSheet(
     context: context,
-    backgroundColor: AppColors.bgCard,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
     builder: (_) => _JoinPairingSheet(store: store),
   );
 }
@@ -196,17 +187,24 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
                   vertical: 18,
                   horizontal: 24,
                 ),
+                // صندوق الرمز: زجاج متدرّج تيل/أزرق بحدّ تيل (.code في التصميم)
                 decoration: BoxDecoration(
-                  color: AppColors.bgDark,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0x2E2DD4BF), Color(0x1438BDF8)],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0x662DD4BF)),
                 ),
                 child: SelectableText(
                   code,
+                  textDirection: TextDirection.ltr,
                   style: const TextStyle(
-                    fontSize: 36,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+                    letterSpacing: 8,
+                    color: Color(0xFFCCFBF1),
                   ),
                 ),
               ),

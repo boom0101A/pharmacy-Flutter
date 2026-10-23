@@ -399,8 +399,133 @@ Future<T?> showGlassSheet<T>({
         radius: 32,
         color: const Color(0xB8101C30),
         borderColor: AppColors.borderHi,
-        child: Builder(builder: builder),
+        // طبقة Material شفافة فوق الزجاج: ListTile/SwitchListTile يرسمان
+        // خلفيتهما وتموّج اللمس على أقرب Material — بدونها تخفيها التعبئة.
+        child: Material(
+          type: MaterialType.transparency,
+          child: Builder(builder: builder),
+        ),
       ),
     ),
   );
+}
+
+/// يرسم تدرّجاً خلف `FilledButton` عادي — يبقى الزر نفسه (حالة التعطيل،
+/// الاختبارات، إمكانية الوصول) ويأخذ مظهر «filled/success» في ملف التصميم.
+///
+/// الزر الداخلي يجب ألا يحدّد `backgroundColor` بنفسه — وإلا غطّى التدرّج.
+class GradientFilled extends StatelessWidget {
+  const GradientFilled({
+    super.key,
+    required this.child,
+    this.gradient = AppGradients.brand,
+    this.foreground = AppColors.onGradient,
+    this.radius = 21,
+    this.enabled = true,
+    this.glow = const Color(0x472DD4BF),
+  });
+
+  final Widget child;
+  final Gradient gradient;
+  final Color foreground;
+  final double radius;
+  final bool enabled;
+  final Color glow;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+    );
+    return Opacity(
+      opacity: enabled ? 1 : 0.38,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(radius),
+          boxShadow: [
+            BoxShadow(color: glow, blurRadius: 20, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: FilledButtonTheme(
+          data: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              disabledBackgroundColor: Colors.transparent,
+              foregroundColor: foreground,
+              disabledForegroundColor: foreground,
+              shadowColor: Colors.transparent,
+              shape: shape,
+              textStyle: const TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// شريط عنوان زجاجي عائم (`.appbar` في ملف التصميم): هامش 10، زوايا 22،
+/// ارتفاع 60، ضبابية حقيقية (سطح ثابت). زر الرجوع يستعمل `maybePop` فيحترم
+/// أي `PopScope` في الشاشة (مثل تأكيد الخروج من الفاتورة).
+class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const GlassAppBar({super.key, required this.title, this.actions = const []});
+
+  final Widget title;
+  final List<Widget> actions;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(74);
+
+  @override
+  Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
+        child: GlassSurface(
+          blur: true,
+          radius: 22,
+          child: SizedBox(
+            height: 58,
+            child: Row(
+              children: [
+                const SizedBox(width: 4),
+                if (canPop)
+                  IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).backButtonTooltip,
+                    color: AppColors.textSecondary,
+                    icon: const BackButtonIcon(),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  )
+                else
+                  const SizedBox(width: 8),
+                Expanded(
+                  child: DefaultTextStyle.merge(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                    child: title,
+                  ),
+                ),
+                ...actions,
+                const SizedBox(width: 4),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
