@@ -9,6 +9,7 @@ import 'services/notification_service.dart';
 import 'services/sync_service.dart';
 import 'state/medicine_store.dart';
 import 'theme.dart';
+import 'widgets/glass.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +61,11 @@ class _PharmacyAppState extends State<PharmacyApp> {
         child: MediaQuery.withClampedTextScaling(
           minScaleFactor: 0.9,
           maxScaleFactor: 1.15,
-          child: child!,
+          // خلفية «الشفق» الثابتة تحت كل الشاشات — الشاشات شفافة فوقها
+          child: Stack(
+            fit: StackFit.expand,
+            children: [const AuroraBackground(), child!],
+          ),
         ),
       ),
       home: HomeScreen(store: _store),

@@ -1,0 +1,406 @@
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
+/// اللمعان العلوي (`--sheen` في ملف التصميم): خط ضوء رفيع على الحافة العليا
+/// يمنح السطح إحساس الزجاج. يُرسم كتدرّج داخل السطح، بلا أي ضبابية.
+const _sheen = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0x26FFFFFF), Color(0x00FFFFFF)],
+  stops: [0, .35],
+);
+
+/// سطح زجاجي: تعبئة شفافة + حدّ رفيع + لمعان علوي + ظل.
+///
+/// **[blur] للأسطح الثابتة فقط** (الترويسة، شريط الأزرار، الأوراق، الحوارات):
+/// `BackdropFilter` على كل بطاقة في قائمة من ألف مادة يقطّع التمرير على
+/// الهواتف المتوسطة. البطاقات تبدو زجاجية بالشفافية واللمعان وحدهما.
+class GlassSurface extends StatelessWidget {
+  const GlassSurface({
+    super.key,
+    required this.child,
+    this.radius = 22,
+    this.blur = false,
+    this.color = AppColors.glass,
+    this.gradient,
+    this.borderColor = AppColors.border,
+    this.padding,
+    this.margin,
+    this.shadow = true,
+    this.sheen = true,
+  });
+
+  final Widget child;
+  final double radius;
+  final bool blur;
+  final Color color;
+  final Gradient? gradient;
+  final Color borderColor;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final bool shadow;
+  final bool sheen;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = BorderRadius.circular(radius);
+    Widget body = DecoratedBox(
+      decoration: BoxDecoration(
+        color: gradient == null ? color : null,
+        gradient: gradient,
+        borderRadius: shape,
+        border: Border.all(color: borderColor),
+      ),
+      child: sheen
+          ? DecoratedBox(
+              decoration: BoxDecoration(borderRadius: shape, gradient: _sheen),
+              position: DecorationPosition.foreground,
+              child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+            )
+          : Padding(padding: padding ?? EdgeInsets.zero, child: child),
+    );
+
+    if (blur) {
+      body = ClipRRect(
+        borderRadius: shape,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: body,
+        ),
+      );
+    }
+
+    if (shadow) {
+      body = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: shape,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x47000000),
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: body,
+      );
+    }
+
+    return margin == null ? body : Padding(padding: margin!, child: body);
+  }
+}
+
+/// خلفية «الشفق» الثابتة: تدرّج داكن + ثلاث بقع ملوّنة ضبابية (تيل، أزرق،
+/// بنفسجي) بمواقع ملف التصميم.
+///
+/// **ثابتة بلا حركة** (قرار المستخدم): الحركة المستمرة تستهلك البطارية طوال
+/// يوم العمل. تُرسم مرة واحدة داخل `RepaintBoundary` فلا يُعاد رسمها مع
+/// تمرير القوائم فوقها.
+class AuroraBackground extends StatelessWidget {
+  const AuroraBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0.4, -0.8),
+            radius: 1.3,
+            colors: [Color(0xFF0B2A3A), Color(0xFF030812)],
+            stops: [0, .6],
+          ),
+        ),
+        child: ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          child: const Stack(
+            children: [
+              _Blob(color: Color(0x8C0D9488), size: 320, top: -90, right: -80),
+              _Blob(
+                color: Color(0x732563EB),
+                size: 280,
+                topFraction: .34,
+                left: -120,
+              ),
+              _Blob(
+                color: Color(0x667C3AED),
+                size: 260,
+                bottom: -80,
+                right: -40,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Blob extends StatelessWidget {
+  const _Blob({
+    required this.color,
+    required this.size,
+    this.top,
+    this.topFraction,
+    this.left,
+    this.right,
+    this.bottom,
+  });
+
+  final Color color;
+  final double size;
+  final double? top, topFraction, left, right, bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MediaQuery.sizeOf(context).height;
+    return Positioned(
+      top: topFraction != null ? h * topFraction! : top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+    );
+  }
+}
+
+/// زر بتدرّج («filled» و«success» و«warn» في ملف التصميم) مع ضغطة نابضية.
+class GradientButton extends StatefulWidget {
+  const GradientButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.gradient = AppGradients.brand,
+    this.foreground = AppColors.onGradient,
+    this.height = 42,
+    this.radius = 21,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20),
+    this.glow = const Color(0x472DD4BF),
+  });
+
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Gradient gradient;
+  final Color foreground;
+  final double height;
+  final double radius;
+  final EdgeInsetsGeometry padding;
+  final Color glow;
+
+  @override
+  State<GradientButton> createState() => _GradientButtonState();
+}
+
+class _GradientButtonState extends State<GradientButton> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onPressed != null;
+    final shape = BorderRadius.circular(widget.radius);
+    return AnimatedScale(
+      scale: _down ? 0.96 : 1,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutBack,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.38,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: widget.gradient,
+            borderRadius: shape,
+            boxShadow: [
+              BoxShadow(
+                color: widget.glow,
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: shape,
+              onTap: widget.onPressed,
+              onHighlightChanged: (v) => setState(() => _down = v),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: shape,
+                  gradient: _sheen,
+                ),
+                child: SizedBox(
+                  height: widget.height,
+                  child: Padding(
+                    padding: widget.padding,
+                    child: Center(
+                      widthFactor: 1,
+                      child: DefaultTextStyle.merge(
+                        style: TextStyle(
+                          color: widget.foreground,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                        child: IconTheme.merge(
+                          data: IconThemeData(color: widget.foreground),
+                          child: widget.child,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// مربع 52×52 بجانب البحث: «filled» بتدرّج أو «outlined» زجاجي.
+class GlassSquareButton extends StatefulWidget {
+  const GlassSquareButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    this.filled = false,
+    this.active = false,
+    this.size = 52,
+    this.tooltip,
+  });
+
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final bool filled;
+
+  /// مفتوح (لوحة الفلاتر): حدّ تيل وخلفية خفيفة.
+  final bool active;
+  final double size;
+  final String? tooltip;
+
+  @override
+  State<GlassSquareButton> createState() => _GlassSquareButtonState();
+}
+
+class _GlassSquareButtonState extends State<GlassSquareButton> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = BorderRadius.circular(18);
+    final decoration = widget.filled
+        ? BoxDecoration(
+            gradient: AppGradients.brand,
+            borderRadius: shape,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x592DD4BF),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: widget.active ? const Color(0x262DD4BF) : AppColors.glass,
+            borderRadius: shape,
+            border: Border.all(
+              color: widget.active ? const Color(0x992DD4BF) : AppColors.border,
+            ),
+          );
+    Widget button = AnimatedScale(
+      scale: _down ? 0.92 : 1,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutBack,
+      child: SizedBox.square(
+        dimension: widget.size,
+        child: DecoratedBox(
+          decoration: decoration,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: shape,
+              onTap: widget.onPressed,
+              onHighlightChanged: (v) => setState(() => _down = v),
+              child: IconTheme.merge(
+                data: IconThemeData(
+                  color: widget.filled
+                      ? AppColors.onGradient
+                      : AppColors.primary,
+                ),
+                child: Center(child: widget.icon),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (widget.tooltip != null) {
+      button = Tooltip(message: widget.tooltip!, child: button);
+    }
+    return button;
+  }
+}
+
+/// مقبض الورقة السفلية.
+class SheetHandle extends StatelessWidget {
+  const SheetHandle({super.key});
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      width: 42,
+      height: 5,
+      decoration: BoxDecoration(
+        color: const Color(0x4DFFFFFF),
+        borderRadius: BorderRadius.circular(3),
+      ),
+    ),
+  );
+}
+
+/// فاصل يتلاشى من الطرفين (`.divider` في ملف التصميم).
+class GlassDivider extends StatelessWidget {
+  const GlassDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 1,
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.transparent, AppColors.borderHi, Colors.transparent],
+      ),
+    ),
+  );
+}
+
+/// عرض ورقة سفلية زجاجية عائمة (هامش 8، زوايا 32، ضبابية حقيقية).
+///
+/// بديل موحّد لـ`showModalBottomSheet` في الإعدادات والمشاركة والأجهزة —
+/// المحتوى نفسه بلا تغيير، فقط الإطار.
+Future<T?> showGlassSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    builder: (ctx) => Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: GlassSurface(
+        blur: true,
+        radius: 32,
+        color: const Color(0xB8101C30),
+        borderColor: AppColors.borderHi,
+        child: Builder(builder: builder),
+      ),
+    ),
+  );
+}

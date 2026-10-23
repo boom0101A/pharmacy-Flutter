@@ -11,17 +11,20 @@ import 'package:flutter/material.dart';
 class SmoothPageRoute<T> extends PageRouteBuilder<T> {
   SmoothPageRoute({required this.builder, super.settings})
     : super(
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 220),
         pageBuilder: (context, animation, secondaryAnimation) =>
             builder(context),
         transitionsBuilder: (context, animation, secondary, child) {
+          // منحنى `--ease` في ملف التصميم: cubic-bezier(.215,.61,.355,1)
           final curved = CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutCubic,
+            curve: const Cubic(.215, .61, .355, 1),
             reverseCurve: Curves.easeInCubic,
           );
 
+          // تلاشٍ + انزلاق 6% + تكبير من .985 (`.screen.hidden`) — بلا ضبابية
+          // الانتقال الموجودة في الملف: ثقيلة على الهاتف لكل فتح شاشة.
           return FadeTransition(
             opacity: curved,
             child: SlideTransition(
@@ -29,7 +32,10 @@ class SmoothPageRoute<T> extends PageRouteBuilder<T> {
                 begin: const Offset(0.06, 0),
                 end: Offset.zero,
               ).animate(curved),
-              child: child,
+              child: ScaleTransition(
+                scale: Tween(begin: .985, end: 1.0).animate(curved),
+                child: child,
+              ),
             ),
           );
         },
