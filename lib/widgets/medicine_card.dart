@@ -81,168 +81,198 @@ class MedicineCard extends StatelessWidget {
         ? AppColors.warning
         : AppColors.success;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // الصورة تأخذ المساحة المتبقية — يمنع الفيضان مهما كان حجم الخط
-          Expanded(
-            child: GestureDetector(
-              onTap: imagePath == null ? null : onImageTap,
-              child: SizedBox(
-                width: double.infinity,
-                child: imagePath != null
-                    ? Hero(
-                        tag: 'medicine-image-${medicine.id}',
-                        child: Image.file(
-                          File(imagePath),
-                          fit: BoxFit.cover,
-                          cacheWidth: _decodeWidth,
-                          // ظهور ناعم بدل قفزة الصورة عند اكتمال فك الترميز
-                          frameBuilder: (_, child, frame, wasSyncLoaded) {
-                            if (wasSyncLoaded) return child;
-                            return AnimatedOpacity(
-                              opacity: frame == null ? 0 : 1,
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeOut,
-                              child: child,
-                            );
-                          },
-                          errorBuilder: (_, _, _) =>
-                              _ImagePlaceholder(type: medicine.type),
-                        ),
-                      )
-                    : _ImagePlaceholder(type: medicine.type),
-              ),
-            ),
+    // بطاقة زجاجية بلا ضبابية حقيقية (قرار الأداء): شفافية + حدّ + لمعان
+    // قطري (`.card::after` في ملف التصميم) — قائمة من ألف مادة تبقى سلسة.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.glass,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x40000000),
+            blurRadius: 24,
+            offset: Offset(0, 8),
           ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  medicine.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+        ],
+      ),
+      position: DecorationPosition.background,
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment(0.2, 0.2),
+            colors: [Color(0x1FFFFFFF), Color(0x00FFFFFF)],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // الصورة تأخذ المساحة المتبقية — يمنع الفيضان مهما كان حجم الخط.
+            // مؤطّرة داخل البطاقة بهامش 6 وزوايا 18 كما في ملف التصميم.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: GestureDetector(
+                    onTap: imagePath == null ? null : onImageTap,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: imagePath != null
+                          ? Hero(
+                              tag: 'medicine-image-${medicine.id}',
+                              child: Image.file(
+                                File(imagePath),
+                                fit: BoxFit.cover,
+                                cacheWidth: _decodeWidth,
+                                // ظهور ناعم بدل قفزة الصورة عند اكتمال فك الترميز
+                                frameBuilder: (_, child, frame, wasSyncLoaded) {
+                                  if (wasSyncLoaded) return child;
+                                  return AnimatedOpacity(
+                                    opacity: frame == null ? 0 : 1,
+                                    duration: const Duration(milliseconds: 220),
+                                    curve: Curves.easeOut,
+                                    child: child,
+                                  );
+                                },
+                                errorBuilder: (_, _, _) =>
+                                    _ImagePlaceholder(type: medicine.type),
+                              ),
+                            )
+                          : _ImagePlaceholder(type: medicine.type),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                // الأرقام تُعرض من اليسار لليمين حتى لا ينكسر ترتيب الباركود
-                if (medicine.barcode.isEmpty)
-                  const Text(
-                    'بدون باركود',
-                    maxLines: 1,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    medicine.name,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: AppColors.warning),
-                  )
-                else
-                  Row(
-                    children: [
-                      const Text(
-                        'باركود',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          medicine.barcode,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // الأرقام تُعرض من اليسار لليمين حتى لا ينكسر ترتيب الباركود
+                  if (medicine.barcode.isEmpty)
+                    const Text(
+                      'بدون باركود',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: AppColors.warning),
+                    )
+                  else
+                    Row(
+                      children: [
+                        const Text(
+                          'باركود',
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            medicine.barcode,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (medicine.type == ItemType.supply &&
+                      (medicine.category ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '🧪 ${medicine.category}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                  if (medicine.isExpired || medicine.isExpiringSoon) ...[
+                    const SizedBox(height: 5),
+                    _ExpiryBadge(medicine: medicine),
+                  ],
+                  const SizedBox(height: 8),
+                  // السعر يأخذ ضعف مساحة الكمية: «١٠٥٬٠٠٠ د.ع» أطول بكثير من «3»
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _Stat(
+                          label: 'السعر',
+                          value: '${formatPrice(medicine.price)} د.ع',
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: _Stat(
+                          label: 'الكمية',
+                          value: medicine.isOutOfStock
+                              ? 'نفذ'
+                              : medicine.quantity.toString(),
+                          color: qtyColor,
+                          alignEnd: true,
+                        ),
                       ),
                     ],
                   ),
-                if (medicine.type == ItemType.supply &&
-                    (medicine.category ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '🧪 ${medicine.category}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
                 ],
-                if (medicine.isExpired || medicine.isExpiringSoon) ...[
-                  const SizedBox(height: 5),
-                  _ExpiryBadge(medicine: medicine),
-                ],
-                const SizedBox(height: 8),
-                // السعر يأخذ ضعف مساحة الكمية: «١٠٥٬٠٠٠ د.ع» أطول بكثير من «3»
-                Row(
+              ),
+            ),
+            // أيقونات فقط في كبسولتين زجاجيتين (`.card .actions` في ملف التصميم)
+            SizedBox(
+              height: 46,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
+                child: Row(
                   children: [
                     Expanded(
-                      flex: 3,
-                      child: _Stat(
-                        label: 'السعر',
-                        value: '${formatPrice(medicine.price)} د.ع',
-                        color: AppColors.textPrimary,
+                      child: _ActionButton(
+                        icon: Icons.edit_rounded,
+                        color: AppColors.primary,
+                        tooltip: 'تعديل',
+                        onPressed: onEdit,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
-                      flex: 2,
-                      child: _Stat(
-                        label: 'الكمية',
-                        value: medicine.isOutOfStock
-                            ? 'نفذ'
-                            : medicine.quantity.toString(),
-                        color: qtyColor,
-                        alignEnd: true,
+                      child: _ActionButton(
+                        icon: Icons.delete_outline_rounded,
+                        color: AppColors.danger,
+                        tooltip: 'حذف',
+                        onPressed: onDelete,
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-          const Divider(height: 1, color: AppColors.border),
-          // أيقونات فقط — أوضح وأكثر تناسقاً من النص داخل بطاقة ضيقة
-          SizedBox(
-            height: 42,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ActionButton(
-                    icon: Icons.edit_outlined,
-                    color: AppColors.primary,
-                    tooltip: 'تعديل',
-                    onPressed: onEdit,
-                  ),
-                ),
-                const SizedBox(
-                  height: 22,
-                  child: VerticalDivider(width: 1, color: AppColors.border),
-                ),
-                Expanded(
-                  child: _ActionButton(
-                    icon: Icons.delete_outline,
-                    color: AppColors.danger,
-                    tooltip: 'حذف',
-                    onPressed: onDelete,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -264,16 +294,21 @@ class _ExpiryBadge extends StatelessWidget {
         : 'ينتهي ${e.year}/${e.month.toString().padLeft(2, '0')}';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         '⏳ $label',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 10, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -303,21 +338,29 @@ class _ActionButtonState extends State<_ActionButton> {
   @override
   Widget build(BuildContext context) => Tooltip(
     message: widget.tooltip,
-    child: InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        widget.onPressed();
-      },
-      onHighlightChanged: (v) => setState(() => _down = v),
-      splashColor: widget.color.withValues(alpha: 0.18),
-      highlightColor: widget.color.withValues(alpha: 0.08),
-      child: Center(
-        // انكماش لحظي تحت الإصبع — تأكيد لمسي بلا صوت ولا تأخير
-        child: AnimatedScale(
-          scale: _down ? 0.82 : 1,
-          duration: const Duration(milliseconds: 110),
-          curve: Curves.easeOut,
-          child: Icon(widget.icon, size: 20, color: widget.color),
+    child: Material(
+      color: const Color(0x0DFFFFFF),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onPressed();
+        },
+        onHighlightChanged: (v) => setState(() => _down = v),
+        splashColor: widget.color.withValues(alpha: 0.18),
+        highlightColor: widget.color.withValues(alpha: 0.08),
+        child: Center(
+          // انكماش لحظي تحت الإصبع — تأكيد لمسي بلا صوت ولا تأخير
+          child: AnimatedScale(
+            scale: _down ? 0.82 : 1,
+            duration: const Duration(milliseconds: 110),
+            curve: Curves.easeOut,
+            child: Icon(widget.icon, size: 20, color: widget.color),
+          ),
         ),
       ),
     ),
@@ -330,8 +373,16 @@ class _ImagePlaceholder extends StatelessWidget {
   final ItemType type;
 
   @override
+  // توهّج تيل خفيف بدل الخلفية المصمتة (`.card .img` في ملف التصميم)
   Widget build(BuildContext context) => Container(
-    color: AppColors.bgDark,
+    decoration: const BoxDecoration(
+      gradient: RadialGradient(
+        center: Alignment(-0.4, -0.6),
+        radius: 1.1,
+        colors: [Color(0x382DD4BF), Color(0x0F38BDF8), Color(0x08FFFFFF)],
+        stops: [0, .6, 1],
+      ),
+    ),
     alignment: Alignment.center,
     child: Text(
       type == ItemType.supply ? '🩹' : '💊',

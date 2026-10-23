@@ -174,7 +174,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         actions: [
           IconButton(
             tooltip: 'تحديث',
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -286,7 +286,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
               children: [
                 FilledButton.icon(
                   onPressed: locked ? null : () => _merge(g),
-                  icon: const Icon(Icons.merge_type, size: 18),
+                  icon: const Icon(Icons.merge_type_rounded, size: 18),
                   label: Text('دمج (الكمية $total)'),
                 ),
                 OutlinedButton(

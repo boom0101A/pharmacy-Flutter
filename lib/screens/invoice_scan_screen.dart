@@ -333,7 +333,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
           if (_lines.isNotEmpty && !_saving && !_anyReading)
             TextButton.icon(
               onPressed: _save,
-              icon: const Icon(Icons.check, color: AppColors.success),
+              icon: const Icon(Icons.check_rounded, color: AppColors.success),
               label: Text(
                 'حفظ ($named)',
                 style: const TextStyle(color: AppColors.success),
@@ -355,7 +355,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () => _addPage(camera: true),
-                        icon: const Icon(Icons.photo_camera),
+                        icon: const Icon(Icons.photo_camera_rounded),
                         label: const Text('كاميرا'),
                       ),
                     ),
@@ -363,7 +363,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _addPage(camera: false),
-                        icon: const Icon(Icons.photo_library),
+                        icon: const Icon(Icons.photo_library_rounded),
                         label: const Text('معرض'),
                       ),
                     ),
@@ -495,12 +495,12 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       children: [
         for (final page in _pages) _pageTile(page),
         _addPageButton(
-          icon: Icons.photo_camera,
+          icon: Icons.photo_camera_rounded,
           label: 'تصوير من جديد',
           camera: true,
         ),
         _addPageButton(
-          icon: Icons.photo_library,
+          icon: Icons.photo_library_rounded,
           label: 'من المعرض',
           camera: false,
         ),
@@ -570,7 +570,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                         page.image,
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => const Center(
-                          child: Icon(Icons.description_outlined),
+                          child: Icon(Icons.description_rounded),
                         ),
                       ),
                     ),
@@ -593,7 +593,10 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                         tooltip: 'حذف الصفحة',
                         padding: EdgeInsets.zero,
                         iconSize: 18,
-                        icon: const Icon(Icons.cancel, color: AppColors.danger),
+                        icon: const Icon(
+                          Icons.cancel_rounded,
+                          color: AppColors.danger,
+                        ),
                         onPressed: () => _removePage(page),
                       ),
                     ),
@@ -647,7 +650,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                   page.image,
                   errorBuilder: (_, _, _) => const Padding(
                     padding: EdgeInsets.all(40),
-                    child: Icon(Icons.broken_image_outlined, size: 48),
+                    child: Icon(Icons.broken_image_rounded, size: 48),
                   ),
                 ),
               ),
@@ -754,7 +757,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 Expanded(child: _typeChip(line)),
                 IconButton(
                   icon: const Icon(
-                    Icons.delete_outline,
+                    Icons.delete_outline_rounded,
                     size: 20,
                     color: AppColors.danger,
                   ),

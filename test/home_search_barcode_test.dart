@@ -46,7 +46,7 @@ void main() {
 
     // نتحقق من وجود أيقونة الماسح داخل شريط البحث (خارج الأزرار العائمة).
     // نستعمل التلميح المرئي (الأيقونة نفسها) لا نصّاً، فالزر أيقونة فقط.
-    final scanIcons = find.byIcon(Icons.qr_code_scanner);
+    final scanIcons = find.byIcon(Icons.qr_code_scanner_rounded);
     // قد يوجد نفس الأيقونة على زر «مسح باركود» العائم — يكفي واحد على الأقل
     // في شريط البحث (فوق الطية أعلى الشاشة).
     expect(scanIcons, findsWidgets);

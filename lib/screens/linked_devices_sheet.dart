@@ -165,7 +165,9 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Icon(
-            uid == m.ownerUid ? Icons.verified_user : Icons.smartphone,
+            uid == m.ownerUid
+                ? Icons.verified_user_rounded
+                : Icons.smartphone_rounded,
             color: uid == m.ownerUid ? AppColors.success : AppColors.primary,
           ),
           title: Text(

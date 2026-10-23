@@ -169,7 +169,7 @@ void main() {
       );
       await tester.enterText(find.byKey(const Key('nameField')), 'دواء آخر');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsOneWidget);
@@ -187,7 +187,7 @@ void main() {
       );
       await tester.enterText(find.byKey(const Key('nameField')), 'دواء آخر');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -202,7 +202,7 @@ void main() {
       expect(find.text('تعديل دواء'), findsOneWidget);
       expect(store.saved, isEmpty);
 
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -221,7 +221,7 @@ void main() {
       );
       await tester.enterText(find.byKey(const Key('nameField')), 'دواء آخر');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -245,7 +245,7 @@ void main() {
       );
       await tester.enterText(find.byKey(const Key('nameField')), 'دواء جديد');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

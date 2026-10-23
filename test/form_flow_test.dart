@@ -86,7 +86,7 @@ void main() {
   Finder quantityField() => find.byKey(const Key('quantityField'));
 
   Future<void> tapSave(WidgetTester tester) async {
-    await tester.tap(find.byIcon(Icons.check));
+    await tester.tap(find.byIcon(Icons.check_rounded));
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -300,7 +300,7 @@ void main() {
 
       expect(find.text('4'), findsOneWidget, reason: 'الرصيد الحالي معروض');
 
-      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.byIcon(Icons.add_rounded));
       await tester.pump();
 
       await tester.enterText(
@@ -326,7 +326,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.byIcon(Icons.add),
+        find.byIcon(Icons.add_rounded),
         findsNothing,
         reason: 'لا رصيد قائم لإضافة وارد إليه',
       );
@@ -465,8 +465,8 @@ void main() {
       // نقرتان متتاليتان بلا أي pump بينهما — تحاكي ضغطاً مزدوجاً حقيقياً
       // قبل أن تُعاد بناء الواجهة وتُعطَّل onPressed. الحارس الداخلي في
       // _save() هو خط الدفاع الحقيقي هنا لا تعطيل الزر وحده.
-      await tester.tap(find.byIcon(Icons.check), warnIfMissed: false);
-      await tester.tap(find.byIcon(Icons.check), warnIfMissed: false);
+      await tester.tap(find.byIcon(Icons.check_rounded), warnIfMissed: false);
+      await tester.tap(find.byIcon(Icons.check_rounded), warnIfMissed: false);
 
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -490,7 +490,7 @@ void main() {
       await tester.enterText(nameField(), 'دواء');
       await tester.pump();
 
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pump(); // إطار واحد فقط — أثناء الحفظ لا بعده
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -534,7 +534,7 @@ void main() {
 
       await tester.enterText(nameField(), 'شاش طبي معقم');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       expect(find.text('⚠️ مادة بنفس الاسم موجودة'), findsOneWidget);
@@ -554,7 +554,7 @@ void main() {
 
       await tester.enterText(nameField(), 'شاش طبي معقم');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle(); // اكتمال انتقال ظهور الحوار
 
       await tester.tap(
@@ -569,7 +569,7 @@ void main() {
       expect(find.text('تعديل مستلزم'), findsOneWidget);
       expect(store.saved, isEmpty);
 
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -589,7 +589,7 @@ void main() {
 
       await tester.enterText(nameField(), 'شاش طبي معقم');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -623,7 +623,7 @@ void main() {
 
       await tester.enterText(nameField(), 'شاش طبي معقم');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -689,7 +689,7 @@ void main() {
 
       await tester.enterText(nameField(), 'باراسيتامول 500');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       expect(find.text('⚠️ مادة بنفس الاسم موجودة'), findsOneWidget);
@@ -709,7 +709,7 @@ void main() {
 
       await tester.enterText(nameField(), 'باراسيتامول 500');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -723,7 +723,7 @@ void main() {
       expect(find.text('تعديل دواء'), findsOneWidget);
       expect(store.saved, isEmpty);
 
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -745,7 +745,7 @@ void main() {
 
       await tester.enterText(nameField(), 'باراسيتامول 500');
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.check));
+      await tester.tap(find.byIcon(Icons.check_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(

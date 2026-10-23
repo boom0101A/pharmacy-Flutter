@@ -288,7 +288,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
     children: [
       const Row(
         children: [
-          Icon(Icons.check_circle, color: AppColors.success, size: 20),
+          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
           SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -496,7 +496,11 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
           }
           return const Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.success, size: 20),
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 20,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(

@@ -11,6 +11,7 @@ import '../services/sync_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../util/number_parse.dart';
+import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
 import 'form_screen.dart';
@@ -295,6 +296,8 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
       ),
+      // شريط زجاجي عائم بعرض الشاشة (dock في ملف التصميم)
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       // تبديل الأزرار بين القسمين بتلاشٍ وانزلاق بدل استبدال مفاجئ
       floatingActionButton: AnimatedSwitcher(
         duration: const Duration(milliseconds: 260),
@@ -315,23 +318,20 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  /// شريط الأزرار الزجاجي العائم (dock) — ضبابية حقيقية لأنه سطح ثابت.
   Widget _actionButtons() {
-    // الأزرار الثلاثة تتجاوز عرض الشاشات الضيقة (320). التصغير المتناسب عند
-    // الحاجة فقط يبقيها كلها ظاهرة ومضغوطة، بلا تغيير على الشاشات العادية.
-    return ConstrainedBox(
-      // المفتاح هنا لا على الصف الداخلي: AnimatedSwitcher يقارن مفتاح ابنه
-      // المباشر ليقرر أن المحتوى تغيّر ويشغّل الانتقال
+    return SizedBox(
+      // المفتاح هنا: AnimatedSwitcher يقارن مفتاح ابنه المباشر ليقرر أن
+      // المحتوى تغيّر ويشغّل الانتقال
       key: ValueKey('fabs-${type.code}'),
-      constraints: BoxConstraints(
-        // clamp يحمي من عرض صفري لحظي أثناء إعادة التخطيط (قيد غير سويّ يرمي)
-        maxWidth: (MediaQuery.sizeOf(context).width - 32).clamp(
-          1.0,
-          double.infinity,
-        ),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: AlignmentDirectional.centerStart,
+      // clamp يحمي من عرض صفري لحظي أثناء إعادة التخطيط (قيد غير سويّ يرمي)
+      width: (MediaQuery.sizeOf(context).width - 24).clamp(1.0, 720.0),
+      child: GlassSurface(
+        blur: true,
+        radius: 28,
+        color: const Color(0x8C0E182A),
+        borderColor: AppColors.borderHi,
+        padding: const EdgeInsets.all(8),
         child: _actionRow(),
       ),
     );
@@ -342,43 +342,39 @@ class _HomeScreenState extends State<HomeScreen>
     // ثلاثة أزرار عريضة لا تتسع للهواتف الضيقة: «مسح باركود» يصير أيقونة
     // فقط هناك، ويبقى «فاتورة ذكية» باسمه لأنه الأقل وضوحاً بلا نص.
     final compactScan = hasInvoice && MediaQuery.sizeOf(context).width < 400;
+    final scan = _DockButton(
+      gradient: AppGradients.brand,
+      foreground: AppColors.onGradient,
+      icon: Icons.qr_code_scanner_rounded,
+      label: compactScan ? null : 'مسح باركود',
+      tooltip: 'مسح باركود',
+      onPressed: () => _openForm(scanFirst: true),
+    );
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         // قراءة الفاتورة متاحة في القسمين — الأسطر تُصنَّف في شاشة المراجعة.
         // تختفي تلقائياً إن غاب مفتاح Gemini (لا فائدة من زرّ يفتح خطأ).
         if (hasInvoice) ...[
-          FloatingActionButton.extended(
-            heroTag: 'invoice-${type.code}',
-            onPressed: _openInvoiceScan,
-            backgroundColor: AppColors.warning,
-            icon: const Icon(Icons.receipt_long),
-            label: const Text('فاتورة ذكية'),
+          Expanded(
+            child: _DockButton(
+              gradient: AppGradients.warning,
+              foreground: const Color(0xFF3A2400),
+              icon: Icons.receipt_long_rounded,
+              label: 'فاتورة ذكية',
+              onPressed: _openInvoiceScan,
+            ),
           ),
-          const SizedBox(width: 10),
-        ],
-        if (compactScan)
-          FloatingActionButton(
-            heroTag: 'scan-${type.code}',
-            onPressed: () => _openForm(scanFirst: true),
-            backgroundColor: AppColors.primary,
-            tooltip: 'مسح باركود',
-            child: const Icon(Icons.qr_code_scanner),
-          )
-        else
-          FloatingActionButton.extended(
-            heroTag: 'scan-${type.code}',
-            onPressed: () => _openForm(scanFirst: true),
-            backgroundColor: AppColors.primary,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('مسح باركود'),
-          ),
-        const SizedBox(width: 10),
-        FloatingActionButton(
-          heroTag: 'add-${type.code}',
+          const SizedBox(width: 8),
+          scan,
+        ] else
+          Expanded(child: scan),
+        const SizedBox(width: 8),
+        _DockButton(
+          gradient: AppGradients.success,
+          foreground: const Color(0xFF032B1E),
+          icon: Icons.add_rounded,
+          tooltip: 'إضافة',
           onPressed: () => _openForm(),
-          backgroundColor: AppColors.success,
-          child: const Icon(Icons.add),
         ),
       ],
     );
@@ -405,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen>
       backgroundColor: AppColors.bgCard,
       child: GridView.builder(
         key: PageStorageKey('grid-${sectionType.code}'),
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 120),
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
@@ -434,20 +430,40 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  /// كبسولة زجاجية بمؤشر متدرّج ينزلق بين القسمين (`.tabs` في ملف التصميم).
   Widget _tabBar() {
-    return Container(
-      color: AppColors.bgCard,
+    return GlassSurface(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.all(4),
+      radius: 18,
+      shadow: false,
       child: TabBar(
         controller: _tabs,
-        indicatorColor: AppColors.primary,
-        indicatorWeight: 3,
-        labelColor: AppColors.primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        splashBorderRadius: BorderRadius.circular(14),
+        indicator: BoxDecoration(
+          gradient: AppGradients.brand,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x592DD4BF),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        labelColor: AppColors.onGradient,
         unselectedLabelColor: AppColors.textSecondary,
-        labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        labelStyle: const TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: 13.5,
+          fontWeight: FontWeight.bold,
+        ),
         tabs: [
           for (final t in ItemType.values)
             Tab(
-              height: 46,
+              height: 40,
               // «🩹 مستلزم طبي (1)» لا يتّسع في نصف شاشة عرضها 320؛
               // التصغير عند الحاجة أفضل من قصّ النص أو من شريط فيضان
               child: FittedBox(
@@ -460,16 +476,15 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  /// بطاقة زجاجية متدرّجة (تيل/أزرق/بنفسجي) بضبابية حقيقية — سطح ثابت.
   Widget _header() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [Color(0xFF12405C), AppColors.bgCard],
-        ),
-      ),
+    return GlassSurface(
+      blur: true,
+      radius: 28,
+      gradient: AppGradients.header,
+      borderColor: AppColors.borderHi,
+      margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
         children: [
           Row(
@@ -480,18 +495,22 @@ class _HomeScreenState extends State<HomeScreen>
                   '💊 صيدليتي',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -.2,
+                  ),
                 ),
               ),
               const _SyncIndicator(),
               IconButton(
-                icon: const Icon(Icons.settings, size: 20),
+                icon: const Icon(Icons.settings_rounded, size: 20),
                 color: AppColors.textSecondary,
                 onPressed: () => showSettingsSheet(context, store),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -532,11 +551,11 @@ class _HomeScreenState extends State<HomeScreen>
                 hintText: isSupplies
                     ? 'ابحث في المستلزمات بالاسم...'
                     : 'ابحث بالاسم أو الباركود...',
-                prefixIcon: const Icon(Icons.search, size: 20),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: store.keyword.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
+                        icon: const Icon(Icons.clear_rounded, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           store.setKeyword('');
@@ -548,40 +567,33 @@ class _HomeScreenState extends State<HomeScreen>
           // زر مسح الباركود إلى جانب البحث — سريع للأدوية التي حُفظت بباركود،
           // فبدل الطباعة اليدوية يمسح الرمز فيظهر مطابقه فوراً في القائمة.
           const SizedBox(width: 8),
-          SizedBox(
-            height: 52,
-            width: 52,
-            child: FilledButton(
-              onPressed: _scanIntoSearch,
-              style: FilledButton.styleFrom(
-                padding: EdgeInsets.zero,
-                backgroundColor: AppColors.primary,
-              ),
-              child: const Icon(Icons.qr_code_scanner, size: 24),
-            ),
+          GlassSquareButton(
+            filled: true,
+            tooltip: 'مسح باركود في البحث',
+            onPressed: _scanIntoSearch,
+            icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
           ),
           const SizedBox(width: 8),
           Badge(
             isLabelVisible: store.activeFilterCount > 0,
+            backgroundColor: AppColors.danger,
             label: Text(store.activeFilterCount.toString()),
-            child: SizedBox(
-              height: 52,
-              width: 52,
-              child: OutlinedButton(
-                onPressed: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _filtersOpen = !_filtersOpen);
-                },
-                style: OutlinedButton.styleFrom(padding: EdgeInsets.zero),
-                // دوران ربع لفة عند فتح اللوحة — يربط الزر بما ظهر تحته
-                child: AnimatedRotation(
-                  turns: _filtersOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutBack,
-                  child: Icon(
-                    _filtersOpen ? Icons.filter_alt : Icons.filter_alt_outlined,
-                    color: AppColors.primary,
-                  ),
+            child: GlassSquareButton(
+              active: _filtersOpen,
+              tooltip: 'الفلاتر',
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() => _filtersOpen = !_filtersOpen);
+              },
+              // نصف لفة عند فتح اللوحة — يربط الزر بما ظهر تحته
+              icon: AnimatedRotation(
+                turns: _filtersOpen ? 0.5 : 0,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  _filtersOpen
+                      ? Icons.filter_alt_rounded
+                      : Icons.filter_alt_outlined,
                 ),
               ),
             ),
@@ -596,79 +608,79 @@ class _HomeScreenState extends State<HomeScreen>
     // الشبكة خارج الشاشة ويظهر شريط الفيضان الأصفر؛ الآن تمرّر داخلها.
     final maxHeight = MediaQuery.sizeOf(context).height * 0.45;
 
-    return Container(
+    return GlassSurface(
+      blur: true,
+      radius: 22,
+      color: AppColors.glassStrong,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      padding: const EdgeInsets.all(12),
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const _SectionLabel('📌 فلترة سريعة'),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _chip('⏳ قريبة الانتهاء', QuickFilter.expiringSoon),
-                _chip('⚠️ مخزون منخفض (≤5)', QuickFilter.lowStock),
-                _chip('🚫 نفذ من المخزن', QuickFilter.outOfStock),
-                _chip('📊 بدون باركود', QuickFilter.noBarcode),
-                _chip('📷 لديه صورة', QuickFilter.hasImage),
-                _chip('🖼️ بدون صورة', QuickFilter.noImage),
-              ],
-            ),
-            const SizedBox(height: 14),
-            const _SectionLabel('💰 نطاق السعر (د.ع)'),
-            _RangeRow(
-              // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
-              // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
-              key: ValueKey('price-${type.code}-${store.filterResetCount}'),
-              initialMin: _fmt(store.priceMin),
-              initialMax: _fmt(store.priceMax),
-              onChanged: (min, max) => store.setPriceRange(
-                min == null ? null : parseLocalizedNumber(min),
-                max == null ? null : parseLocalizedNumber(max),
+      padding: const EdgeInsets.all(14),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionLabel('📌 فلترة سريعة'),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _chip('⏳ قريبة الانتهاء', QuickFilter.expiringSoon),
+                  _chip('⚠️ مخزون منخفض (≤5)', QuickFilter.lowStock),
+                  _chip('🚫 نفذ من المخزن', QuickFilter.outOfStock),
+                  _chip('📊 بدون باركود', QuickFilter.noBarcode),
+                  _chip('📷 لديه صورة', QuickFilter.hasImage),
+                  _chip('🖼️ بدون صورة', QuickFilter.noImage),
+                ],
               ),
-            ),
-            const SizedBox(height: 14),
-            const _SectionLabel('📦 نطاق الكمية'),
-            _RangeRow(
-              key: ValueKey('qty-${type.code}-${store.filterResetCount}'),
-              initialMin: _fmt(store.qtyMin),
-              initialMax: _fmt(store.qtyMax),
-              onChanged: (min, max) => store.setQuantityRange(
-                min == null ? null : parseLocalizedInt(min),
-                max == null ? null : parseLocalizedInt(max),
+              const SizedBox(height: 14),
+              const _SectionLabel('💰 نطاق السعر (د.ع)'),
+              _RangeRow(
+                // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
+                // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
+                key: ValueKey('price-${type.code}-${store.filterResetCount}'),
+                initialMin: _fmt(store.priceMin),
+                initialMax: _fmt(store.priceMax),
+                onChanged: (min, max) => store.setPriceRange(
+                  min == null ? null : parseLocalizedNumber(min),
+                  max == null ? null : parseLocalizedNumber(max),
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            const _SectionLabel('🔃 ترتيب حسب'),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _sortChip('🕐 الأحدث', SortField.date),
-                _sortChip('🔤 الاسم', SortField.name),
-                _sortChip('💲 السعر', SortField.price),
-                _sortChip('📦 الكمية', SortField.quantity),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: store.resetFilters,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('إعادة تعيين الفلاتر'),
+              const SizedBox(height: 14),
+              const _SectionLabel('📦 نطاق الكمية'),
+              _RangeRow(
+                key: ValueKey('qty-${type.code}-${store.filterResetCount}'),
+                initialMin: _fmt(store.qtyMin),
+                initialMax: _fmt(store.qtyMax),
+                onChanged: (min, max) => store.setQuantityRange(
+                  min == null ? null : parseLocalizedInt(min),
+                  max == null ? null : parseLocalizedInt(max),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 14),
+              const _SectionLabel('🔃 ترتيب حسب'),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _sortChip('🕐 الأحدث', SortField.date),
+                  _sortChip('🔤 الاسم', SortField.name),
+                  _sortChip('💲 السعر', SortField.price),
+                  _sortChip('📦 الكمية', SortField.quantity),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: store.resetFilters,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('إعادة تعيين الفلاتر'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -687,15 +699,18 @@ class _HomeScreenState extends State<HomeScreen>
         HapticFeedback.selectionClick();
         store.toggleQuickFilter(filter);
       },
-      backgroundColor: AppColors.bgDark,
-      selectedColor: AppColors.primary.withValues(alpha: 0.25),
-      side: const BorderSide(color: AppColors.border),
+      backgroundColor: const Color(0x0FFFFFFF),
+      selectedColor: const Color(0x332DD4BF),
+      side: BorderSide(
+        color: selected ? const Color(0x992DD4BF) : AppColors.border,
+      ),
       showCheckmark: false,
     );
   }
 
   Widget _sortChip(String label, SortField field) {
     final active = store.sortField == field;
+    final selected = active;
     return ChoiceChip(
       label: Text(
         active ? '$label ${store.sortAscending ? '▲' : '▼'}' : label,
@@ -703,9 +718,11 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       selected: active,
       onSelected: (_) => store.setSort(field),
-      backgroundColor: AppColors.bgDark,
-      selectedColor: AppColors.primary.withValues(alpha: 0.25),
-      side: const BorderSide(color: AppColors.border),
+      backgroundColor: const Color(0x0FFFFFFF),
+      selectedColor: const Color(0x332DD4BF),
+      side: BorderSide(
+        color: selected ? const Color(0x992DD4BF) : AppColors.border,
+      ),
       showCheckmark: false,
     );
   }
@@ -764,16 +781,27 @@ class _HomeScreenState extends State<HomeScreen>
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           const SizedBox(height: 70),
-          Text(
-            filtered
-                ? '🔍'
-                : supplies
-                ? '🩹'
-                : '💊',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 56),
+          // دائرة زجاجية حول الرمز (`.empty .e` في ملف التصميم)
+          Center(
+            child: SizedBox.square(
+              dimension: 110,
+              child: GlassSurface(
+                radius: 55,
+                shadow: false,
+                child: Center(
+                  child: Text(
+                    filtered
+                        ? '🔍'
+                        : supplies
+                        ? '🩹'
+                        : '💊',
+                    style: const TextStyle(fontSize: 52),
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             filtered
                 ? 'لا توجد نتائج مطابقة'
@@ -818,45 +846,69 @@ class _SyncIndicator extends StatelessWidget {
           SyncStatus.error => AppColors.danger,
           SyncStatus.disabled => AppColors.textMuted,
         };
-        return InkWell(
-          onTap: () => _showDetails(context, sync),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (sync.status == SyncStatus.syncing)
-                  const SizedBox(
-                    width: 10,
-                    height: 10,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Icon(Icons.circle, size: 10, color: color),
-                const SizedBox(width: 6),
-                // «مزامنة سحابية ✓» أطول نص في الترويسة — يُقصّ ولا يفيض
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    sync.statusLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+        // كبسولة زجاجية بنقطة متوهّجة (`.sync` في ملف التصميم). التوهّج
+        // ثابت: النبض المستمر يعيد الرسم بلا توقف طوال فتح التطبيق.
+        return Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => _showDetails(context, sync),
+            borderRadius: BorderRadius.circular(20),
+            child: Ink(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0x14FFFFFF),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (sync.status == SyncStatus.syncing)
+                    const SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: .55),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  // «مزامنة سحابية ✓» أطول نص في الترويسة — يُقصّ ولا يفيض
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 120),
+                    child: Text(
+                      sync.statusLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
-                ),
-                if (sync.lastError != null) ...[
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.info_outline,
-                    size: 14,
-                    color: AppColors.textMuted,
-                  ),
+                  if (sync.lastError != null) ...[
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -906,13 +958,11 @@ class _StatBox extends StatelessWidget {
   final int decimals;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => GlassSurface(
+    radius: 18,
+    color: const Color(0x5906101E),
+    shadow: false,
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-    decoration: BoxDecoration(
-      color: AppColors.bgDark.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.border),
-    ),
     child: Column(
       children: [
         TweenAnimationBuilder<double>(
@@ -926,9 +976,10 @@ class _StatBox extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),
@@ -1024,4 +1075,53 @@ class _RangeRowState extends State<_RangeRow> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     ),
   );
+}
+
+/// زر داخل الشريط الزجاجي السفلي: تدرّج + لمعان + ضغطة نابضية، بارتفاع 52.
+/// بلا [label] يصير أيقونة مربعة 52×52.
+class _DockButton extends StatelessWidget {
+  const _DockButton({
+    required this.gradient,
+    required this.foreground,
+    required this.icon,
+    required this.onPressed,
+    this.label,
+    this.tooltip,
+  });
+
+  final Gradient gradient;
+  final Color foreground;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? label;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = label;
+    Widget button = GradientButton(
+      onPressed: onPressed,
+      gradient: gradient,
+      foreground: foreground,
+      height: 52,
+      radius: 20,
+      glow: const Color(0x4D000000),
+      padding: EdgeInsets.symmetric(horizontal: text == null ? 14 : 16),
+      child: text == null
+          ? Icon(icon, size: 24)
+          : FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 24),
+                  const SizedBox(width: 8),
+                  Text(text, maxLines: 1),
+                ],
+              ),
+            ),
+    );
+    if (tooltip != null) button = Tooltip(message: tooltip!, child: button);
+    return button;
+  }
 }

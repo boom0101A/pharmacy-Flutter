@@ -85,14 +85,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
                       iconSize: 30,
                       onPressed: _closeManually,
                     ),
                     const Spacer(),
                     IconButton(
                       icon: Icon(
-                        _torchOn ? Icons.flash_on : Icons.flash_off,
+                        _torchOn
+                            ? Icons.flash_on_rounded
+                            : Icons.flash_off_rounded,
                         color: _torchOn ? AppColors.warning : Colors.white,
                       ),
                       iconSize: 28,
@@ -104,7 +109,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.cameraswitch, color: Colors.white),
+                      icon: const Icon(
+                        Icons.cameraswitch_rounded,
+                        color: Colors.white,
+                      ),
                       iconSize: 28,
                       onPressed: () => _controller.switchCamera(),
                     ),
@@ -185,7 +193,7 @@ class _ErrorView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            Icons.no_photography,
+            Icons.no_photography_rounded,
             size: 64,
             color: AppColors.textMuted,
           ),

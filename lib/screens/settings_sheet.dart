@@ -199,7 +199,7 @@ class _SettingsSheet extends StatelessWidget {
           Expanded(
             child: FilledButton.icon(
               onPressed: () => _export(context),
-              icon: const Icon(Icons.save_alt, size: 18),
+              icon: const Icon(Icons.save_alt_rounded, size: 18),
               label: const Text('حفظ نسخة'),
               style: FilledButton.styleFrom(backgroundColor: AppColors.success),
             ),
@@ -208,7 +208,7 @@ class _SettingsSheet extends StatelessWidget {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => _import(context),
-              icon: const Icon(Icons.restore, size: 18),
+              icon: const Icon(Icons.restore_rounded, size: 18),
               label: const Text('استرجاع'),
             ),
           ),
@@ -235,7 +235,7 @@ class _SettingsSheet extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              uid == null ? Icons.cloud_off : Icons.fingerprint,
+              uid == null ? Icons.cloud_off_rounded : Icons.fingerprint_rounded,
               size: 16,
               color: uid == null ? AppColors.warning : AppColors.textMuted,
             ),
@@ -386,7 +386,7 @@ class _SettingsSheet extends StatelessWidget {
           Expanded(
             child: FilledButton.icon(
               onPressed: () => showSharePairingSheet(context),
-              icon: const Icon(Icons.qr_code_2, size: 18),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('مشاركة مع جهاز آخر'),
             ),
           ),
@@ -394,7 +394,7 @@ class _SettingsSheet extends StatelessWidget {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => showJoinPairingSheet(context, store),
-              icon: const Icon(Icons.link, size: 18),
+              icon: const Icon(Icons.link_rounded, size: 18),
               label: const Text('الانضمام إلى مخزون'),
             ),
           ),
@@ -405,7 +405,7 @@ class _SettingsSheet extends StatelessWidget {
         width: double.infinity,
         child: OutlinedButton.icon(
           onPressed: () => showLinkedDevicesSheet(context),
-          icon: const Icon(Icons.devices, size: 18),
+          icon: const Icon(Icons.devices_rounded, size: 18),
           label: const Text('الأجهزة المرتبطة'),
         ),
       ),
@@ -418,7 +418,7 @@ class _SettingsSheet extends StatelessWidget {
               builder: (_) => DuplicatesScreen(store: store),
             ),
           ),
-          icon: const Icon(Icons.manage_search, size: 18),
+          icon: const Icon(Icons.manage_search_rounded, size: 18),
           label: const Text('مراجعة التكرارات'),
         ),
       ),

@@ -555,7 +555,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                         padding: EdgeInsets.zero,
                         backgroundColor: AppColors.primary,
                       ),
-                      child: const Icon(Icons.qr_code_scanner, size: 26),
+                      child: const Icon(
+                        Icons.qr_code_scanner_rounded,
+                        size: 26,
+                      ),
                     ),
                   ),
                 ],
@@ -613,7 +616,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                           child: IconButton(
                             padding: EdgeInsets.zero,
                             iconSize: 18,
-                            icon: const Icon(Icons.close, color: Colors.white),
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                            ),
                             onPressed: _removeImage,
                           ),
                         ),
@@ -627,7 +633,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _pickImage(ImageSource.camera),
-                      icon: const Icon(Icons.photo_camera),
+                      icon: const Icon(Icons.photo_camera_rounded),
                       label: const Text('كاميرا'),
                     ),
                   ),
@@ -635,7 +641,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _pickImage(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library),
+                      icon: const Icon(Icons.photo_library_rounded),
                       label: const Text('معرض'),
                     ),
                   ),
@@ -720,7 +726,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                                     padding: EdgeInsets.zero,
                                     foregroundColor: AppColors.success,
                                   ),
-                                  child: const Icon(Icons.add, size: 20),
+                                  child: const Icon(
+                                    Icons.add_rounded,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ],
@@ -741,9 +750,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                 child: InputDecorator(
                   decoration: InputDecoration(
                     suffixIcon: _expiry == null
-                        ? const Icon(Icons.calendar_today, size: 18)
+                        ? const Icon(Icons.calendar_today_rounded, size: 18)
                         : IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () => setState(() => _expiry = null),
                           ),
                   ),
@@ -779,7 +788,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.check),
+                      : const Icon(Icons.check_rounded),
                   label: Text(
                     _isEdit
                         ? 'حفظ التعديلات'

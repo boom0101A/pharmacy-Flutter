@@ -71,6 +71,31 @@ void main() {
       ]);
   });
 
+  // الضبابية الحقيقية للأسطح الثابتة فقط: الترويسة والشريط السفلي. لو دخلت
+  // البطاقات لصار عددها بعدد المواد الظاهرة ولتقطّع التمرير على الهاتف.
+  testWidgets('الضبابية في الترويسة والشريط فقط — لا في البطاقات', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    store.seed([
+      for (var i = 0; i < 50; i++) _item(id: 'm$i', name: 'دواء $i'),
+    ]);
+    await tester.pumpWidget(_app(store));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MedicineCard), findsWidgets);
+    expect(find.byType(BackdropFilter), findsNWidgets(2));
+    expect(
+      find.descendant(
+        of: find.byType(MedicineCard),
+        matching: find.byType(BackdropFilter),
+      ),
+      findsNothing,
+    );
+  });
+
   group('التبويب والانتقال', () {
     testWidgets('يعرض تبويبين بعدّاديهما الصحيحين', (tester) async {
       await tester.pumpWidget(_app(store));
@@ -155,11 +180,11 @@ void main() {
       // بيئة الاختبار بلا dotenv مُهيَّأ ⇒ hasGeminiKey = false ⇒ يختفي الزر
       await tester.pumpWidget(_app(store));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.receipt_long), findsNothing);
+      expect(find.byIcon(Icons.receipt_long_rounded), findsNothing);
 
       await tester.tap(find.textContaining('مستلزم طبي'));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.receipt_long), findsNothing);
+      expect(find.byIcon(Icons.receipt_long_rounded), findsNothing);
     });
 
     testWidgets('زر «فاتورة ذكية» ظاهر بنصه في القسمين عند وجود المفتاح', (
@@ -352,7 +377,7 @@ void main() {
         of: find.text(name),
         matching: find.byType(MedicineCard),
       ),
-      matching: find.byIcon(Icons.delete_outline),
+      matching: find.byIcon(Icons.delete_outline_rounded),
     );
 
     testWidgets('الحذف يُخفي المادة فوراً ويعرض شريط تراجع لخمس ثوانٍ', (
