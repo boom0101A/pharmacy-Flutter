@@ -68,7 +68,7 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
   }
 
   Future<void> _remove(String uid) async {
-    final ok = await showDialog<bool>(
+    final ok = await showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,

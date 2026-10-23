@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'smooth_route.dart';
 
 /// اللمعان العلوي (`--sheen` في ملف التصميم): خط ضوء رفيع على الحافة العليا
 /// يمنح السطح إحساس الزجاج. يُرسم كتدرّج داخل السطح، بلا أي ضبابية.
@@ -63,15 +64,7 @@ class GlassSurface extends StatelessWidget {
           : Padding(padding: padding ?? EdgeInsets.zero, child: child),
     );
 
-    if (blur) {
-      body = ClipRRect(
-        borderRadius: shape,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-          child: body,
-        ),
-      );
-    }
+    if (blur) body = _BlurWhenIdle(shape: shape, child: body);
 
     if (shadow) {
       body = DecoratedBox(
@@ -90,6 +83,75 @@ class GlassSurface extends StatelessWidget {
     }
 
     return margin == null ? body : Padding(padding: margin!, child: body);
+  }
+}
+
+/// ضبابية حقيقية فقط والشاشة مستقرة.
+///
+/// أثناء انتقال الشاشات تُرسم الشاشتان معاً، وكل `BackdropFilter` فيهما يُعاد
+/// حسابه في كل إطار من الحركة — أثقل مصدر للتقطّع على هاتف متوسط. هنا يظهر
+/// السطح بلونه نفسه بلا ضبابية طوال الحركة، وتعود الضبابية فور الاستقرار.
+/// يُعاد البناء عند تغيّر حالة الحركة فقط (بداية/نهاية)، لا في كل إطار.
+class _BlurWhenIdle extends StatefulWidget {
+  const _BlurWhenIdle({required this.shape, required this.child});
+
+  final BorderRadius shape;
+  final Widget child;
+
+  @override
+  State<_BlurWhenIdle> createState() => _BlurWhenIdleState();
+}
+
+class _BlurWhenIdleState extends State<_BlurWhenIdle> {
+  ModalRoute<Object?>? _route;
+
+  static bool _settled(Animation<double>? a) =>
+      a == null ||
+      a.status == AnimationStatus.completed ||
+      a.status == AnimationStatus.dismissed;
+
+  bool get _idle =>
+      _settled(_route?.animation) && _settled(_route?.secondaryAnimation);
+
+  void _onStatus(AnimationStatus _) {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (identical(route, _route)) return;
+    _detach();
+    _route = route;
+    route?.animation?.addStatusListener(_onStatus);
+    route?.secondaryAnimation?.addStatusListener(_onStatus);
+  }
+
+  void _detach() {
+    _route?.animation?.removeStatusListener(_onStatus);
+    _route?.secondaryAnimation?.removeStatusListener(_onStatus);
+  }
+
+  @override
+  void dispose() {
+    _detach();
+    super.dispose();
+  }
+
+  // شكل الشجرة ثابت دائماً — فقط `enabled` يتبدّل. إزالة BackdropFilter
+  // وإعادته كانت تعيد بناء كل ما داخل السطح من الصفر فتضيع حالته (حقول
+  // الفلاتر المكتوبة، ومتابعة الاسترجاع داخل ورقة الإعدادات بعد الحوار).
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: widget.shape,
+      child: BackdropFilter(
+        enabled: _idle,
+        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        child: widget.child,
+      ),
+    );
   }
 }
 
@@ -390,6 +452,13 @@ Future<T?> showGlassSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    // صعود نابضي (`--spring`) ونزول أهدأ عند الإغلاق
+    sheetAnimationStyle: const AnimationStyle(
+      duration: Duration(milliseconds: 380),
+      reverseDuration: Duration(milliseconds: 240),
+      curve: designSpring,
+      reverseCurve: Curves.easeInCubic,
+    ),
     // الورقة الطويلة (الإعدادات) كانت تمتد تحت شريط حالة الهاتف فيختفي
     // مقبضها وأعلاها خلف الساعة والأيقونات — رُصد على هاتف المستخدم.
     useSafeArea: true,
@@ -531,4 +600,42 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
+}
+
+/// حوار زجاجي يظهر بتكبير نابضي من .92 مع تلاشٍ (`.dialog.show` في ملف
+/// التصميم) بدل التلاشي المجرّد الافتراضي.
+///
+/// نفس توقيع `showDialog` المستعمل في التطبيق — المحتوى (`AlertDialog`) لا
+/// يتغيّر، فقط طريقة ظهوره. الضغط خارجه يُغلقه ما دام [barrierDismissible].
+Future<T?> showGlassDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) {
+  return showGeneralDialog<T>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: const Color(0x8C02060E),
+    transitionDuration: const Duration(milliseconds: 320),
+    pageBuilder: (ctx, _, _) => Builder(builder: builder),
+    transitionBuilder: (ctx, animation, _, child) {
+      final reduce = MediaQuery.maybeDisableAnimationsOf(ctx) ?? false;
+      final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+      if (reduce) return FadeTransition(opacity: fade, child: child);
+      return FadeTransition(
+        opacity: fade,
+        child: ScaleTransition(
+          scale: Tween(begin: .92, end: 1.0).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: designSpring,
+              reverseCurve: Curves.easeInCubic,
+            ),
+          ),
+          child: child,
+        ),
+      );
+    },
+  );
 }

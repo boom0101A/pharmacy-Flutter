@@ -231,7 +231,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   /// 10 لا 14. هذا الزر يفتح إدخالاً للوارد فقط ويجمعه هو مع الرصيد.
   Future<void> _addQuantity() async {
     final controller = TextEditingController();
-    final added = await showDialog<int>(
+    final added = await showGlassDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -412,7 +412,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   /// الحقيقيان الوحيدان: تعديل الموجود، أو الإلغاء.
   /// يعيد: true = عدّل الموجود · null/false = إلغاء.
   Future<bool?> _confirmDuplicateBarcode(Medicine match) {
-    return showDialog<bool>(
+    return showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -441,7 +441,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
   /// تنبيه عند تعديل باركود مادة إلى باركود تملكه مادة أخرى — لا حفظ.
   Future<void> _showBarcodeTaken(Medicine owner) {
-    return showDialog<void>(
+    return showGlassDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -466,7 +466,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   /// يسأل عند اكتشاف مادة بنفس الاسم بلا باركود لتمييزها.
   /// يعيد: true = عدّل الموجود · false = احفظ سجلاً منفصلاً · null = إلغاء.
   Future<bool?> _confirmDuplicateName(Medicine match) {
-    return showDialog<bool>(
+    return showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,

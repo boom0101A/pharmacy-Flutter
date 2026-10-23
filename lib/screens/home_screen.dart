@@ -244,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen>
   void _viewImage(Medicine medicine) {
     final path = ImageStore.fullPathSync(medicine.imagePath);
     if (path == null) return;
-    showDialog(
+    showGlassDialog(
       context: context,
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
@@ -268,8 +268,8 @@ class _HomeScreenState extends State<HomeScreen>
             _searchRow(),
             // فتح/طي لوحة الفلاتر بحركة انزلاق ناعمة
             AnimatedSize(
-              duration: const Duration(milliseconds: 240),
-              curve: Curves.easeOutCubic,
+              duration: const Duration(milliseconds: 300),
+              curve: designEase,
               alignment: Alignment.topCenter,
               child: _filtersOpen
                   ? _filterPanel()
@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen>
       // تبديل الأزرار بين القسمين بتلاشٍ وانزلاق بدل استبدال مفاجئ
       floatingActionButton: AnimatedSwitcher(
         duration: const Duration(milliseconds: 260),
-        switchInCurve: Curves.easeOutCubic,
+        switchInCurve: designEase,
         switchOutCurve: Curves.easeIn,
         transitionBuilder: (child, animation) => FadeTransition(
           opacity: animation,
@@ -918,7 +918,7 @@ class _SyncIndicator extends StatelessWidget {
 
   /// عرض سبب فشل المزامنة بالتفصيل عند الضغط على المؤشر.
   void _showDetails(BuildContext context, SyncService sync) {
-    showDialog(
+    showGlassDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,

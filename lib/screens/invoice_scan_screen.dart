@@ -101,7 +101,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   /// وأسطرها — بتأكيد إن كانت هناك أسطر مقروءة ستضيع.
   Future<void> _addPage({required bool camera}) async {
     if (_lines.isNotEmpty) {
-      final replace = await showDialog<bool>(
+      final replace = await showGlassDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgCard,
@@ -257,7 +257,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   /// زر الرجوع بعد قراءة الأسطر كان يُسقط الفاتورة كلها بلا سؤال — قراءة
   /// صفحات من جديد تكلّف دقائق وطلبات Gemini.
   Future<void> _confirmLeave() async {
-    final leave = await showDialog<bool>(
+    final leave = await showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -647,7 +647,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
 
   /// الصفحة مكبّرة للمقارنة مع الأسطر، مع سبب الفشل إن فشلت.
   void _viewPage(_InvoicePage page) {
-    showDialog<void>(
+    showGlassDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: AppColors.bgDark,

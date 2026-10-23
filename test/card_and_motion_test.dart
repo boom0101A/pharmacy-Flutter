@@ -118,6 +118,45 @@ void main() {
   });
 
   group('انتقال الشاشات', () {
+    // من أطفأ الحركة في إعدادات إمكانية الوصول: تلاشٍ فقط بلا انزلاق ولا تكبير
+    testWidgets('«تقليل الحركة» ← تلاشٍ فقط', (tester) async {
+      late BuildContext ctx;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: MaterialApp(
+            home: Builder(
+              builder: (c) {
+                ctx = c;
+                return const Scaffold(body: Text('home'));
+              },
+            ),
+          ),
+        ),
+      );
+      Navigator.of(ctx).push(
+        SmoothPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('next')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final next = find.text('next');
+      expect(
+        find.ancestor(of: next, matching: find.byType(SlideTransition)),
+        findsNothing,
+      );
+      expect(
+        find.ancestor(of: next, matching: find.byType(ScaleTransition)),
+        findsNothing,
+      );
+      expect(
+        find.ancestor(of: next, matching: find.byType(FadeTransition)),
+        findsWidgets,
+      );
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('SmoothPageRoute ينتقل ويعود بقيمته', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

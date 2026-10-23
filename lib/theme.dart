@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/smooth_route.dart';
+
 /// لوحة «Liquid Glass» — من ملف التصميم `صيدليتي Liquid Glass.html`.
 ///
 /// الأسماء نفسها كاللوحة السابقة (مئات الاستعمالات لا تتغيّر)، والقيم جديدة.
@@ -83,6 +85,13 @@ ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
+    // انتقال «الزجاج الطبقي» الموحّد لكل الصفحات (راجع smooth_route.dart)
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: GlassPageTransitionsBuilder(),
+        TargetPlatform.iOS: GlassPageTransitionsBuilder(),
+      },
+    ),
     // الخلفية الحيّة (الشفق) مرسومة تحت كل الشاشات في main.dart
     scaffoldBackgroundColor: Colors.transparent,
     canvasColor: AppColors.bgDark,

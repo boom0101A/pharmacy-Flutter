@@ -94,7 +94,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     final merged = mergeGroup(g.items, keeperId, DateTime.now());
     final losers = g.items.where((m) => m.id != keeperId).toList();
 
-    final ok = await showDialog<bool>(
+    final ok = await showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,

@@ -290,7 +290,7 @@ class _SettingsSheet extends StatelessWidget {
     // بلا نسخة محلية (بعد إعادة تثبيت) ⇒ اختيار ملف مباشرة.
     var useLocal = false;
     if (local != null) {
-      final choice = await showDialog<bool>(
+      final choice = await showGlassDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgCard,
@@ -326,7 +326,7 @@ class _SettingsSheet extends StatelessWidget {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
