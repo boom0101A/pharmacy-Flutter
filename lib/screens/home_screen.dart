@@ -318,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// شريط الأزرار الزجاجي العائم (dock) — ضبابية حقيقية لأنه سطح ثابت.
+  /// شريط الأزرار الزجاجي العائم (dock) — ضبابية حقيقية لأنه يعلو القائمة المتحركة.
   Widget _actionButtons() {
     return SizedBox(
       // المفتاح هنا: AnimatedSwitcher يقارن مفتاح ابنه المباشر ليقرر أن
@@ -476,10 +476,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// بطاقة زجاجية متدرّجة (تيل/أزرق/بنفسجي) بضبابية حقيقية — سطح ثابت.
+  /// بطاقة زجاجية متدرّجة (تيل/أزرق/بنفسجي). بلا ضبابية حقيقية: لا شيء يتحرك
+  /// خلفها (الخلفية ثابتة ومضبّبة أصلاً)، وكانت تُعاد في كل إطار بلا أثر مرئي.
   Widget _header() {
     return GlassSurface(
-      blur: true,
       radius: 28,
       gradient: AppGradients.header,
       borderColor: AppColors.borderHi,
@@ -609,7 +609,6 @@ class _HomeScreenState extends State<HomeScreen>
     final maxHeight = MediaQuery.sizeOf(context).height * 0.45;
 
     return GlassSurface(
-      blur: true,
       radius: 22,
       color: AppColors.glassStrong,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

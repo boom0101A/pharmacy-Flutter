@@ -34,6 +34,14 @@ void main() {
     expect(find.byType(AnimatedWidget), findsNothing);
   });
 
+  // Impeller بلا ذاكرة نقطية: أي ضبابية تُعاد في كل إطار — الخلفية تُرسم
+  // بتدرّجات فقط فلا تكلّف شيئاً أثناء التمرير والانتقالات.
+  testWidgets('الخلفية بلا أي مرشّح ضبابية', (tester) async {
+    await tester.pumpWidget(host(const AuroraBackground()));
+    expect(find.byType(ImageFiltered), findsNothing);
+    expect(find.byType(BackdropFilter), findsNothing);
+  });
+
   testWidgets('زر التدرّج يستجيب للضغط ويتعطّل بلا onPressed', (tester) async {
     var taps = 0;
     await tester.pumpWidget(

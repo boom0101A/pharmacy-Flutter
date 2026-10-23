@@ -71,10 +71,11 @@ class GlassSurface extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: shape,
           boxShadow: const [
+            // ظل خفيف: الظلال الضبابية الكبيرة تُعاد في كل إطار على Impeller
             BoxShadow(
-              color: Color(0x47000000),
-              blurRadius: 24,
-              offset: Offset(0, 8),
+              color: Color(0x33000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -159,8 +160,13 @@ class _BlurWhenIdleState extends State<_BlurWhenIdle> {
 /// بنفسجي) بمواقع ملف التصميم.
 ///
 /// **ثابتة بلا حركة** (قرار المستخدم): الحركة المستمرة تستهلك البطارية طوال
-/// يوم العمل. تُرسم مرة واحدة داخل `RepaintBoundary` فلا يُعاد رسمها مع
-/// تمرير القوائم فوقها.
+/// يوم العمل.
+///
+/// **بلا أي مرشّح ضبابية:** محرّك Impeller (المستعمل على هاتف المستخدم) لا
+/// يحتفظ بنسخة نقطية جاهزة، فكانت ضبابية σ=60 على الشاشة كلها تُعاد في كل
+/// إطار تمرير وانتقال — أثقل مصدر للتقطّع (قيس: ~35 إطاراً/ثانية من 120).
+/// كل بقعة الآن تدرّج دائري يتلاشى إلى الشفافية: نفس الحافة الناعمة تقريباً
+/// وكلفة شبه معدومة.
 class AuroraBackground extends StatelessWidget {
   const AuroraBackground({super.key});
 
@@ -176,25 +182,17 @@ class AuroraBackground extends StatelessWidget {
             stops: [0, .6],
           ),
         ),
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-          child: const Stack(
-            children: [
-              _Blob(color: Color(0x8C0D9488), size: 320, top: -90, right: -80),
-              _Blob(
-                color: Color(0x732563EB),
-                size: 280,
-                topFraction: .34,
-                left: -120,
-              ),
-              _Blob(
-                color: Color(0x667C3AED),
-                size: 260,
-                bottom: -80,
-                right: -40,
-              ),
-            ],
-          ),
+        child: const Stack(
+          children: [
+            _Blob(color: Color(0x8C0D9488), size: 320, top: -90, right: -80),
+            _Blob(
+              color: Color(0x732563EB),
+              size: 280,
+              topFraction: .34,
+              left: -120,
+            ),
+            _Blob(color: Color(0x667C3AED), size: 260, bottom: -80, right: -40),
+          ],
         ),
       ),
     );
@@ -216,18 +214,35 @@ class _Blob extends StatelessWidget {
   final double size;
   final double? top, topFraction, left, right, bottom;
 
+  /// امتداد الحافة الناعمة خارج حجم البقعة — يقارب انتشار ضبابية σ=60.
+  static const _spread = 120.0;
+
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.sizeOf(context).height;
+    double? out(double? v) => v == null ? null : v - _spread;
+    final total = size + 2 * _spread;
+    // نصف قطر البقعة الأصلية نسبةً إلى الدائرة الموسّعة
+    final core = size / total;
     return Positioned(
-      top: topFraction != null ? h * topFraction! : top,
-      left: left,
-      right: right,
-      bottom: bottom,
-      width: size,
-      height: size,
+      top: topFraction != null ? h * topFraction! - _spread : out(top),
+      left: out(left),
+      right: out(right),
+      bottom: out(bottom),
+      width: total,
+      height: total,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: color.a * .55),
+              color.withValues(alpha: 0),
+            ],
+            stops: [0, core, 1],
+          ),
+        ),
       ),
     );
   }
@@ -542,7 +557,7 @@ class GradientFilled extends StatelessWidget {
 }
 
 /// شريط عنوان زجاجي عائم (`.appbar` في ملف التصميم): هامش 10، زوايا 22،
-/// ارتفاع 60، ضبابية حقيقية (سطح ثابت). زر الرجوع يستعمل `maybePop` فيحترم
+/// ارتفاع 60. بلا ضبابية حقيقية: لا محتوى يمر خلفه، فكانت كلفة كل إطار بلا أثر. زر الرجوع يستعمل `maybePop` فيحترم
 /// أي `PopScope` في الشاشة (مثل تأكيد الخروج من الفاتورة).
 class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   const GlassAppBar({super.key, required this.title, this.actions = const []});
@@ -561,7 +576,6 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
         child: GlassSurface(
-          blur: true,
           radius: 22,
           child: SizedBox(
             height: 58,

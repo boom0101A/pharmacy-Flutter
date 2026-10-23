@@ -73,7 +73,7 @@ void main() {
 
   // الضبابية الحقيقية للأسطح الثابتة فقط: الترويسة والشريط السفلي. لو دخلت
   // البطاقات لصار عددها بعدد المواد الظاهرة ولتقطّع التمرير على الهاتف.
-  testWidgets('الضبابية في الترويسة والشريط فقط — لا في البطاقات', (
+  testWidgets('الضبابية في الشريط السفلي فقط — لا في الترويسة ولا البطاقات', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(420, 1400);
@@ -86,7 +86,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(MedicineCard), findsWidgets);
-    expect(find.byType(BackdropFilter), findsNWidgets(2));
+    // الشريط السفلي وحده: هو فقط ما يعلو محتوى متحركاً (القائمة)
+    expect(find.byType(BackdropFilter), findsOneWidget);
     expect(
       find.descendant(
         of: find.byType(MedicineCard),

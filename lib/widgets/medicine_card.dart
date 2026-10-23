@@ -88,13 +88,8 @@ class MedicineCard extends StatelessWidget {
         color: AppColors.glass,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
+        // بلا ظل: ظل ضبابي تحت كل بطاقة ظاهرة كان يُعاد في كل إطار تمرير
+        // (Impeller بلا ذاكرة نقطية)، وأثره المرئي ضئيل على الخلفية الداكنة.
       ),
       position: DecorationPosition.background,
       child: DecoratedBox(
