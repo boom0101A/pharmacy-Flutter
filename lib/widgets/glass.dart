@@ -390,6 +390,9 @@ Future<T?> showGlassSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    // الورقة الطويلة (الإعدادات) كانت تمتد تحت شريط حالة الهاتف فيختفي
+    // مقبضها وأعلاها خلف الساعة والأيقونات — رُصد على هاتف المستخدم.
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     elevation: 0,
     builder: (ctx) => Padding(
