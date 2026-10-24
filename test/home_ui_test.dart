@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
+import 'package:saydaliyati/services/duplicate_dismissals.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/theme.dart';
 import 'package:saydaliyati/widgets/medicine_card.dart';
@@ -95,6 +96,51 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  // الفحص التلقائي المستمر للتكرار: شريط هادئ يظهر فقط عند وجود تكرار
+  group('شريط التكرارات التلقائي', () {
+    setUp(() => DuplicateDismissals.instance.resetForTest());
+
+    testWidgets('لا يظهر بلا تكرار', (tester) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('duplicatesBar')), findsNothing);
+    });
+
+    testWidgets('يظهر بعدد المجموعات ويفتح المراجعة', (tester) async {
+      store.seed([
+        _item(id: 'a', name: 'Panadol', createdAt: 1),
+        _item(id: 'b', name: 'panadol ', createdAt: 2),
+        _item(id: 'c', name: 'Aspirin', createdAt: 3),
+      ]);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(store.duplicateGroupCount, 1);
+      expect(
+        find.textContaining('1 مجموعة تكرار تحتاج مراجعة'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('duplicatesBar')));
+      // المراجعة تحمّل قاعدة SQLite غير المتاحة هنا فيدور مؤشرها — ننتظر
+      // انتهاء الانتقال فقط ونتحقق من فتح الشاشة
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('🔍 مراجعة التكرارات'), findsOneWidget);
+    });
+
+    test('«ليست مكرّرة» من أي جهاز يُسقطها من العدّ', () {
+      final s = _TestStore()
+        ..seed([
+          _item(id: 'a', name: 'Panadol'),
+          _item(id: 'b', name: 'Panadol'),
+        ]);
+      expect(s.duplicateGroupCount, 1);
+      DuplicateDismissals.instance.resetForTest({'a|b'});
+      s.seed(s.all);
+      expect(s.duplicateGroupCount, 0);
+    });
   });
 
   group('التبويب والانتقال', () {

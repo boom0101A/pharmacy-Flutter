@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/medicine.dart';
+import '../services/duplicate_dismissals.dart';
 import '../services/duplicates.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
@@ -29,12 +29,9 @@ class DuplicatesScreen extends StatefulWidget {
 }
 
 class _DuplicatesScreenState extends State<DuplicatesScreen> {
-  static const _kDismissed = 'dismissed_duplicate_groups';
-
   bool _loading = true;
   String? _error;
   List<Medicine> _items = const [];
-  Set<String> _dismissed = {};
   int _pending = 0;
   final Map<String, String> _keeperByGroup = {};
 
@@ -50,7 +47,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       _error = null;
     });
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // قرارات «ليست مكرّرة» من كل أجهزة الصيدلية، لا هذا الهاتف وحده
+      await DuplicateDismissals.instance.loadLocal();
+      await DuplicateDismissals.instance.syncWithCloud();
       final load = widget.loadItems ?? widget.store.itemsForDuplicateReview;
       final pendingFn =
           widget.pendingCloudDeletes ?? widget.store.pendingCloudDeleteCount;
@@ -60,7 +59,6 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       setState(() {
         _items = items;
         _pending = pending;
-        _dismissed = (prefs.getStringList(_kDismissed) ?? const []).toSet();
         _loading = false;
       });
     } catch (e) {
@@ -73,7 +71,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   }
 
   List<DuplicateGroup> get _groups =>
-      findDuplicateGroups(_items, dismissed: _dismissed);
+      findDuplicateGroups(_items, dismissed: DuplicateDismissals.instance.keys);
 
   String _keeperOf(DuplicateGroup g) =>
       _keeperByGroup[g.key] ??
@@ -82,11 +80,8 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       ]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt))).first.id);
 
   Future<void> _dismiss(DuplicateGroup g) async {
-    final prefs = await SharedPreferences.getInstance();
-    final next = {..._dismissed, g.key};
-    await prefs.setStringList(_kDismissed, next.toList());
-    if (!mounted) return;
-    setState(() => _dismissed = next);
+    await DuplicateDismissals.instance.add(g.key);
+    if (mounted) setState(() {});
   }
 
   Future<void> _merge(DuplicateGroup g) async {

@@ -151,6 +151,18 @@ service cloud.firestore {
       allow delete: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
     }
 
+    // ---------------- قرارات «ليست مكرّرة» (مشتركة لأجهزة الصيدلية) ----------------
+    // مستند واحد لكل صيدلية بمفتاح معرّفها: قائمة مفاتيح مجموعات قرّر أحد
+    // الأعضاء أنها منتجات مختلفة. للأعضاء فقط، ولا يُحذف.
+    match /dupDismissals/{pid} {
+      allow read: if isMemberOfPharmacy(pid);
+      allow create, update: if isMemberOfPharmacy(pid)
+        && request.resource.data.pharmacyId == pid
+        && request.resource.data.keys().hasOnly(['pharmacyId', 'keys'])
+        && request.resource.data['keys'] is list;
+      allow delete: if false;
+    }
+
     // ---------------- القاموس المشترك ----------------
     // اسم الدواء وصورته المصغّرة فقط. القراءة مفتوحة عمداً: الفائدة كلها في
     // أن تجد أي صيدلية الاسم جاهزاً. الكتابة تتطلب مصادقة، ونتحقق من الحقول

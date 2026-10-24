@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/services/duplicate_dismissals.dart';
 import 'package:saydaliyati/services/duplicates.dart';
 
 Medicine m(
@@ -176,5 +177,9 @@ void main() {
       final r = reconcileReviewItems(cloud: [m('c')], local: [m('l')]);
       expect(r.map((x) => x.id), unorderedEquals(['c', 'l']));
     });
+  });
+
+  test('دمج قرارات «ليست مكرّرة» من جهازين لا يُفقد أياً منها', () {
+    expect(DuplicateDismissals.merge({'a|b'}, {'c|d', 'a|b'}), {'a|b', 'c|d'});
   });
 }

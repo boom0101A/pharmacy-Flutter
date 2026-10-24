@@ -7,6 +7,7 @@ import '../db/medicine_db.dart';
 import '../models/medicine.dart';
 import '../services/app_settings.dart';
 import '../services/barcode_registry.dart';
+import '../services/duplicate_dismissals.dart';
 import '../services/duplicates.dart';
 import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
@@ -75,11 +76,35 @@ class MedicineStore extends ChangeNotifier {
   /// ونعيد النتيجة نفسها حتى يستدعي أحدهم `notifyListeners`.
   final Map<ItemType, List<Medicine>> _visibleCache = {};
 
+  /// عدد مجموعات التكرار — يُحسب عند الطلب ويُحفظ حتى يتغيّر شيء.
+  int? _duplicateCount;
+
+  MedicineStore() {
+    // قرار «ليست مكرّرة» من أي جهاز يغيّر العدد الظاهر في الرئيسية
+    DuplicateDismissals.instance.addListener(notifyListeners);
+  }
+
+  @override
+  void dispose() {
+    DuplicateDismissals.instance.removeListener(notifyListeners);
+    super.dispose();
+  }
+
   @override
   void notifyListeners() {
     _visibleCache.clear();
+    _duplicateCount = null;
     super.notifyListeners();
   }
+
+  /// الفحص التلقائي المستمر: مجموعات التكرار في المخزون المحلي بعد استبعاد
+  /// قرارات «ليست مكرّرة». يُعاد حسابه بعد كل تغيير (حفظ، حذف، مزامنة، دمج)
+  /// — لا في كل إعادة رسم. تقريبي: مجموعات الباركود الموجودة في السحابة فقط
+  /// لا تُرى محلياً، وشاشة المراجعة نفسها تقرأ السحابة فتُظهرها كاملة.
+  int get duplicateGroupCount => _duplicateCount ??= findDuplicateGroups([
+    for (final m in _all)
+      if (!_pendingDeleteIds.contains(m.id)) m,
+  ], dismissed: DuplicateDismissals.instance.keys).length;
 
   bool get isLoading => _loading;
   List<Medicine> get all => _all;
@@ -195,6 +220,7 @@ class MedicineStore extends ChangeNotifier {
     notifyListeners();
 
     await _repairLegacyBarcodes();
+    await DuplicateDismissals.instance.loadLocal();
     _all = await _db.getAll();
     _loading = false;
     notifyListeners();
@@ -283,6 +309,7 @@ class MedicineStore extends ChangeNotifier {
       notifyListeners();
     }
     unawaited(SyncService.instance.pruneOrphanImages());
+    unawaited(DuplicateDismissals.instance.syncWithCloud());
     _scheduleDigestIfEnabled();
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/duplicates_screen.dart';
+import 'package:saydaliyati/services/duplicate_dismissals.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,6 +58,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    DuplicateDismissals.instance.resetForTest();
     store = _Store();
     cloud = [
       m('a', 'لزقة خافض حرارة', qty: 20, updated: 200),

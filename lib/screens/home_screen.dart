@@ -14,6 +14,7 @@ import '../util/number_parse.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
+import 'duplicates_screen.dart';
 import 'form_screen.dart';
 import 'invoice_scan_screen.dart';
 import 'scanner_screen.dart';
@@ -266,6 +267,15 @@ class _HomeScreenState extends State<HomeScreen>
             _header(),
             _tabBar(),
             _searchRow(),
+            // الفحص التلقائي للتكرار: شريط هادئ يظهر فقط عند وجود تكرار
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: designEase,
+              alignment: Alignment.topCenter,
+              child: store.duplicateGroupCount > 0
+                  ? _duplicatesBar(store.duplicateGroupCount)
+                  : const SizedBox(width: double.infinity),
+            ),
             // فتح/طي لوحة الفلاتر بحركة انزلاق ناعمة
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
@@ -724,6 +734,66 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       showCheckmark: false,
     );
+  }
+
+  /// «🔍 N تكرارات تحتاج مراجعة» — يفتح المراجعة بضغطة.
+  Widget _duplicatesBar(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Material(
+        color: const Color(0x1FFBBF24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0x66FBBF24)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const Key('duplicatesBar'),
+          onTap: _openDuplicates,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                const Text('🔍', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$count ${count == 1 ? 'مجموعة تكرار تحتاج' : 'تكرارات تحتاج'} مراجعة',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'مراجعة',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.warning,
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColors.warning,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openDuplicates() async {
+    await Navigator.of(context).push(
+      SmoothPageRoute<void>(builder: (_) => DuplicatesScreen(store: store)),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _resultsInfo(int count) {

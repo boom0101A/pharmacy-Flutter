@@ -11,6 +11,7 @@ import '../models/medicine.dart';
 import 'app_settings.dart';
 import 'auth_service.dart';
 import 'barcode_registry.dart';
+import 'duplicate_dismissals.dart';
 import 'image_store.dart';
 import 'pharmacy_service.dart';
 
@@ -88,6 +89,7 @@ class SyncService extends ChangeNotifier {
       _db!.settings = const Settings(persistenceEnabled: true);
       BarcodeRegistry.attach(_db!);
       PharmacyService.attach(_db!);
+      DuplicateDismissals.attach(_db!);
 
       // الهوية شرط للكتابة تحت القواعد الجديدة
       await AuthService.instance.init();
