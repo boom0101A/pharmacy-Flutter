@@ -144,11 +144,19 @@ class MedicineStore extends ChangeNotifier {
   ///
   /// تُستعمل في مراجعة الفاتورة: مواد المجهّزين بلا باركود، فالاسم هو
   /// المطابق الوحيد المتاح لاكتشاف أن الفاتورة تكرّر مادة موجودة بالفعل.
-  Medicine? findExistingByName(String name, ItemType type) {
+  ///
+  /// [barcode]: باركود السطر/المادة الجديدة. مادة موجودة بباركود **مختلف**
+  /// صنف آخر (نفس الدواء بطعم أو لون آخر) فلا تُطابَق بالاسم — كان الوارد
+  /// يُضاف لرصيد الصنف الخطأ.
+  Medicine? findExistingByName(String name, ItemType type, {String? barcode}) {
     final norm = normalizeName(name);
     if (norm.isEmpty) return null;
+    final code = Gs1Parser.canonicalKey(barcode ?? '');
     for (final m in _all) {
-      if (m.type == type && normalizeName(m.name) == norm) return m;
+      if (m.type != type || normalizeName(m.name) != norm) continue;
+      final other = Gs1Parser.canonicalKey(m.barcode);
+      if (code != null && other != null && code != other) continue;
+      return m;
     }
     return null;
   }

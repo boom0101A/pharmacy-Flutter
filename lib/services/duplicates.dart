@@ -33,22 +33,43 @@ List<DuplicateGroup> findDuplicateGroups(
 
   void union(int a, int b) => parent[find(a)] = find(b);
 
-  final byName = <String, int>{};
+  // التجميع بالاسم يحترم الباركود: نفس الاسم بباركودين مختلفين صنفان مختلفان
+  // (طعم/لون آخر للدواء نفسه) لا تكرار. داخل كل اسم: مرساة لكل باركود،
+  // وأول مادة بلا باركود ترتبط بأول باركود فقط — فلا تجسّر بين صنفين.
+  final byName = <String, _NameGroup>{};
   final byCode = <String, int>{};
   final sharedCode = <int>{};
   for (var i = 0; i < items.length; i++) {
     final m = items[i];
+    final code = Gs1Parser.canonicalKey(m.barcode);
     final name = MedicineStore.normalizeName(m.name);
     if (name.isNotEmpty) {
-      final key = '${m.type.name}::$name';
-      final j = byName[key];
-      if (j == null) {
-        byName[key] = i;
+      final g = byName.putIfAbsent('${m.type.name}::$name', _NameGroup.new);
+      if (code == null) {
+        final first = g.noCode;
+        if (first != null) {
+          union(i, first);
+        } else {
+          g.noCode = i;
+          if (g.anchors.isNotEmpty) {
+            g.linkedCode = g.anchors.keys.first;
+            union(i, g.anchors.values.first);
+          }
+        }
       } else {
-        union(i, j);
+        final same = g.anchors[code];
+        if (same != null) {
+          union(i, same);
+        } else {
+          g.anchors[code] = i;
+          final orphan = g.noCode;
+          if (orphan != null && g.linkedCode == null) {
+            g.linkedCode = code;
+            union(i, orphan);
+          }
+        }
       }
     }
-    final code = Gs1Parser.canonicalKey(m.barcode);
     if (code != null) {
       final j = byCode[code];
       if (j == null) {
@@ -155,4 +176,12 @@ List<Medicine> reconcileReviewItems({
     out.add(mine);
   }
   return out;
+}
+
+/// مواد اسم واحد داخل قسم واحد: مرساة لكل باركود، وأول مادة بلا باركود
+/// والباركود الوحيد الذي رُبطت به.
+class _NameGroup {
+  final anchors = <String, int>{};
+  int? noCode;
+  String? linkedCode;
 }

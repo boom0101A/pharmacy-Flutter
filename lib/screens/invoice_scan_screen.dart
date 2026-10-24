@@ -293,7 +293,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     if (byBarcode != null) return byBarcode;
     final name = line.name.text.trim();
     if (name.isEmpty) return null;
-    return widget.store.findExistingByName(name, line.type);
+    return widget.store.findExistingByName(
+      name,
+      line.type,
+      barcode: line.barcode.text,
+    );
   }
 
   /// هل يطابق هذا السطر سطراً آخر في نفس الفاتورة (نفس الاسم بعد التطبيع
@@ -1095,7 +1099,10 @@ InvoiceSaveResult buildInvoiceSaveItems({
     // معها. إنشاء سجل جديد بنفس الباركود كان يجعل upsert(replace) يحذف
     // المادة الأصلية محلياً بينما تبقى النسختان في السحابة.
     final byBarcode = store.findExistingByBarcode(d.barcode);
-    final existing = byBarcode ?? store.findExistingByName(d.name, d.type);
+    // بالاسم فقط إن لم يتعارض الباركودان: باركود مختلف = صنف آخر (طعم/لون)
+    final existing =
+        byBarcode ??
+        store.findExistingByName(d.name, d.type, barcode: d.barcode);
     final ts = now.millisecondsSinceEpoch;
     final already = existing == null ? null : indexById[existing.id];
     if (already != null) {

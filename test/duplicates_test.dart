@@ -182,4 +182,46 @@ void main() {
   test('دمج قرارات «ليست مكرّرة» من جهازين لا يُفقد أياً منها', () {
     expect(DuplicateDismissals.merge({'a|b'}, {'c|d', 'a|b'}), {'a|b', 'c|d'});
   });
+
+  // نفس الدواء والشركة بطعم/لون مختلف = باركود مختلف = منتج مختلف
+  group('أصناف الطعم واللون', () {
+    test('نفس الاسم وباركودان مختلفان ← ليست مجموعة', () {
+      final g = findDuplicateGroups([
+        m('a', name: 'Panadol Kids', barcode: '6281234567890'),
+        m('b', name: 'Panadol Kids', barcode: '6281234567906'),
+      ]);
+      expect(g, isEmpty);
+    });
+
+    test('نفس الاسم وأحدهما بلا باركود ← مجموعة', () {
+      final g = findDuplicateGroups([
+        m('a', name: 'Panadol Kids', barcode: '6281234567890'),
+        m('b', name: 'Panadol Kids'),
+      ]);
+      expect(g.single.items.length, 2);
+    });
+
+    test('نفس الاسم ونفس الباركود بصيغتين ← مجموعة', () {
+      final g = findDuplicateGroups([
+        m('a', name: 'Panadol Kids', barcode: '6281234567890'),
+        m('b', name: 'Panadol Kids', barcode: '06281234567890'),
+      ]);
+      expect(g.single.items.length, 2);
+    });
+
+    test('مادة بلا باركود لا تجمع صنفين مختلفين في مجموعة واحدة', () {
+      final g = findDuplicateGroups([
+        m('a', name: 'Panadol Kids', barcode: '6281234567890'),
+        m('b', name: 'Panadol Kids', barcode: '6281234567906'),
+        m('c', name: 'Panadol Kids'),
+      ]);
+      for (final group in g) {
+        final codes = group.items
+            .map((x) => x.barcode)
+            .where((b) => b.isNotEmpty)
+            .toSet();
+        expect(codes.length, lessThanOrEqualTo(1));
+      }
+    });
+  });
 }

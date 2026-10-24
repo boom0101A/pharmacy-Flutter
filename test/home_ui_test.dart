@@ -130,6 +130,31 @@ void main() {
       expect(find.text('🔍 مراجعة التكرارات'), findsOneWidget);
     });
 
+    test('صنفان بنفس الاسم وباركودين مختلفين ليسا تكراراً', () {
+      final s = _TestStore()
+        ..seed([
+          Medicine(
+            id: 'a',
+            barcode: '6281234567890',
+            name: 'Panadol Kids',
+            price: 1,
+            quantity: 1,
+            createdAt: 1,
+            updatedAt: 1,
+          ),
+          Medicine(
+            id: 'b',
+            barcode: '6281234567906',
+            name: 'Panadol Kids',
+            price: 1,
+            quantity: 1,
+            createdAt: 2,
+            updatedAt: 2,
+          ),
+        ]);
+      expect(s.duplicateGroupCount, 0);
+    });
+
     test('«ليست مكرّرة» من أي جهاز يُسقطها من العدّ', () {
       final s = _TestStore()
         ..seed([

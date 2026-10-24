@@ -424,4 +424,46 @@ void main() {
       expect(r.items.single.price, 0);
     });
   });
+
+  group('صنف جديد بطعم/لون مختلف', () {
+    const strawberry = Medicine(
+      id: 'st',
+      barcode: '6281234567890',
+      name: 'Panadol Kids',
+      price: 2000,
+      quantity: 10,
+      type: ItemType.medicine,
+      createdAt: 0,
+      updatedAt: 0,
+    );
+
+    test('باركود جديد بنفس الاسم ← مادة جديدة ولا تُمسّ الأخرى', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'Panadol Kids',
+            type: ItemType.medicine,
+            quantity: 5,
+            barcode: '6281234567906',
+          ),
+        ],
+        store: _TestStore()..seed([strawberry]),
+        now: now,
+      );
+      expect(r.items.single.id, isNot('st'));
+      expect(r.items.single.barcode, '6281234567906');
+      expect(r.addedNew, 1);
+      expect(r.mergedExisting, 0);
+    });
+
+    test('سطر بلا باركود يبقى يُدمج بالاسم', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [_draft('Panadol Kids', type: ItemType.medicine, quantity: 5)],
+        store: _TestStore()..seed([strawberry]),
+        now: now,
+      );
+      expect(r.items.single.id, 'st');
+      expect(r.items.single.quantity, 15);
+    });
+  });
 }
