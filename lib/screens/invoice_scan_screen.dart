@@ -11,6 +11,8 @@ import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../widgets/smooth_route.dart';
+import 'scanner_screen.dart';
 
 /// يختار صورة صفحة (كاميرا أو معرض) — قابل للحقن في الاختبار.
 typedef InvoicePagePicker = Future<File?> Function({required bool camera});
@@ -33,6 +35,7 @@ class InvoiceScanScreen extends StatefulWidget {
     this.initialType = ItemType.supply,
     this.pickPage,
     this.readPage,
+    this.scanBarcode,
   });
 
   final MedicineStore store;
@@ -42,6 +45,9 @@ class InvoiceScanScreen extends StatefulWidget {
 
   final InvoicePagePicker? pickPage;
   final InvoicePageReader? readPage;
+
+  /// يمسح باركوداً بالكاميرا (null = ألغى) — قابل للحقن في الاختبار.
+  final Future<String?> Function()? scanBarcode;
 
   @override
   State<InvoiceScanScreen> createState() => _InvoiceScanScreenState();
@@ -69,6 +75,29 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   ItemType _bulkType = ItemType.supply;
 
   InvoicePagePicker get _pick => widget.pickPage ?? _defaultPick;
+
+  /// مسح باركود سطر: الكاميرا ← GTIN في خانة الباركود، وصلاحية رمز GS1 إن
+  /// كانت خانتها فارغة. الباركود صار مسحاً حقيقياً فتسقط شارة «غير صالح»،
+  /// وشارة «موجودة مسبقاً» تُعاد حسابها تلقائياً (تستمع لخانة الباركود).
+  Future<void> _scanBarcodeFor(_EditableLine line) async {
+    final code =
+        await (widget.scanBarcode?.call() ??
+            Navigator.of(context).push<String>(
+              SmoothPageRoute(builder: (_) => const ScannerScreen()),
+            ));
+    if (code == null || code.trim().isEmpty || !mounted) return;
+    final parsed = Gs1Parser.parse(code);
+    setState(() {
+      line.barcode.text = parsed.barcode;
+      final exp = parsed.expiryDate;
+      if (exp != null && line.expiry.text.trim().isEmpty) {
+        line.expiry.text =
+            '${exp.year}-${exp.month.toString().padLeft(2, '0')}';
+      }
+      line.issues.remove(LineIssue.invalidBarcode);
+    });
+  }
+
   InvoicePageReader get _read => widget.readPage ?? GeminiVision.readInvoice;
 
   @override
@@ -876,11 +905,20 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
+                  // الكتابة اليدوية باقية؛ الأيقونة تملؤها من صورة الباركود
                   child: TextField(
                     controller: line.barcode,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'الباركود (اختياري)',
+                      suffixIcon: IconButton(
+                        tooltip: 'مسح الباركود',
+                        icon: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: AppColors.primary,
+                        ),
+                        onPressed: () => _scanBarcodeFor(line),
+                      ),
                     ),
                   ),
                 ),
@@ -1173,8 +1211,9 @@ class _EditableLine {
     required InvoiceLine source,
     required this.type,
     required this.page,
-    this.issues = const [],
-  }) : bonus = source.bonus ?? 0,
+    List<LineIssue> issues = const [],
+  }) : issues = List.of(issues),
+       bonus = source.bonus ?? 0,
        name = TextEditingController(text: source.name),
        price = TextEditingController(
          text: source.price == null ? '' : _num(source.price!),

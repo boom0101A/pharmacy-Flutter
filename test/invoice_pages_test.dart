@@ -33,6 +33,9 @@ void main() {
   late List<bool> pickedWithCamera;
   late int reads;
 
+  /// ما يُعيده الماسح المحقون (null = ألغى المستخدم).
+  String? scanned;
+
   setUp(() {
     store = _Store();
     picks = ['page1.jpg', 'page2.jpg', 'page3.jpg'];
@@ -62,6 +65,7 @@ void main() {
             pickedWithCamera.add(camera);
             return picks.isEmpty ? null : File(picks.removeAt(0));
           },
+          scanBarcode: () async => scanned,
           readPage: (file) async {
             reads++;
             return results[file.path.split(RegExp(r'[\\/]')).last] ??
@@ -239,5 +243,80 @@ void main() {
     ]);
     await pump(tester);
     expect(find.textContaining('قُرئت بالنموذج البديل'), findsNothing);
+  });
+
+  // خانة الباركود: أيقونة ماسح تملؤها من صورة الباركود، والكتابة اليدوية باقية
+  group('مسح باركود السطر', () {
+    Future<void> scan(WidgetTester tester) async {
+      await tester.tap(find.byTooltip('مسح الباركود').first);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('المسح يملأ الباركود ويزيل شارة «غير صالح»', (tester) async {
+      results['page1.jpg'] = InvoiceResult.success([
+        InvoiceLine(
+          name: 'Bad',
+          price: 1,
+          quantity: 1,
+          barcode: '6285128013339',
+        ),
+      ]);
+      scanned = '6285128013338';
+      await pump(tester);
+      expect(find.text('باركود غير صالح — حُذف'), findsOneWidget);
+
+      await scan(tester);
+      expect(find.widgetWithText(TextField, '06285128013338'), findsOneWidget);
+      expect(find.text('باركود غير صالح — حُذف'), findsNothing);
+    });
+
+    testWidgets('رمز GS1 يملأ الصلاحية الفارغة', (tester) async {
+      results['page1.jpg'] = InvoiceResult.success([
+        InvoiceLine(name: 'Rennie', price: 1000, quantity: 3),
+      ]);
+      scanned = '0106285128013338172711301012345';
+      await pump(tester);
+      await scan(tester);
+      expect(find.widgetWithText(TextField, '06285128013338'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '2027-11'), findsOneWidget);
+    });
+
+    testWidgets('إلغاء المسح لا يغيّر شيئاً', (tester) async {
+      results['page1.jpg'] = InvoiceResult.success([
+        InvoiceLine(
+          name: 'Rennie',
+          price: 1000,
+          quantity: 3,
+          barcode: '6285128013338',
+        ),
+      ]);
+      scanned = null;
+      await pump(tester);
+      await scan(tester);
+      expect(find.widgetWithText(TextField, '6285128013338'), findsOneWidget);
+    });
+
+    testWidgets('باركود مادة في المخزون يُظهر «موجودة مسبقاً»', (tester) async {
+      store.seed([
+        const Medicine(
+          id: 'e1',
+          barcode: '06285128013338',
+          name: 'Klamoks',
+          price: 3000,
+          quantity: 6,
+          type: ItemType.supply,
+          createdAt: 0,
+          updatedAt: 0,
+        ),
+      ]);
+      results['page1.jpg'] = InvoiceResult.success([
+        InvoiceLine(name: 'اسم مختلف', price: 1, quantity: 2),
+      ]);
+      scanned = '6285128013338';
+      await pump(tester);
+      expect(find.textContaining('موجودة مسبقاً'), findsNothing);
+      await scan(tester);
+      expect(find.textContaining('موجودة مسبقاً («Klamoks»)'), findsOneWidget);
+    });
   });
 }
