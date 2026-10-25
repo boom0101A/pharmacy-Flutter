@@ -8,12 +8,14 @@ import '../models/medicine.dart';
 import '../services/drug_lookup.dart';
 import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
+import '../services/product_cropper.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
+import 'crop_screen.dart';
 import 'scanner_screen.dart';
 
 /// شاشة إضافة/تعديل دواء.
@@ -24,6 +26,8 @@ class MedicineFormScreen extends StatefulWidget {
     this.existing,
     this.openScannerOnStart = false,
     this.initialType = ItemType.medicine,
+    this.pickImagePath,
+    this.cropper = const ProductCropper(),
   });
 
   final MedicineStore store;
@@ -34,6 +38,12 @@ class MedicineFormScreen extends StatefulWidget {
 
   /// القسم الذي فُتح منه النموذج — يحدد النوع الابتدائي للمادة الجديدة.
   final ItemType initialType;
+
+  /// بديل منتقي الصور للاختبارات — يعيد مسار الصورة أو null.
+  final Future<String?> Function(ImageSource source)? pickImagePath;
+
+  /// قصّ الصورة حول العلبة قبل حفظها.
+  final ProductCropper cropper;
 
   @override
   State<MedicineFormScreen> createState() => _MedicineFormScreenState();
@@ -198,13 +208,22 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   // ---------- الصورة ----------
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      maxWidth: 1200,
-      imageQuality: 85,
+    final path = widget.pickImagePath != null
+        ? await widget.pickImagePath!(source)
+        : (await ImagePicker().pickImage(
+            source: source,
+            maxWidth: 1200,
+            imageQuality: 85,
+          ))?.path;
+    if (path == null || !mounted) return;
+    // القص حول العلبة تلقائياً مع تأكيد المستخدم؛ الرجوع يُلغي التغيير
+    final chosen = await Navigator.of(context).push<File>(
+      SmoothPageRoute(
+        builder: (_) => CropScreen(file: File(path), cropper: widget.cropper),
+      ),
     );
-    if (picked == null) return;
-    final saved = await ImageStore.saveFile(File(picked.path));
+    if (chosen == null) return;
+    final saved = await ImageStore.saveFile(chosen);
     if (!mounted) return;
     final replaced = _imageFileName;
     setState(() => _imageFileName = saved);
