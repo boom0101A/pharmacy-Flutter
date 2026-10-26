@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/medicine.dart';
 import '../services/app_settings.dart';
+import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
 import '../services/notification_service.dart';
 import '../services/sync_service.dart';
@@ -169,7 +170,8 @@ class _HomeScreenState extends State<HomeScreen>
       context,
     ).push<String>(SmoothPageRoute(builder: (_) => const ScannerScreen()));
     if (code == null || !mounted) return;
-    final trimmed = code.trim();
+    // رمز GS1 يحمل الصلاحية والوجبة مع الباركود — المخزون يحفظ الباركود وحده
+    final trimmed = Gs1Parser.parse(code.trim()).barcode.trim();
     if (trimmed.isEmpty) return;
     _searchController.text = trimmed;
     store.setKeyword(trimmed);

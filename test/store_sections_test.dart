@@ -189,6 +189,21 @@ void main() {
       expect(store.visible.first.id, 's1');
     });
 
+    test('باركود 13 رقماً يطابق نسخته ذات الـ14 والعكس', () {
+      store.seed([
+        _item(id: 'a', name: 'أ').copyWith(barcode: '6285128013338'),
+        _item(id: 'b', name: 'ب').copyWith(barcode: '06291100000012'),
+      ]);
+      store.setActiveType(ItemType.medicine);
+
+      store.setKeyword('06285128013338');
+      expect(store.visible.map((m) => m.id), ['a']);
+      store.setKeyword('6291100000012');
+      expect(store.visible.map((m) => m.id), ['b']);
+      store.setKeyword('628512');
+      expect(store.visible.map((m) => m.id), ['a']);
+    });
+
     test('البحث باسم الشركة', () {
       store.seed([
         _item(id: 'd1', name: 'جل تسنين').copyWith(company: 'Juman'),

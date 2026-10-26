@@ -641,14 +641,29 @@ class MedicineStore extends ChangeNotifier {
     return _visibleCache[type] = list;
   }
 
+  String? _codeFor;
+  String? _code;
+
+  /// المفتاح القانوني لكلمة البحث — يُحسب مرة واحدة لكل كلمة لا لكل مادة.
+  String? _keywordCode(String k) {
+    if (k != _codeFor) {
+      _codeFor = k;
+      _code = Gs1Parser.canonicalKey(k);
+    }
+    return _code;
+  }
+
   bool _matches(Medicine m, _SectionFilters f) {
     if (f.keyword.isNotEmpty) {
       final k = f.keyword.toLowerCase();
       final categoryMatch = (m.category ?? '').toLowerCase().contains(k);
+      // باركود كامل: 13 رقماً يطابق نسخته ذات الـ14 (بصفر بادئ) والعكس
+      final code = _keywordCode(k);
       if (!m.name.toLowerCase().contains(k) &&
           !m.barcode.toLowerCase().contains(k) &&
           !categoryMatch &&
-          !(m.company ?? '').toLowerCase().contains(k)) {
+          !(m.company ?? '').toLowerCase().contains(k) &&
+          (code == null || Gs1Parser.canonicalKey(m.barcode) != code)) {
         return false;
       }
     }
