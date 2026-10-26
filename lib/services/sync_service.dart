@@ -121,8 +121,11 @@ class SyncService extends ChangeNotifier {
     final db = _db;
     if (db == null || !isEnabled) return;
     try {
-      await db.collection(_collection).doc(medicine.id).set(_payload(medicine));
-      _setStatus(SyncStatus.synced);
+      final acked = await awaitServerAck(
+        db.collection(_collection).doc(medicine.id).set(_payload(medicine)),
+        ackTimeout,
+      );
+      _setStatus(acked ? SyncStatus.synced : SyncStatus.offline);
     } on FirebaseException catch (e) {
       _setStatus(
         e.code == 'unavailable' ? SyncStatus.offline : SyncStatus.error,
@@ -163,7 +166,11 @@ class SyncService extends ChangeNotifier {
         'pharmacyId': pharmacyId,
         'deletedAt': DateTime.now().millisecondsSinceEpoch,
       });
-      await batch.commit();
+      if (!await awaitServerAck(batch.commit(), ackTimeout)) {
+        // في الطابور الدائم؛ المعرّف يبقى في pending_deletes ويُعاد لاحقاً
+        _setStatus(SyncStatus.offline);
+        return false;
+      }
       _setStatus(SyncStatus.synced);
       return true;
     } on FirebaseException catch (e) {
@@ -333,7 +340,11 @@ class SyncService extends ChangeNotifier {
         pending,
         await MedicineDb.instance.peekPendingDeletes(),
       );
-      await _commitInChunks(db, pending);
+      if (!await _commitInChunks(db, pending)) {
+        // ما نزل محفوظ ومعروض؛ الرفع في الطابور الدائم حتى يعود الاتصال
+        _setStatus(SyncStatus.offline);
+        return localChanged;
+      }
 
       _setStatus(
         SyncStatus.synced,
@@ -430,17 +441,33 @@ class SyncService extends ChangeNotifier {
     if (local.isEmpty) return 0;
 
     final pending = {for (final m in local) m.id: _payload(m)};
-    await _commitInChunks(db, pending);
+    // بلا تأكيد لا تُعلَّم العملية «تمّت» — يلتقطه المستدعي ويُعيدها لاحقاً
+    if (!await _commitInChunks(db, pending)) {
+      throw TimeoutException('لم يؤكّد الخادم رفع السجلات');
+    }
     return pending.length;
   }
 
+  /// مهلة انتظار تأكيد الخادم لكتابة.
+  static const ackTimeout = Duration(seconds: 15);
+
+  /// مع التخزين الدائم لا يكتمل مستقبل الكتابة إلا بتأكيد الخادم — بلا
+  /// إنترنت يعلّق إلى أن يعود الاتصال، فتعلق معه دورة المزامنة وسحب التحديث.
+  /// الكتابة نفسها محفوظة في الطابور الدائم وتُرفع وحدها لاحقاً، فالمهلة لا
+  /// تُضيّع شيئاً. true = أكّد الخادم · false = لم يؤكّد بعد. الرفض الحقيقي
+  /// (صلاحيات مثلاً) يُعاد رميه كما هو.
+  @visibleForTesting
+  static Future<bool> awaitServerAck(Future<void> write, Duration timeout) =>
+      write.then((_) => true).timeout(timeout, onTimeout: () => false);
+
   /// كتابة دفعية مقسّمة — دفعة Firestore الواحدة تفشل كاملة فوق 500 عملية،
   /// وأول مزامنة لجهاز جديد بعد بضع فواتير تتجاوز ذلك بسهولة.
-  Future<void> _commitInChunks(
+  /// يُرجع false إن لم يؤكّد الخادم دفعةً خلال [ackTimeout] (بلا إنترنت).
+  Future<bool> _commitInChunks(
     FirebaseFirestore db,
     Map<String, Map<String, Object?>> items,
   ) async {
-    if (items.isEmpty) return;
+    if (items.isEmpty) return true;
     final entries = items.entries.toList();
     for (var i = 0; i < entries.length; i += _batchLimit) {
       final end = (i + _batchLimit).clamp(0, entries.length);
@@ -448,8 +475,9 @@ class SyncService extends ChangeNotifier {
       for (final e in entries.sublist(i, end)) {
         batch.set(db.collection(_collection).doc(e.key), e.value);
       }
-      await batch.commit();
+      if (!await awaitServerAck(batch.commit(), ackTimeout)) return false;
     }
+    return true;
   }
 
   /// تحويل صورة base64 (data URL) من نسخة الويب إلى ملف محلي.
