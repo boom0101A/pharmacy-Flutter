@@ -146,6 +146,28 @@ void main() {
       final r = mergeGroup([m('a'), m('b', image: 'b.jpg')], 'a', now);
       expect(r.imagePath, 'b.jpg');
     });
+    test('الشركة ونوع المادة يُنقلان للباقية الفارغة ولا يستبدلان الموجود', () {
+      final r = mergeGroup(
+        [
+          m('a'),
+          m(
+            'b',
+            type: ItemType.medicine,
+          ).copyWith(company: 'Juman', category: 'Syrup'),
+        ],
+        'a',
+        now,
+      );
+      expect(r.company, 'Juman');
+      expect(r.category, 'Syrup');
+
+      final kept = mergeGroup(
+        [m('a').copyWith(company: 'Old'), m('b').copyWith(company: 'New')],
+        'a',
+        now,
+      );
+      expect(kept.company, 'Old');
+    });
   });
 
   group('reconcileReviewItems', () {

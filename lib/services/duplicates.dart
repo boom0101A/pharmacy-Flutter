@@ -127,8 +127,25 @@ Medicine mergeGroup(List<Medicine> group, String keeperId, DateTime now) {
           .map((m) => m.imagePath)
           .firstWhere((p) => p != null, orElse: () => null);
 
+  // الشركة ونوع المادة: قيمة الباقية، وإلا الأحدث غير الفارغ — لا يضيعان بالدمج
+  String? firstText(Iterable<String?> values) => values
+      .map((v) => v?.trim())
+      .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
+  final company = firstText([
+    keeper.company,
+    ...byNewest.map((m) => m.company),
+  ]);
+  final category = firstText([
+    keeper.category,
+    ...byNewest
+        .where((m) => m.type == ItemType.medicine)
+        .map((m) => m.category),
+  ]);
+
   return keeper.copyWith(
     imagePath: image,
+    company: company,
+    category: category,
     quantity: group.fold<int>(0, (n, m) => n + m.quantity),
     price: price,
     expiryDate: expiry,

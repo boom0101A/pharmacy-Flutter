@@ -41,7 +41,17 @@ class _CropScreenState extends State<CropScreen> {
   }
 
   Future<void> _prepare() async {
-    final size = await widget.cropper.imageSize(widget.file);
+    final Size size;
+    try {
+      size = await widget.cropper.imageSize(widget.file);
+    } catch (e) {
+      // صورة لا تُفكّ — لا نترك المستخدم أمام دوّارة أبدية؛ الأصلية كما هي
+      debugPrint('تعذّرت قراءة أبعاد الصورة: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop(widget.file);
+      });
+      return;
+    }
     final box = await widget.cropper.detectProduct(widget.file);
     if (!mounted) return;
     final s = ProductCropper.suggestCrop(box, size);

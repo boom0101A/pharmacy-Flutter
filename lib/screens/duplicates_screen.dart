@@ -335,6 +335,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       'السعر ${formatPrice(m.price)} د.ع',
       if (m.expiryDate != null) 'الصلاحية ${_date(m.expiryDate!)}',
       if (m.barcode.isNotEmpty) m.barcode,
+      if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
       'عُدّلت ${_date(m.updatedAt)}',
       m.type.label,
     ];

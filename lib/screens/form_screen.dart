@@ -231,6 +231,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     );
     if (chosen == null) return;
     final saved = await ImageStore.saveFile(chosen);
+    // نُسخت إلى مجلد الصور — المؤقتة (القص وملف المنتقي) لم تعد لازمة
+    for (final temp in {chosen.path, path}) {
+      unawaited(File(temp).delete().then((_) {}, onError: (_) {}));
+    }
     if (!mounted) return;
     final replaced = _imageFileName;
     setState(() => _imageFileName = saved);

@@ -25,6 +25,13 @@ class _FakeCropper extends ProductCropper {
   }
 }
 
+class _BrokenCropper extends _FakeCropper {
+  _BrokenCropper() : super(null);
+
+  @override
+  Future<Size> imageSize(File file) async => throw Exception('تالفة');
+}
+
 void main() {
   const image = Size(1000, 800);
 
@@ -141,6 +148,12 @@ void main() {
     await tester.tap(find.byKey(const Key('cropDone')));
     await tester.pumpAndSettle();
     expect(cropper.croppedTo, suggested);
+  });
+
+  testWidgets('صورة لا تُفكّ: الشاشة تُغلق وتعيد الأصلية', (tester) async {
+    final result = await openCrop(tester, _BrokenCropper());
+    expect(find.text('open'), findsOneWidget);
+    expect(result, isA<File>());
   });
 
   testWidgets('بلا قص يعيد الأصلية دون قص', (tester) async {
