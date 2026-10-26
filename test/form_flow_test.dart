@@ -169,59 +169,67 @@ void main() {
     });
   });
 
-  group('نوع المادة (الشكل الصيدلاني) — للمستلزمات فقط', () {
-    testWidgets('الحقل لا يظهر عند إضافة دواء', (tester) async {
+  group('نوع المادة (الشكل الصيدلاني) — للأدوية فقط، والشركة للقسمين', () {
+    Finder companyField() => find.byKey(const Key('companyField'));
+
+    testWidgets('الحقل لا يظهر عند إضافة مستلزم، والشركة تظهر', (tester) async {
+      useTallSurface(tester);
+      await tester.pumpWidget(
+        host(MedicineFormScreen(store: store, initialType: ItemType.supply)),
+      );
+      await tester.pump();
+
+      expect(categoryField(), findsNothing);
+      expect(companyField(), findsOneWidget);
+
+      await tester.enterText(nameField(), 'شاش طبي');
+      await tester.enterText(companyField(), 'Juman');
+      await tester.pump();
+      await tapSave(tester);
+
+      expect(store.saved.single.company, 'Juman');
+      expect(store.saved.single.category, isNull);
+    });
+
+    testWidgets('الحقلان يظهران عند إضافة دواء ويُحفظان', (tester) async {
       useTallSurface(tester);
       await tester.pumpWidget(host(MedicineFormScreen(store: store)));
       await tester.pump();
 
-      expect(categoryField(), findsNothing);
-    });
-
-    testWidgets('الحقل يظهر عند إضافة مستلزم ويُحفظ', (tester) async {
-      useTallSurface(tester);
-      await tester.pumpWidget(
-        host(MedicineFormScreen(store: store, initialType: ItemType.supply)),
-      );
-      await tester.pump();
-
       expect(categoryField(), findsOneWidget);
 
-      await tester.enterText(nameField(), 'كريم مضاد حيوي');
-      await tester.enterText(categoryField(), 'Cream');
+      await tester.enterText(nameField(), 'باراسيتامول');
+      await tester.enterText(categoryField(), 'Tablet');
+      await tester.enterText(companyField(), 'SDI');
       await tester.pump();
       await tapSave(tester);
 
-      expect(store.saved.single.category, 'Cream');
+      expect(store.saved.single.category, 'Tablet');
+      expect(store.saved.single.company, 'SDI');
     });
 
-    testWidgets('حقل فارغ يُحفظ null لا نصاً فارغاً', (tester) async {
+    testWidgets('حقلان فارغان يُحفظان null لا نصاً فارغاً', (tester) async {
       useTallSurface(tester);
-      await tester.pumpWidget(
-        host(MedicineFormScreen(store: store, initialType: ItemType.supply)),
-      );
+      await tester.pumpWidget(host(MedicineFormScreen(store: store)));
       await tester.pump();
 
-      await tester.enterText(nameField(), 'شاش طبي');
+      await tester.enterText(nameField(), 'دواء ما');
       await tapSave(tester);
 
       expect(store.saved.single.category, isNull);
+      expect(store.saved.single.company, isNull);
     });
 
-    testWidgets('التبديل إلى دواء يخفي الحقل ولا يحفظ قيمته السابقة', (
-      tester,
-    ) async {
+    testWidgets('التبديل إلى مستلزم يخفي الحقل ولا يحفظ قيمته', (tester) async {
       useTallSurface(tester);
-      await tester.pumpWidget(
-        host(MedicineFormScreen(store: store, initialType: ItemType.supply)),
-      );
+      await tester.pumpWidget(host(MedicineFormScreen(store: store)));
       await tester.pump();
 
       await tester.enterText(nameField(), 'مادة ما');
       await tester.enterText(categoryField(), 'Vial');
       await tester.pump();
 
-      await tester.tap(find.text('💊 دواء'));
+      await tester.tap(find.text('🩹 مستلزم طبي'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -229,21 +237,21 @@ void main() {
 
       await tapSave(tester);
       expect(store.saved.single.category, isNull);
-      expect(store.saved.single.type, ItemType.medicine);
+      expect(store.saved.single.type, ItemType.supply);
     });
 
-    testWidgets('تعديل مستلزم موجود يملأ الحقل بقيمته المحفوظة', (
+    testWidgets('تعديل دواء موجود يملأ الحقلين بقيمهما المحفوظة', (
       tester,
     ) async {
       useTallSurface(tester);
       const existing = Medicine(
-        id: 's1',
+        id: 'd1',
         barcode: '',
-        name: 'كريم موضعي',
+        name: 'شراب سعال',
         price: 500,
         quantity: 5,
-        type: ItemType.supply,
-        category: 'Cream',
+        category: 'Syrup',
+        company: 'Juman',
         createdAt: 0,
         updatedAt: 0,
       );
@@ -253,7 +261,8 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Cream'), findsOneWidget);
+      expect(find.text('Syrup'), findsOneWidget);
+      expect(find.text('Juman'), findsOneWidget);
     });
   });
 

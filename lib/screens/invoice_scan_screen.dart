@@ -247,6 +247,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             quantity: parseLocalizedInt(line.quantity.text) ?? 0,
             barcode: line.barcode.text.trim(),
             category: _orNull(line.category.text),
+            company: _orNull(line.company.text),
             expiryDate: InvoiceLineToMedicine.parseExpiry(
               _orNull(line.expiry.text),
             ),
@@ -924,9 +925,18 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
               ],
             ),
-            if (line.type == ItemType.supply) ...[
+            const SizedBox(height: 6),
+            TextField(
+              key: const Key('lineCompany'),
+              controller: line.company,
+              decoration: const InputDecoration(
+                labelText: '🏭 اسم الشركة (اختياري)',
+              ),
+            ),
+            if (line.type == ItemType.medicine) ...[
               const SizedBox(height: 6),
               TextField(
+                key: const Key('lineCategory'),
                 controller: line.category,
                 decoration: const InputDecoration(
                   labelText: '🧪 نوع المادة (اختياري)',
@@ -1003,6 +1013,7 @@ class InvoiceLineDraft {
     this.quantity = 0,
     this.barcode = '',
     this.category,
+    this.company,
     this.expiryDate,
   });
 
@@ -1012,6 +1023,7 @@ class InvoiceLineDraft {
   final int quantity;
   final String barcode;
   final String? category;
+  final String? company;
 
   /// مللي ثانية، أو null إن لم تُقرأ صلاحية.
   final int? expiryDate;
@@ -1078,6 +1090,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
       quantity: raw.quantity < 0 ? 0 : raw.quantity,
       barcode: raw.barcode.trim(),
       category: raw.category,
+      company: raw.company,
       expiryDate: raw.expiryDate,
     );
     final code = Gs1Parser.canonicalKey(d.barcode);
@@ -1114,6 +1127,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
         quantity: prev.quantity + d.quantity,
         barcode: prev.barcode.isNotEmpty ? prev.barcode : d.barcode,
         category: prev.category ?? d.category,
+        company: prev.company ?? d.company,
         expiryDate: _earlier(prev.expiryDate, d.expiryDate),
       );
       mergedWithinFlags[k] = true;
@@ -1163,10 +1177,12 @@ InvoiceSaveResult buildInvoiceSaveItems({
           price: d.price > 0 ? d.price : existing.price,
           quantity: existing.quantity + d.quantity,
           type: type,
-          category: type == ItemType.supply
-              ? (d.category ?? existing.category)
+          // نملأ الفارغ فقط — لا نغيّر قيمة كتبها المستخدم سابقاً. نوع المادة
+          // للأدوية وحدها؛ قيمة قديمة لمستلزم تبقى مخفية كما هي.
+          category: type == ItemType.medicine
+              ? (existing.category ?? d.category)
               : null,
-          clearCategory: type != ItemType.supply,
+          company: existing.company ?? d.company,
           expiryDate: expiry,
           updatedAt: ts,
         ),
@@ -1181,7 +1197,8 @@ InvoiceSaveResult buildInvoiceSaveItems({
           price: d.price,
           quantity: d.quantity,
           type: d.type,
-          category: d.type == ItemType.supply ? d.category : null,
+          category: d.type == ItemType.medicine ? d.category : null,
+          company: d.company,
           expiryDate: d.expiryDate,
           createdAt: ts,
           updatedAt: ts,
@@ -1226,7 +1243,8 @@ class _EditableLine {
        ),
        barcode = TextEditingController(text: source.barcode ?? ''),
        expiry = TextEditingController(text: source.expiry ?? ''),
-       category = TextEditingController(text: source.category ?? '');
+       category = TextEditingController(text: source.category ?? ''),
+       company = TextEditingController(text: source.company ?? '');
 
   final _InvoicePage page;
   final List<LineIssue> issues;
@@ -1237,6 +1255,7 @@ class _EditableLine {
   final TextEditingController barcode;
   final TextEditingController expiry;
   final TextEditingController category;
+  final TextEditingController company;
   ItemType type;
 
   void dispose() {
@@ -1246,6 +1265,7 @@ class _EditableLine {
     barcode.dispose();
     expiry.dispose();
     category.dispose();
+    company.dispose();
   }
 
   static String _num(double v) =>

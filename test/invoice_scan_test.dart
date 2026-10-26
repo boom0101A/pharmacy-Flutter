@@ -23,6 +23,7 @@ InvoiceLineDraft _draft(
   int quantity = 0,
   String barcode = '',
   String? category,
+  String? company,
   int? expiryDate,
 }) => InvoiceLineDraft(
   name: name,
@@ -31,6 +32,7 @@ InvoiceLineDraft _draft(
   quantity: quantity,
   barcode: barcode,
   category: category,
+  company: company,
   expiryDate: expiryDate,
 );
 
@@ -138,32 +140,84 @@ void main() {
       expect(result.items.single.quantity, 10);
     });
 
-    test(
-      'الفئة (category) تُحفَظ للمستلزم فقط، وتُمسَح إن كان القسم دواءً',
-      () {
-        final store = _TestStore();
-        final supplyResult = buildInvoiceSaveItems(
-          drafts: [_draft('كريم', category: 'Cream', quantity: 1)],
-          store: store,
-          now: now,
-        );
-        expect(supplyResult.items.single.category, 'Cream');
+    test('الفئة (category) تُحفَظ للدواء فقط، والشركة للقسمين', () {
+      final store = _TestStore();
+      final supplyResult = buildInvoiceSaveItems(
+        drafts: [
+          _draft('كريم', category: 'Cream', company: 'Juman', quantity: 1),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(supplyResult.items.single.category, isNull);
+      expect(supplyResult.items.single.company, 'Juman');
 
-        final medResult = buildInvoiceSaveItems(
-          drafts: [
-            _draft(
-              'دواء',
-              type: ItemType.medicine,
-              category: 'Tablet',
-              quantity: 1,
-            ),
-          ],
-          store: store,
-          now: now,
-        );
-        expect(medResult.items.single.category, isNull);
-      },
-    );
+      final medResult = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'دواء',
+            type: ItemType.medicine,
+            category: 'Tablet',
+            company: 'SDI',
+            quantity: 1,
+          ),
+        ],
+        store: store,
+        now: now,
+      );
+      expect(medResult.items.single.category, 'Tablet');
+      expect(medResult.items.single.company, 'SDI');
+    });
+
+    test('الدمج مع مادة موجودة يملأ الفارغ فقط ولا يغيّر الموجود', () {
+      final store = _TestStore()
+        ..seed([
+          const Medicine(
+            id: 'a',
+            barcode: '',
+            name: 'شراب سعال',
+            price: 0,
+            quantity: 1,
+            category: 'Syrup',
+            createdAt: 0,
+            updatedAt: 0,
+          ),
+          const Medicine(
+            id: 'b',
+            barcode: '',
+            name: 'قطرة عين',
+            price: 0,
+            quantity: 1,
+            company: 'Old',
+            createdAt: 0,
+            updatedAt: 0,
+          ),
+        ]);
+      final items = buildInvoiceSaveItems(
+        drafts: [
+          _draft(
+            'شراب سعال',
+            type: ItemType.medicine,
+            category: 'Tablet',
+            company: 'Juman',
+          ),
+          _draft(
+            'قطرة عين',
+            type: ItemType.medicine,
+            category: 'Drops',
+            company: 'New',
+          ),
+        ],
+        store: store,
+        now: now,
+      ).items;
+      final a = items.firstWhere((m) => m.id == 'a');
+      final b = items.firstWhere((m) => m.id == 'b');
+      expect(a.category, 'Syrup');
+      expect(a.company, 'Juman');
+      expect(b.category, 'Drops');
+      expect(b.company, 'Old');
+    });
 
     test(
       'الدمج داخل الفاتورة: يُحتفَظ بالباركود الموجود إن كان لسطر واحد فقط',

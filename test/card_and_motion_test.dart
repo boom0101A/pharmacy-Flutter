@@ -203,29 +203,7 @@ void main() {
   });
 
   group('شارة نوع المادة على البطاقة', () {
-    testWidgets('تظهر للمستلزم الذي له نوع', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          _card(
-            _item(type: ItemType.supply, category: 'Cream'),
-            animate: false,
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Cream'), findsOneWidget);
-    });
-
-    testWidgets('لا تظهر للمستلزم بلا نوع', (tester) async {
-      await tester.pumpWidget(
-        _host(_card(_item(type: ItemType.supply), animate: false)),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('🧪'), findsNothing);
-    });
-
-    testWidgets('لا تظهر للدواء حتى لو حمل قيمة category', (tester) async {
-      // حالة نظرية (البناء الحالي يمنعها) — البطاقة نفسها خط دفاع أخير
+    testWidgets('تظهر للدواء الذي له نوع', (tester) async {
       await tester.pumpWidget(
         _host(
           _card(
@@ -235,7 +213,55 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('Tablet'), findsNothing);
+      expect(find.textContaining('Tablet'), findsOneWidget);
+    });
+
+    testWidgets('لا تظهر للدواء بلا نوع', (tester) async {
+      await tester.pumpWidget(
+        _host(_card(_item(type: ItemType.medicine), animate: false)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('🧪'), findsNothing);
+    });
+
+    testWidgets('لا تظهر لمستلزم يحمل قيمة category قديمة', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          _card(
+            _item(type: ItemType.supply, category: 'Cream'),
+            animate: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Cream'), findsNothing);
+    });
+
+    testWidgets('الشركة تظهر للقسمين بجانب النوع', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          _card(
+            _item(
+              type: ItemType.medicine,
+              category: 'Tablet',
+            ).copyWith(company: 'Juman'),
+            animate: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('🧪 Tablet · 🏭 Juman'), findsOneWidget);
+
+      await tester.pumpWidget(
+        _host(
+          _card(
+            _item(type: ItemType.supply).copyWith(company: 'Juman'),
+            animate: false,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('🏭 Juman'), findsOneWidget);
     });
   });
 }

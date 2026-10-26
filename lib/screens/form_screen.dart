@@ -59,6 +59,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   /// الشكل الصيدلاني — خاص بالمستلزمات فقط.
   late final TextEditingController _category;
 
+  /// الشركة المصنّعة — للقسمين.
+  late final TextEditingController _company;
+
   String? _imageFileName;
   bool _looking = false;
   bool _saving = false;
@@ -88,6 +91,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       text: m == null ? '' : m.quantity.toString(),
     );
     _category = TextEditingController(text: m?.category ?? '');
+    _company = TextEditingController(text: m?.company ?? '');
     _imageFileName = m?.imagePath;
     _expiry = m?.expiry;
     _type = m?.type ?? widget.initialType;
@@ -104,6 +108,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _price.dispose();
     _quantity.dispose();
     _category.dispose();
+    _company.dispose();
     super.dispose();
   }
 
@@ -201,6 +206,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _price.text = _trimNumber(m.price);
     _quantity.text = m.quantity.toString();
     _imageFileName = m.imagePath;
+    _category.text = m.category ?? '';
+    _company.text = m.company ?? '';
     _expiry ??= m.expiry;
     _type = m.type;
   }
@@ -384,8 +391,11 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           expiryDate: _expiry?.millisecondsSinceEpoch,
           clearExpiry: _expiry == null,
           type: _type,
-          category: _isSupply ? _category.text.trim() : null,
-          clearCategory: !_isSupply || _category.text.trim().isEmpty,
+          // مستلزم: قيمة قديمة تبقى كما هي مخفية، فلا نمسحها
+          category: _isSupply ? null : _categoryOrNull(),
+          clearCategory: !_isSupply && _categoryOrNull() == null,
+          company: _orNull(_company),
+          clearCompany: _orNull(_company) == null,
           updatedAt: now,
         ) ??
         Medicine(
@@ -397,7 +407,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           imagePath: _imageFileName,
           expiryDate: _expiry?.millisecondsSinceEpoch,
           type: _type,
-          category: _isSupply ? _categoryOrNull() : null,
+          category: _isSupply ? null : _categoryOrNull(),
+          company: _orNull(_company),
           createdAt: now,
           updatedAt: now,
         );
@@ -419,8 +430,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     Navigator.of(context).pop(true);
   }
 
-  String? _categoryOrNull() {
-    final t = _category.text.trim();
+  String? _categoryOrNull() => _orNull(_category);
+
+  static String? _orNull(TextEditingController c) {
+    final t = c.text.trim();
     return t.isEmpty ? null : t;
   }
 
@@ -676,8 +689,17 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null,
               ),
 
-              // ----- نوع المادة (الشكل الصيدلاني) — للمستلزمات فقط -----
-              if (_isSupply) ...[
+              // ----- الشركة المصنّعة — للقسمين -----
+              const SizedBox(height: 20),
+              const _Label('🏭 اسم الشركة (اختياري)'),
+              TextFormField(
+                key: const Key('companyField'),
+                controller: _company,
+                decoration: const InputDecoration(hintText: 'مثل: Juman'),
+              ),
+
+              // ----- نوع المادة (الشكل الصيدلاني) — للأدوية فقط -----
+              if (!_isSupply) ...[
                 const SizedBox(height: 20),
                 const _Label('🧪 نوع المادة (اختياري)'),
                 TextFormField(

@@ -117,7 +117,10 @@ class _CropScreenState extends State<CropScreen> {
     return LayoutBuilder(
       builder: (context, c) {
         final img = _image!;
-        final scale = math.min(c.maxWidth / img.width, c.maxHeight / img.height);
+        final scale = math.min(
+          c.maxWidth / img.width,
+          c.maxHeight / img.height,
+        );
         final w = img.width * scale, h = img.height * scale;
         final r = _rect!;
         final view = Rect.fromLTRB(

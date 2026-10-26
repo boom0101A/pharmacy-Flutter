@@ -192,11 +192,10 @@ class MedicineCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                  if (medicine.type == ItemType.supply &&
-                      (medicine.category ?? '').isNotEmpty) ...[
+                  if (_details(medicine) case final details?) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '🧪 ${medicine.category}',
+                      details,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -429,4 +428,14 @@ class _Stat extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// «🧪 نوع المادة · 🏭 الشركة» — نوع المادة للأدوية فقط.
+String? _details(Medicine m) {
+  final parts = [
+    if (m.type == ItemType.medicine && (m.category ?? '').trim().isNotEmpty)
+      '🧪 ${m.category!.trim()}',
+    if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
 }

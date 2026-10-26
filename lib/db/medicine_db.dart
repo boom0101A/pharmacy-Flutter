@@ -26,7 +26,7 @@ class MedicineDb {
   Database? _db;
 
   /// إصدار المخطط الحالي — يُصدَّر ليقارن به الاختبار.
-  static const schemaVersion = 6;
+  static const schemaVersion = 7;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -68,6 +68,10 @@ class MedicineDb {
         // قابل للفراغ، فلا حاجة لأي ترحيل بيانات قبله.
         await db.execute('ALTER TABLE $_table ADD COLUMN category TEXT');
       }
+      if (oldVersion < 7) {
+        // الشركة المصنّعة — نصّي حر قابل للفراغ مثل category.
+        await db.execute('ALTER TABLE $_table ADD COLUMN company TEXT');
+      }
     },
     onCreate: (db, version) async {
       await db.execute('''
@@ -81,6 +85,7 @@ class MedicineDb {
             expiryDate INTEGER,
             itemType TEXT NOT NULL DEFAULT 'medicine',
             category TEXT,
+            company TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL
           )

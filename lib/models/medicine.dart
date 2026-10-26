@@ -34,10 +34,13 @@ class Medicine {
   /// دواء أم مستلزم طبي — يحدد في أي قسم يظهر.
   final ItemType type;
 
-  /// الشكل الصيدلاني للمستلزم (قرص/شراب/كريم/قطرة...) كما يُطبع في عمود
-  /// «نوع المواد» بفواتير بعض المجهّزين. خاص بالمستلزمات فقط — يبقى null
-  /// للأدوية دائماً حتى لو كُتب نص فيه ثم بُدّل النوع.
+  /// الشكل الصيدلاني للدواء (قرص/شراب/كريم/قطرة...) كما يُطبع في عمود
+  /// «نوع المواد» بفواتير بعض المجهّزين. يُعرض ويُكتب للأدوية فقط؛ قيم قديمة
+  /// حُفظت لمستلزمات (قبل 2026-10) تبقى في السجل لكنها لا تُعرض.
   final String? category;
+
+  /// الشركة المصنّعة أو الوكيل — للأدوية والمستلزمات.
+  final String? company;
 
   final int createdAt;
   final int updatedAt;
@@ -52,6 +55,7 @@ class Medicine {
     this.expiryDate,
     this.type = ItemType.medicine,
     this.category,
+    this.company,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -90,6 +94,8 @@ class Medicine {
     ItemType? type,
     String? category,
     bool clearCategory = false,
+    String? company,
+    bool clearCompany = false,
     int? updatedAt,
   }) {
     return Medicine(
@@ -102,6 +108,7 @@ class Medicine {
       expiryDate: clearExpiry ? null : (expiryDate ?? this.expiryDate),
       type: type ?? this.type,
       category: clearCategory ? null : (category ?? this.category),
+      company: clearCompany ? null : (company ?? this.company),
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
     );
@@ -117,6 +124,7 @@ class Medicine {
     'expiryDate': expiryDate,
     'itemType': type.code,
     'category': category,
+    'company': company,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -136,6 +144,7 @@ class Medicine {
     expiryDate: map['expiryDate'] == null ? null : _asMillis(map['expiryDate']),
     type: ItemType.fromCode(map['itemType']),
     category: map['category'] as String?,
+    company: map['company'] as String?,
     createdAt: _asMillis(map['createdAt']),
     updatedAt: _asMillis(map['updatedAt']),
   );

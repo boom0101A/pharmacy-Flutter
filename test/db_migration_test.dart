@@ -48,6 +48,7 @@ void main() {
         imagePath TEXT,
         ${version >= 3 ? 'expiryDate INTEGER,' : ''}
         ${version >= 4 ? "itemType TEXT NOT NULL DEFAULT 'medicine'," : ''}
+        ${version >= 6 ? 'category TEXT,' : ''}
         createdAt INTEGER NOT NULL,
         updatedAt INTEGER NOT NULL
       )
@@ -770,6 +771,34 @@ void main() {
 
       // القراءة تمسح القائمة فلا تتكرر عمليات الحذف
       expect(await MedicineDb.instance.takePendingDeletes(), isEmpty);
+    });
+  });
+
+  group('ترقية 6 ← 7 — اسم الشركة', () {
+    test('تضيف عمود company وتحفظ category القديم', () async {
+      final path = nextPath();
+      var db = await buildLegacy(path, 6);
+      await db.insert(table, {
+        'id': 's1',
+        'barcode': '',
+        'name': 'كريم',
+        'price': 0,
+        'quantity': 1,
+        'itemType': 'supply',
+        'category': 'Cream',
+        'createdAt': 0,
+        'updatedAt': 0,
+      });
+      await db.close();
+
+      db = await MedicineDb.openAt(path);
+      expect(await db.getVersion(), MedicineDb.schemaVersion);
+      final row = (await db.query(table)).single;
+      expect(row['category'], 'Cream');
+      expect(row['company'], isNull);
+      await db.update(table, {'company': 'Juman'});
+      expect((await db.query(table)).single['company'], 'Juman');
+      await db.close();
     });
   });
 }

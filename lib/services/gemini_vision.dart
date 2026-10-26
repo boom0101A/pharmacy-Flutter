@@ -22,6 +22,7 @@ class InvoiceLine {
     this.barcode,
     this.expiry,
     this.category,
+    this.company,
     this.bonus,
     this.lineTotal,
     this.uncertain = false,
@@ -39,6 +40,9 @@ class InvoiceLine {
   /// عمود «نوع المواد» في فواتير المجهّزين ويُحفظ كما هو بلا ترجمة.
   final String? category;
 
+  /// الشركة المصنّعة أو الوكيل كما طُبعت في السطر أو عمودها.
+  final String? company;
+
   /// الكمية المجانية (بونص) — تصل للرف فعلاً فتُضاف للكمية عند الحفظ.
   final int? bonus;
 
@@ -54,6 +58,7 @@ class InvoiceLine {
     quantity: quantity,
     expiry: expiry,
     category: category,
+    company: company,
     bonus: bonus,
     lineTotal: lineTotal,
     uncertain: uncertain,
@@ -426,6 +431,8 @@ class GeminiVision {
 - expiry: تاريخ الصلاحية كما ظهر في السطر بلا تحويل، وإلا null.
 - category: الشكل الصيدلاني إن وُجد له عمود (Tablet/Cream/Syrup/Drops/...)
   كما هو حرفياً بلا ترجمة، وإلا null — لا تخترعه.
+- company: اسم الشركة المصنّعة أو الوكيل إن ظهر في السطر أو في عمود «الشركة»
+  أو «Company» أو «Manufacturer» (مثل Juman)، كما هو حرفياً، وإلا null.
 - uncertain: true إن كان أي جزء من السطر مقطوعاً أو مطموساً أو غير مقروء
   بوضوح، وإلا false.
 
@@ -446,6 +453,7 @@ class GeminiVision {
             'barcode': {'type': 'STRING', 'nullable': true},
             'expiry': {'type': 'STRING', 'nullable': true},
             'category': {'type': 'STRING', 'nullable': true},
+            'company': {'type': 'STRING', 'nullable': true},
             'bonus': {'type': 'INTEGER', 'nullable': true},
             'line_total': {'type': 'NUMBER', 'nullable': true},
             'uncertain': {'type': 'BOOLEAN'},
@@ -509,6 +517,7 @@ class GeminiVision {
             barcode: _clean(item['barcode']),
             expiry: _clean(item['expiry']),
             category: _clean(item['category']),
+            company: _clean(item['company']),
             bonus: _num(item['bonus'])?.toInt(),
             lineTotal: _num(item['line_total'])?.toDouble(),
             uncertain: item['uncertain'] == true,
@@ -619,7 +628,7 @@ class GeminiVision {
 /// امتداد بسيط لتحويل `InvoiceLine` إلى `Medicine` جاهز للحفظ.
 ///
 /// المنطق الوحيد هنا: توليد `id` جديد بالوقت، تحويل `expiry` النصي إلى
-/// millis إن نجح، وتحديد `category` للمستلزمات فقط. بقيّة القرارات (النوع،
+/// millis إن نجح، وتحديد `category` للأدوية فقط. بقيّة القرارات (النوع،
 /// الدمج بالاسم) في شاشة المراجعة.
 extension InvoiceLineToMedicine on InvoiceLine {
   Medicine toMedicine({required ItemType type, DateTime? now}) {
@@ -633,7 +642,8 @@ extension InvoiceLineToMedicine on InvoiceLine {
       quantity: quantity ?? 0,
       expiryDate: expiryMs,
       type: type,
-      category: type == ItemType.supply ? category : null,
+      category: type == ItemType.medicine ? category : null,
+      company: company,
       createdAt: ts,
       updatedAt: ts,
     );

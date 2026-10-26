@@ -189,6 +189,17 @@ void main() {
       expect(store.visible.first.id, 's1');
     });
 
+    test('البحث باسم الشركة', () {
+      store.seed([
+        _item(id: 'd1', name: 'جل تسنين').copyWith(company: 'Juman'),
+        _item(id: 'd2', name: 'شراب'),
+      ]);
+      store.setActiveType(ItemType.medicine);
+      store.setKeyword('juman');
+
+      expect(store.visible.map((m) => m.id), ['d1']);
+    });
+
     test('لا حساسية لحالة الأحرف في مطابقة النوع', () {
       store.seed([
         _item(

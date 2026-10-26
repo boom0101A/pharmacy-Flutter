@@ -647,7 +647,8 @@ class MedicineStore extends ChangeNotifier {
       final categoryMatch = (m.category ?? '').toLowerCase().contains(k);
       if (!m.name.toLowerCase().contains(k) &&
           !m.barcode.toLowerCase().contains(k) &&
-          !categoryMatch) {
+          !categoryMatch &&
+          !(m.company ?? '').toLowerCase().contains(k)) {
         return false;
       }
     }

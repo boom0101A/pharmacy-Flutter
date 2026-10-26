@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/services/gemini_vision.dart';
 
 void main() {
@@ -14,6 +15,20 @@ void main() {
       expect(l.bonus, 1);
       expect(l.lineTotal, 3000);
       expect(l.uncertain, isTrue);
+    });
+
+    test('يقرأ company، ونوع المادة يُحفظ للدواء وحده', () {
+      final l = GeminiVision.parseInvoiceJson(
+        '{"lines":[{"name":"Baby teething Gel","company":" Juman ",'
+        '"category":"Gel"}]}',
+      ).lines.single;
+      expect(l.company, 'Juman');
+      final med = l.toMedicine(type: ItemType.medicine);
+      expect(med.category, 'Gel');
+      expect(med.company, 'Juman');
+      final sup = l.toMedicine(type: ItemType.supply);
+      expect(sup.category, isNull);
+      expect(sup.company, 'Juman');
     });
   });
 
