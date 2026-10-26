@@ -7,8 +7,8 @@ import 'package:saydaliyati/services/notification_service.dart';
 /// الأولوية المتَّفَق عليها (متطلَّب المستخدم):
 ///   1. صلاحية دواء → قسم الأدوية بفلتر «قاربة الانتهاء»
 ///   2. صلاحية مستلزم → قسم المستلزمات بفلتر «قاربة الانتهاء»
-///   3. نافد أدوية → قسم الأدوية بفلتر «نفد»
-///   4. نافد مستلزمات → قسم المستلزمات بفلتر «نفد»
+///   3. نافد أدوية → قسم الأدوية بفلتر «منخفض أو نافد»
+///   4. نافد مستلزمات → قسم المستلزمات بفلتر «منخفض أو نافد»
 ///   5. منخفض أدوية → «منخفض»
 ///   6. منخفض مستلزمات → «منخفض»
 ///   7. لا شيء → null
@@ -16,12 +16,13 @@ Medicine make({
   required String id,
   ItemType type = ItemType.medicine,
   int quantity = 50,
+  double price = 1000,
   DateTime? expiry,
 }) => Medicine(
   id: id,
   barcode: '',
   name: id,
-  price: 1000,
+  price: price,
   quantity: quantity,
   type: type,
   expiryDate: expiry?.millisecondsSinceEpoch,
@@ -77,25 +78,31 @@ void main() {
       );
     });
 
-    test('بلا صلاحية، دواء نافد → medicine|outOfStock', () {
+    test('بلا صلاحية، دواء نافد → medicine|lowStock (منخفض أو نافد)', () {
       final all = [
         make(id: 'm1', quantity: 0),
         make(id: 's1', type: ItemType.supply, quantity: 20),
       ];
       expect(
         NotificationService.computePayload(all),
-        'type:medicine|filter:outOfStock',
+        'type:medicine|filter:lowStock',
       );
     });
 
-    test('بلا صلاحية ولا أدوية نافدة، مستلزم نافد → supply|outOfStock', () {
+    test('دواء بكمية 0 بلا سعر (ناقص لا نافد) لا يُطلق إشعار نفاد', () {
+      final all = [make(id: 'm1', quantity: 0, price: 0, expiry: far)];
+      expect(NotificationService.computePayload(all), isNull);
+      expect(NotificationService.buildSummary(all), isNull);
+    });
+
+    test('بلا صلاحية ولا أدوية نافدة، مستلزم نافد → supply|lowStock', () {
       final all = [
         make(id: 'm1', quantity: 20),
         make(id: 's1', type: ItemType.supply, quantity: 0),
       ];
       expect(
         NotificationService.computePayload(all),
-        'type:supply|filter:outOfStock',
+        'type:supply|filter:lowStock',
       );
     });
 

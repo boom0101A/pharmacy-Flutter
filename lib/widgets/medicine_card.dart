@@ -75,7 +75,11 @@ class MedicineCard extends StatelessWidget {
 
   Widget _buildCard(BuildContext context) {
     final imagePath = ImageStore.fullPathSync(medicine.imagePath);
-    final qtyColor = medicine.isOutOfStock
+    // كمية صفر بلا سعر: تسجيل لم يكتمل، لا مادة نفدت
+    final unfinished = medicine.isOutOfStock && medicine.price <= 0;
+    final qtyColor = unfinished
+        ? AppColors.warning
+        : medicine.isOutOfStock
         ? AppColors.danger
         : medicine.isLowStock
         ? AppColors.warning
@@ -225,7 +229,9 @@ class MedicineCard extends StatelessWidget {
                         flex: 2,
                         child: _Stat(
                           label: 'الكمية',
-                          value: medicine.isOutOfStock
+                          value: unfinished
+                              ? '📝 ناقصة'
+                              : medicine.isOutOfStock
                               ? 'نفذ'
                               : medicine.quantity.toString(),
                           color: qtyColor,

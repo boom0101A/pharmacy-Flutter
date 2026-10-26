@@ -202,6 +202,23 @@ void main() {
     });
   });
 
+  group('خانة الكمية: «نفذ» مقابل «ناقصة»', () {
+    testWidgets('صفر بسعر ← نفذ', (tester) async {
+      await tester.pumpWidget(_host(_card(_item(quantity: 0), animate: false)));
+      await tester.pumpAndSettle();
+      expect(find.text('نفذ'), findsOneWidget);
+    });
+
+    testWidgets('صفر بلا سعر ← 📝 ناقصة', (tester) async {
+      await tester.pumpWidget(
+        _host(_card(_item(quantity: 0, price: 0), animate: false)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('📝 ناقصة'), findsOneWidget);
+      expect(find.text('نفذ'), findsNothing);
+    });
+  });
+
   group('شارة نوع المادة على البطاقة', () {
     testWidgets('تظهر للدواء الذي له نوع', (tester) async {
       await tester.pumpWidget(

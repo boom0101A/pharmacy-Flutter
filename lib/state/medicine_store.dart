@@ -18,7 +18,7 @@ import '../util/number_parse.dart';
 
 enum QuickFilter {
   lowStock,
-  outOfStock,
+  incomplete,
   noBarcode,
   hasImage,
   noImage,
@@ -189,6 +189,17 @@ class MedicineStore extends ChangeNotifier {
 
   int missingPriceCountOf(ItemType type) =>
       _sectionItems(type).where((m) => m.price <= 0).length;
+
+  int incompleteCountOf(ItemType type) =>
+      _sectionItems(type).where((m) => m.isIncomplete).length;
+
+  /// قائمة «إكمال البيانات»: بلا سعر أولاً (يُفسد القيمة الإجمالية)، ثم بلا
+  /// باركود، والأحدث تعديلاً أولاً داخل كل منهما.
+  List<Medicine> incompleteItems(ItemType type) =>
+      _sectionItems(type).where((m) => m.isIncomplete).toList()..sort((a, b) {
+        final byPrice = (a.price <= 0 ? 0 : 1).compareTo(b.price <= 0 ? 0 : 1);
+        return byPrice != 0 ? byPrice : b.updatedAt.compareTo(a.updatedAt);
+      });
 
   String get keyword => _f.keyword;
   Set<QuickFilter> get quickFilters => _f.quickFilters;
@@ -670,8 +681,9 @@ class MedicineStore extends ChangeNotifier {
 
     for (final quick in f.quickFilters) {
       final ok = switch (quick) {
-        QuickFilter.lowStock => m.quantity > 0 && m.quantity <= 5,
-        QuickFilter.outOfStock => m.quantity == 0,
+        // منخفض أو نافد: الصفر المسعّر يُطلب، والصفر بلا سعر تسجيل ناقص
+        QuickFilter.lowStock => m.isLowStock || m.isSoldOut,
+        QuickFilter.incomplete => m.isIncomplete,
         QuickFilter.noBarcode => m.barcode.isEmpty,
         QuickFilter.hasImage => m.hasImage,
         QuickFilter.noImage => !m.hasImage,

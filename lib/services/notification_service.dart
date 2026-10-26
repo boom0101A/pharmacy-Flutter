@@ -169,7 +169,8 @@ class NotificationService extends ChangeNotifier {
     final expiringSoon = all
         .where((m) => !m.isExpired && m.isExpiringSoon)
         .length;
-    final outOfStock = all.where((m) => m.isOutOfStock).length;
+    // النافد الحقيقي فقط — الصفر بلا سعر تسجيل ناقص لا مادة يجب طلبها
+    final outOfStock = all.where((m) => m.isSoldOut).length;
     final lowStock = all.where((m) => m.isLowStock).length;
 
     final parts = <String>[
@@ -185,8 +186,8 @@ class NotificationService extends ChangeNotifier {
   /// يحدّد الحمولة (payload) التي تُنقل عند نقر الإشعار — بأولوية:
   ///   1. صلاحية دواء (منتهي/قارب) → قسم الأدوية بفلتر «قاربة الانتهاء»
   ///   2. صلاحية مستلزم → قسم المستلزمات بفلتر «قاربة الانتهاء»
-  ///   3. نافد من الأدوية → قسم الأدوية بفلتر «نفد»
-  ///   4. نافد من المستلزمات → قسم المستلزمات بفلتر «نفد»
+  ///   3. نافد من الأدوية → قسم الأدوية بفلتر «منخفض أو نافد»
+  ///   4. نافد من المستلزمات → قسم المستلزمات بفلتر «منخفض أو نافد»
   ///   5. منخفض أدوية/مستلزمات → فلتر «منخفض»
   ///   6. بلا مشاكل → null (لا حمولة، الإشعار لن يُجدول أصلاً)
   ///
@@ -205,11 +206,12 @@ class NotificationService extends ChangeNotifier {
     if (supplies.any(hasExpiryIssue)) {
       return 'type:supply|filter:expiringSoon';
     }
-    if (medicines.any((m) => m.isOutOfStock)) {
-      return 'type:medicine|filter:outOfStock';
+    // النافد يُعرض ضمن «منخفض أو نافد»
+    if (medicines.any((m) => m.isSoldOut)) {
+      return 'type:medicine|filter:lowStock';
     }
-    if (supplies.any((m) => m.isOutOfStock)) {
-      return 'type:supply|filter:outOfStock';
+    if (supplies.any((m) => m.isSoldOut)) {
+      return 'type:supply|filter:lowStock';
     }
     if (medicines.any((m) => m.isLowStock)) {
       return 'type:medicine|filter:lowStock';

@@ -49,6 +49,7 @@ void main() {
         ${version >= 3 ? 'expiryDate INTEGER,' : ''}
         ${version >= 4 ? "itemType TEXT NOT NULL DEFAULT 'medicine'," : ''}
         ${version >= 6 ? 'category TEXT,' : ''}
+        ${version >= 7 ? 'company TEXT,' : ''}
         createdAt INTEGER NOT NULL,
         updatedAt INTEGER NOT NULL
       )
@@ -798,6 +799,34 @@ void main() {
       expect(row['company'], isNull);
       await db.update(table, {'company': 'Juman'});
       expect((await db.query(table)).single['company'], 'Juman');
+      await db.close();
+    });
+  });
+
+  group('ترقية 7 ← 8 — «ليس لها باركود»', () {
+    test('تضيف عمود noBarcode بقيمة 0 بلا فقدان بيانات', () async {
+      final path = nextPath();
+      var db = await buildLegacy(path, 7);
+      await db.insert(table, {
+        'id': 'm1',
+        'barcode': '',
+        'name': 'تحضير',
+        'price': 100,
+        'quantity': 2,
+        'itemType': 'medicine',
+        'company': 'Juman',
+        'createdAt': 0,
+        'updatedAt': 0,
+      });
+      await db.close();
+
+      db = await MedicineDb.openAt(path);
+      expect(await db.getVersion(), MedicineDb.schemaVersion);
+      final row = (await db.query(table)).single;
+      expect(row['noBarcode'], 0);
+      expect(row['company'], 'Juman');
+      await db.update(table, {'noBarcode': 1});
+      expect((await db.query(table)).single['noBarcode'], 1);
       await db.close();
     });
   });

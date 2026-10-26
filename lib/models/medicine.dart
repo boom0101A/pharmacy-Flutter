@@ -42,6 +42,10 @@ class Medicine {
   /// الشركة المصنّعة أو الوكيل — للأدوية والمستلزمات.
   final String? company;
 
+  /// أكّد المستخدم أن المادة بلا باركود فعلاً (تحضير، علبة بلا رمز) — فلا
+  /// تُعدّ «ناقصة» بسبب الباركود.
+  final bool noBarcode;
+
   final int createdAt;
   final int updatedAt;
 
@@ -56,6 +60,7 @@ class Medicine {
     this.type = ItemType.medicine,
     this.category,
     this.company,
+    this.noBarcode = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -63,6 +68,13 @@ class Medicine {
   bool get hasImage => imagePath != null && imagePath!.isNotEmpty;
   bool get isOutOfStock => quantity == 0;
   bool get isLowStock => quantity > 0 && quantity <= 5;
+
+  /// نفدت فعلاً: كميتها صفر ولها سعر. المادة بلا سعر وبلا كمية ليست «نافدة»
+  /// بل تسجيل لم يكتمل (مُسحت ولم تُسعَّر).
+  bool get isSoldOut => quantity == 0 && price > 0;
+
+  /// بيانات ناقصة: بلا سعر، أو بلا باركود ما لم يُؤكَّد أنها بلا باركود.
+  bool get isIncomplete => price <= 0 || (barcode.trim().isEmpty && !noBarcode);
   double get totalValue => price * quantity;
 
   DateTime? get expiry => expiryDate == null
@@ -96,6 +108,7 @@ class Medicine {
     bool clearCategory = false,
     String? company,
     bool clearCompany = false,
+    bool? noBarcode,
     int? updatedAt,
   }) {
     return Medicine(
@@ -109,6 +122,7 @@ class Medicine {
       type: type ?? this.type,
       category: clearCategory ? null : (category ?? this.category),
       company: clearCompany ? null : (company ?? this.company),
+      noBarcode: noBarcode ?? this.noBarcode,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
     );
@@ -125,6 +139,7 @@ class Medicine {
     'itemType': type.code,
     'category': category,
     'company': company,
+    'noBarcode': noBarcode ? 1 : 0,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -145,9 +160,18 @@ class Medicine {
     type: ItemType.fromCode(map['itemType']),
     category: map['category'] as String?,
     company: map['company'] as String?,
+    noBarcode: _asBool(map['noBarcode']),
     createdAt: _asMillis(map['createdAt']),
     updatedAt: _asMillis(map['updatedAt']),
   );
+
+  /// 1/0 من sqflite، وقيم السحابة أياً كانت (null للسجلات الأقدم).
+  static bool _asBool(Object? v) => switch (v) {
+    bool b => b,
+    num n => n != 0,
+    String s => s == '1' || s.toLowerCase() == 'true',
+    _ => false,
+  };
 
   static String _asText(Object? v) => v == null ? '' : v.toString();
 

@@ -15,6 +15,7 @@ import '../util/number_parse.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
+import 'complete_data_screen.dart';
 import 'duplicates_screen.dart';
 import 'form_screen.dart';
 import 'invoice_scan_screen.dart';
@@ -132,8 +133,10 @@ class _HomeScreenState extends State<HomeScreen>
           if (t.name == value) targetType = t;
         }
       } else if (key == 'filter') {
+        // إشعار قديم مجدول قبل إزالة فلتر «نفذ» يحمل outOfStock
+        final name = value == 'outOfStock' ? QuickFilter.lowStock.name : value;
         for (final f in QuickFilter.values) {
-          if (f.name == value) targetFilter = f;
+          if (f.name == name) targetFilter = f;
         }
       }
     }
@@ -276,6 +279,24 @@ class _HomeScreenState extends State<HomeScreen>
               alignment: Alignment.topCenter,
               child: store.duplicateGroupCount > 0
                   ? _duplicatesBar(store.duplicateGroupCount)
+                  : const SizedBox(width: double.infinity),
+            ),
+            // فلتر «بيانات ناقصة» مفعّل: الطريق المختصر لإكمالها مادةً مادة
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: designEase,
+              alignment: Alignment.topCenter,
+              child:
+                  store.quickFilters.contains(QuickFilter.incomplete) &&
+                      store.incompleteCountOf(type) > 0
+                  ? _noticeBar(
+                      key: const Key('completeDataBar'),
+                      icon: '📝',
+                      text:
+                          '${store.incompleteCountOf(type)} مادة بياناتها ناقصة',
+                      action: 'إكمال البيانات',
+                      onTap: _openCompleteData,
+                    )
                   : const SizedBox(width: double.infinity),
             ),
             // فتح/طي لوحة الفلاتر بحركة انزلاق ناعمة
@@ -638,8 +659,11 @@ class _HomeScreenState extends State<HomeScreen>
                 runSpacing: 6,
                 children: [
                   _chip('⏳ قريبة الانتهاء', QuickFilter.expiringSoon),
-                  _chip('⚠️ مخزون منخفض (≤5)', QuickFilter.lowStock),
-                  _chip('🚫 نفذ من المخزن', QuickFilter.outOfStock),
+                  _chip('⚠️ منخفض أو نافد (≤5)', QuickFilter.lowStock),
+                  _chip(
+                    '📝 بيانات ناقصة (${store.incompleteCountOf(type)})',
+                    QuickFilter.incomplete,
+                  ),
                   _chip('📊 بدون باركود', QuickFilter.noBarcode),
                   _chip('📷 لديه صورة', QuickFilter.hasImage),
                   _chip('🖼️ بدون صورة', QuickFilter.noImage),
@@ -739,7 +763,23 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /// «🔍 N تكرارات تحتاج مراجعة» — يفتح المراجعة بضغطة.
-  Widget _duplicatesBar(int count) {
+  Widget _duplicatesBar(int count) => _noticeBar(
+    key: const Key('duplicatesBar'),
+    icon: '🔍',
+    text:
+        '$count ${count == 1 ? 'مجموعة تكرار تحتاج' : 'تكرارات تحتاج'} مراجعة',
+    action: 'مراجعة',
+    onTap: _openDuplicates,
+  );
+
+  /// شريط تنبيه هادئ بلون التحذير مع زر إجراء.
+  Widget _noticeBar({
+    required Key key,
+    required String icon,
+    required String text,
+    required String action,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: Material(
@@ -750,17 +790,17 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          key: const Key('duplicatesBar'),
-          onTap: _openDuplicates,
+          key: key,
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                const Text('🔍', style: TextStyle(fontSize: 16)),
+                Text(icon, style: const TextStyle(fontSize: 16)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '$count ${count == 1 ? 'مجموعة تكرار تحتاج' : 'تكرارات تحتاج'} مراجعة',
+                    text,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -770,9 +810,9 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                const Text(
-                  'مراجعة',
-                  style: TextStyle(
+                Text(
+                  action,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.warning,
@@ -789,6 +829,15 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _openCompleteData() async {
+    await Navigator.of(context).push(
+      SmoothPageRoute<void>(
+        builder: (_) => CompleteDataScreen(store: store, type: type),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Future<void> _openDuplicates() async {

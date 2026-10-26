@@ -9,13 +9,13 @@ import '../services/drug_lookup.dart';
 import '../services/gs1_parser.dart';
 import '../services/image_store.dart';
 import '../services/product_cropper.dart';
+import '../services/product_image_picker.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
-import 'crop_screen.dart';
 import 'scanner_screen.dart';
 
 /// شاشة إضافة/تعديل دواء.
@@ -66,6 +66,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   bool _looking = false;
   bool _saving = false;
 
+  /// «ليس لها باركود» — يُخرجها من «بيانات ناقصة».
+  bool _noBarcode = false;
+
   DateTime? _expiry;
 
   late ItemType _type;
@@ -93,6 +96,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _category = TextEditingController(text: m?.category ?? '');
     _company = TextEditingController(text: m?.company ?? '');
     _imageFileName = m?.imagePath;
+    _noBarcode = m?.noBarcode ?? false;
     _expiry = m?.expiry;
     _type = m?.type ?? widget.initialType;
 
@@ -210,33 +214,19 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _company.text = m.company ?? '';
     _expiry ??= m.expiry;
     _type = m.type;
+    _noBarcode = m.noBarcode;
   }
 
   // ---------- الصورة ----------
 
   Future<void> _pickImage(ImageSource source) async {
-    final path = widget.pickImagePath != null
-        ? await widget.pickImagePath!(source)
-        : (await ImagePicker().pickImage(
-            source: source,
-            // دقة أعلى للقص؛ الناتج يُصغَّر إلى 1200 بعده (ProductCropper)
-            maxWidth: 2400,
-            imageQuality: 85,
-          ))?.path;
-    if (path == null || !mounted) return;
-    // القص حول العلبة تلقائياً مع تأكيد المستخدم؛ الرجوع يُلغي التغيير
-    final chosen = await Navigator.of(context).push<File>(
-      SmoothPageRoute(
-        builder: (_) => CropScreen(file: File(path), cropper: widget.cropper),
-      ),
+    final saved = await pickProductImage(
+      context,
+      source,
+      cropper: widget.cropper,
+      pickImagePath: widget.pickImagePath,
     );
-    if (chosen == null) return;
-    final saved = await ImageStore.saveFile(chosen);
-    // نُسخت إلى مجلد الصور — المؤقتة (القص وملف المنتقي) لم تعد لازمة
-    for (final temp in {chosen.path, path}) {
-      unawaited(File(temp).delete().then((_) {}, onError: (_) {}));
-    }
-    if (!mounted) return;
+    if (saved == null || !mounted) return;
     final replaced = _imageFileName;
     setState(() => _imageFileName = saved);
     // الصورة المستبدَلة لم تعد مشار إليها من أي مكان
@@ -401,6 +391,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           clearCategory: !_isSupply && _categoryOrNull() == null,
           company: _orNull(_company),
           clearCompany: _orNull(_company) == null,
+          noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
           updatedAt: now,
         ) ??
         Medicine(
@@ -414,6 +405,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           type: _type,
           category: _isSupply ? null : _categoryOrNull(),
           company: _orNull(_company),
+          noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
           createdAt: now,
           updatedAt: now,
         );
@@ -577,6 +569,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                       decoration: const InputDecoration(
                         hintText: 'أدخل الباركود يدوياً أو امسحه',
                       ),
+                      onChanged: (_) => setState(() {}),
                       onFieldSubmitted: (v) {
                         if (v.trim().isNotEmpty) _autoFill(v.trim());
                       },
@@ -590,6 +583,16 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   ),
                 ],
               ),
+              if (_barcode.text.trim().isEmpty)
+                CheckboxListTile(
+                  key: const Key('noBarcodeCheck'),
+                  value: _noBarcode,
+                  onChanged: (v) => setState(() => _noBarcode = v ?? false),
+                  title: const Text('ليس لها باركود'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               // بيانات إضافية استُخرجت من رمز GS1 نفسه
               if (_lastScan?.isGs1 == true && _lastScan!.hasExtraData) ...[
                 const SizedBox(height: 10),

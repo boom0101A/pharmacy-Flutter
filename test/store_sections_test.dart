@@ -86,11 +86,39 @@ void main() {
       expect(store.visible.length, 1);
     });
 
+    test('«بيانات ناقصة»: بلا سعر أو بلا باركود، و«ليس له باركود» يُخرجها', () {
+      store.setActiveType(ItemType.medicine);
+      store.toggleQuickFilter(QuickFilter.incomplete);
+      expect(store.visible.map((m) => m.id), ['m3']); // بلا سعر
+
+      store.setActiveType(ItemType.supply);
+      store.toggleQuickFilter(QuickFilter.incomplete);
+      expect(store.incompleteCountOf(ItemType.supply), 2);
+      // بلا سعر أولاً
+      expect(store.incompleteItems(ItemType.supply).map((m) => m.id), [
+        's2',
+        's1',
+      ]);
+    });
+
+    test('«منخفض أو نافد» يشمل الصفر المسعّر ويستثني الناقص', () {
+      store.seed([
+        _item(id: 'sold', barcode: '1', quantity: 0, price: 100),
+        _item(id: 'blank', barcode: '2', quantity: 0, price: 0),
+        _item(id: 'low', barcode: '3', quantity: 3),
+        _item(id: 'ok', barcode: '4', quantity: 50),
+      ]);
+      store.setActiveType(ItemType.medicine);
+      store.toggleQuickFilter(QuickFilter.lowStock);
+      expect(store.visible.map((m) => m.id), unorderedEquals(['sold', 'low']));
+    });
+
     test('الفلاتر السريعة منفصلة لكل قسم', () {
       store.setActiveType(ItemType.supply);
-      store.toggleQuickFilter(QuickFilter.outOfStock);
+      store.toggleQuickFilter(QuickFilter.lowStock);
 
-      expect(store.visibleFor(ItemType.supply).length, 1); // قفازات فقط
+      // شاش (5) فقط — القفازات كميتها 0 بلا سعر: ناقصة لا نافدة
+      expect(store.visibleFor(ItemType.supply).length, 1);
       expect(store.visibleFor(ItemType.medicine).length, 3); // بلا تأثير
       expect(store.activeFilterCount, 1);
 

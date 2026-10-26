@@ -26,7 +26,7 @@ class MedicineDb {
   Database? _db;
 
   /// إصدار المخطط الحالي — يُصدَّر ليقارن به الاختبار.
-  static const schemaVersion = 7;
+  static const schemaVersion = 8;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -72,6 +72,12 @@ class MedicineDb {
         // الشركة المصنّعة — نصّي حر قابل للفراغ مثل category.
         await db.execute('ALTER TABLE $_table ADD COLUMN company TEXT');
       }
+      if (oldVersion < 8) {
+        // «ليس له باركود» — يُخرج المادة من «بيانات ناقصة»
+        await db.execute(
+          'ALTER TABLE $_table ADD COLUMN noBarcode INTEGER NOT NULL DEFAULT 0',
+        );
+      }
     },
     onCreate: (db, version) async {
       await db.execute('''
@@ -86,6 +92,7 @@ class MedicineDb {
             itemType TEXT NOT NULL DEFAULT 'medicine',
             category TEXT,
             company TEXT,
+            noBarcode INTEGER NOT NULL DEFAULT 0,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL
           )
