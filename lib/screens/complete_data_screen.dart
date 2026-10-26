@@ -106,8 +106,15 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
     });
   }
 
+  /// المقارنة تمر على كل مواد القسم — تُحسب مرة لكل مادة لا مع كل بناء
+  /// (كل حرف في حقل الباركود يعيد البناء).
+  final _similarCache = <String, DuplicateGroup?>{};
+
+  DuplicateGroup? _similarFor(Medicine m) =>
+      _similarCache.putIfAbsent(m.id, () => _computeSimilar(m));
+
   /// أقرب مادة **مسعّرة** في القسم نفسه — النسخة الحقيقية لهذه المادة غالباً.
-  DuplicateGroup? _similarFor(Medicine m) {
+  DuplicateGroup? _computeSimilar(Medicine m) {
     final candidates = [
       m,
       for (final o in widget.store.all)
@@ -192,6 +199,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       _toast('تعذّر الدمج — لم يتغيّر شيء: $e');
       return;
     }
+    _similarCache.clear(); // تغيّرت الكميات والمواد
     if (mounted) _next(completed: true);
   }
 
@@ -203,6 +211,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
     );
     if (ok != true) return;
     await widget.store.delete(m);
+    _similarCache.clear();
     if (mounted) _next(completed: true);
   }
 

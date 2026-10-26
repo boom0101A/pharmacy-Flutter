@@ -48,12 +48,28 @@ void main() {
     expect(cloud.calls, 1);
   });
 
-  test('كل المستندات مرفوضة ← رفض حقيقي (عضوية مثلاً) يُعاد رميه', () async {
+  test(
+    'مستند واحد مرفوض وحده (حالة هاتف الأخ: «نين» وحدها) ← denied بلا رمي',
+    () async {
+      final cloud = _FakeCloud({'nin'});
+      final r = await SyncService.commitIsolated(
+        ['nin'],
+        commit: cloud.commit,
+        timeout: t,
+      );
+      expect(r.acked, isTrue);
+      expect(r.denied, ['nin']);
+    },
+  );
+
+  test('كل الدفعة مرفوضة ← كلها في denied (القرار للمستدعي)', () async {
     final cloud = _FakeCloud({'a', 'b'});
-    expect(
-      SyncService.commitIsolated(['a', 'b'], commit: cloud.commit, timeout: t),
-      throwsA(isA<FirebaseException>()),
+    final r = await SyncService.commitIsolated(
+      ['a', 'b'],
+      commit: cloud.commit,
+      timeout: t,
     );
+    expect(r.denied, ['a', 'b']);
   });
 
   test('بلا إنترنت ← acked=false دون انتظار أبدي', () async {

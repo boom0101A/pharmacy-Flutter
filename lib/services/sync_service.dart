@@ -42,6 +42,9 @@ class SyncService extends ChangeNotifier {
   /// Firestore يرفض الدفعة فوق 500 عملية — نبقى دونها بهامش أمان.
   static const _batchLimit = 450;
 
+  /// أقصى عدد مواد مرفوضة يُعاد ربطها بمعرّف جديد في مزامنة واحدة.
+  static const _maxRelink = 20;
+
   FirebaseFirestore? _db;
   SyncStatus _status = SyncStatus.disabled;
   String? _lastError;
@@ -378,6 +381,17 @@ class SyncService extends ChangeNotifier {
       // استعلامنا فنرفعها، فترفضها القواعد — في كل مزامنة. المادة لنا محلياً،
       // والتعارض في المعرّف وحده: تُنقل لمعرّف جديد وتُرفع تحت صيدليتنا. مستند
       // الصيدلية الأخرى لا يُمسّ.
+      // سقف أمان: رفض جماعي يعني قواعد معطوبة لا تعارض معرّفات — نقل مئات
+      // المواد لمعرّفات جديدة كان سيضاعفها في السحابة حين تُصلَح القواعد
+      if (outcome.denied.length > _maxRelink) {
+        _setStatus(
+          SyncStatus.error,
+          error:
+              'السحابة ترفض رفع ${outcome.denied.length} مادة من هذا الهاتف — '
+              'بقية المزامنة تمّت. راجع قواعد Firestore.',
+        );
+        return localChanged;
+      }
       final relinked = <String>[];
       for (final id in outcome.denied) {
         final mine = localById[id];
@@ -521,7 +535,11 @@ class SyncService extends ChangeNotifier {
   /// أخرى مثلاً) كان يُفشلها كلها **في كل مزامنة** — فلا يُرفع أي تعديل من
   /// ذلك الجهاز، ويظهر «تعذّرت المزامنة» بلا سبب مفهوم. الآن: عند الرفض تُعاد
   /// مستندات الدفعة فرادى، ويُعاد المرفوض منها في [CommitOutcome.denied].
-  /// إن رُفضت كلها فهو رفض حقيقي (العضوية مثلاً) فيُعاد رميه كما هو.
+  ///
+  /// لا يرمي أبداً عند رفض الصلاحية — ولا حين يُرفض الكل: في المزامنة
+  /// المستقرة قد تكون المادة المرفوضة **وحدها** في الدفعة. التمييز بين
+  /// «مستند بعينه» و«فقدان العضوية» شأن المستدعي ([syncAll] قرأ استعلام
+  /// الصيدلية لتوّه، والقراءة نفسها تتطلب العضوية).
   @visibleForTesting
   static Future<CommitOutcome> commitIsolated(
     List<String> ids, {
@@ -538,21 +556,16 @@ class SyncService extends ChangeNotifier {
         }
       } on FirebaseException catch (e) {
         if (e.code != 'permission-denied') rethrow;
-        var accepted = 0;
-        FirebaseException? last;
         for (final id in chunk) {
           try {
             if (!await awaitServerAck(commit([id]), timeout)) {
               return CommitOutcome(acked: false, denied: denied);
             }
-            accepted++;
           } on FirebaseException catch (one) {
             if (one.code != 'permission-denied') rethrow;
-            last = one;
             denied.add(id);
           }
         }
-        if (accepted == 0 && last != null) throw last;
       }
     }
     return CommitOutcome(acked: true, denied: denied);

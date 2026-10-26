@@ -139,6 +139,17 @@ void main() {
     expect(store.mergedLosers!.single.id, 'blank');
   });
 
+  testWidgets('الكتابة في الباركود لا تُسقط الاقتراح (محسوب مرة لكل مادة)', (
+    tester,
+  ) async {
+    await open(tester);
+    for (final text in ['0', '04', '040', '0400', '04009']) {
+      await tester.enterText(find.byKey(const Key('completeBarcode')), text);
+      await tester.pump();
+      expect(find.byKey(const Key('similarSuggestion')), findsOneWidget);
+    }
+  });
+
   testWidgets('مسح الباركود يملأ الحقل (ويفكّ GS1)', (tester) async {
     await open(tester, scan: () async => '0106285128013338172711301099');
     await tester.tap(find.byKey(const Key('completeSkip')));
