@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/medicine.dart';
@@ -35,6 +36,10 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   int _pending = 0;
   final Map<String, String> _keeperByGroup = {};
 
+  /// «أسماء متشابهة» — مقارنة أزواج مكلفة نسبياً، فتُحسب خارج واجهة المستخدم
+  /// عند التحميل وبعد كل دمج، لا في كل بناء.
+  List<DuplicateGroup> _similarAll = const [];
+
   @override
   void initState() {
     super.initState();
@@ -56,8 +61,11 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       final items = await load();
       final pending = await pendingFn();
       if (!mounted) return;
+      final similar = await _findSimilar(items);
+      if (!mounted) return;
       setState(() {
         _items = items;
+        _similarAll = similar;
         _pending = pending;
         _loading = false;
       });
@@ -72,6 +80,27 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
 
   List<DuplicateGroup> get _groups =>
       findDuplicateGroups(_items, dismissed: DuplicateDismissals.instance.keys);
+
+  List<DuplicateGroup> get _similar {
+    final dismissed = DuplicateDismissals.instance.keys;
+    return [
+      for (final g in _similarAll)
+        if (!dismissed.contains(g.key)) g,
+    ];
+  }
+
+  /// المواد الداخلة في مجموعة مؤكّدة تُستبعد — لا تُعرض مرتين.
+  static Future<List<DuplicateGroup>> _findSimilar(List<Medicine> items) {
+    final exact = {
+      for (final g in findDuplicateGroups(items))
+        for (final m in g.items) m.id,
+    };
+    // قائمة صغيرة: كلفة إنشاء عزلة أكبر من المقارنة نفسها
+    if (items.length < 300) {
+      return Future.value(_similarInIsolate((items, exact)));
+    }
+    return compute(_similarInIsolate, (items, exact));
+  }
 
   String _keeperOf(DuplicateGroup g) =>
       _keeperByGroup[g.key] ??
@@ -121,12 +150,16 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       return;
     }
     if (!mounted) return;
+    final loserIds = losers.map((m) => m.id).toSet();
+    final items = [
+      for (final m in _items)
+        if (m.id == merged.id) merged else if (!loserIds.contains(m.id)) m,
+    ];
+    final similar = await _findSimilar(items);
+    if (!mounted) return;
     setState(() {
-      final loserIds = losers.map((m) => m.id).toSet();
-      _items = [
-        for (final m in _items)
-          if (m.id == merged.id) merged else if (!loserIds.contains(m.id)) m,
-      ];
+      _items = items;
+      _similarAll = similar;
     });
   }
 
@@ -193,7 +226,8 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       );
     }
     final groups = _groups;
-    if (groups.isEmpty) {
+    final similar = _similar;
+    if (groups.isEmpty && similar.isEmpty) {
       return const Center(
         child: Text('لا توجد تكرارات ✅', style: TextStyle(fontSize: 16)),
       );
@@ -202,19 +236,39 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       padding: const EdgeInsets.all(12),
       children: [
         if (_pending > 0) _lockBanner(),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            '${groups.length} مجموعة — اختر المادة التي تبقى ثم «دمج»، أو '
-            '«ليست مكرّرة» إن كانت منتجات مختلفة.',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.5,
+        if (groups.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '${groups.length} مجموعة — اختر المادة التي تبقى ثم «دمج»، أو '
+              '«ليست مكرّرة» إن كانت منتجات مختلفة.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
           ),
-        ),
-        for (final g in groups) _groupCard(g),
+          for (final g in groups) _groupCard(g),
+        ],
+        if (similar.isNotEmpty) ...[
+          Padding(
+            key: const Key('similarSection'),
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Text(
+              '🔍 أسماء متشابهة — تحقّق قبل الدمج (${similar.length})\n'
+              'أسماء متقاربة لا متطابقة: خطأ إملائي، أو كلمة زائدة، أو حجم '
+              'وتركيز آخر. كثير منها منتجات مختلفة فعلاً — «ليست مكرّرة» '
+              'يخفيها من كل الأجهزة.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+          for (final g in similar) _groupCard(g),
+        ],
       ],
     );
   }
@@ -248,13 +302,17 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              g.byBarcode
+              g.isSimilar
+                  ? '🔍 أسماء متشابهة بنسبة ${(g.similarity! * 100).round()}%'
+                  : g.byBarcode
                   ? '🏷️ نفس الباركود — قد تكون منتجات مختلفة'
                   : '📝 نفس الاسم في نفس القسم',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: g.byBarcode ? AppColors.warning : AppColors.primary,
+                color: g.byBarcode || g.isSimilar
+                    ? AppColors.warning
+                    : AppColors.primary,
               ),
             ),
             RadioGroup<String>(
@@ -348,3 +406,6 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         '${d.day.toString().padLeft(2, '0')}';
   }
 }
+
+List<DuplicateGroup> _similarInIsolate((List<Medicine>, Set<String>) a) =>
+    findSimilarGroups(a.$1, exclude: a.$2);

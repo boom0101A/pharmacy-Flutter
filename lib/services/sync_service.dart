@@ -24,6 +24,14 @@ enum SyncStatus { disabled, offline, syncing, synced, error }
 /// بالأحدث (`updatedAt` الأكبر يفوز).
 ///
 /// ملاحظة: الصور تبقى محلية على الجهاز ولا تُرفع (يحتاج Firebase Storage).
+/// نتيجة رفع دفعي: [acked] = أكّد الخادم (لا انقطاع)، و[denied] = معرّفات
+/// رفضتها القواعد فرادى بينما قُبل غيرها.
+class CommitOutcome {
+  const CommitOutcome({required this.acked, required this.denied});
+  final bool acked;
+  final List<String> denied;
+}
+
 class SyncService extends ChangeNotifier {
   SyncService._();
   static final SyncService instance = SyncService._();
@@ -174,6 +182,25 @@ class SyncService extends ChangeNotifier {
       _setStatus(SyncStatus.synced);
       return true;
     } on FirebaseException catch (e) {
+      // مستند السحابة لصيدلية أخرى (لا نملك حذفه): شاهد الحذف وحده مسموح
+      // ويكفي لأجهزتنا. بدونه يبقى المعرّف في طابور الحذف ويفشل للأبد.
+      if (e.code == 'permission-denied') {
+        try {
+          final tomb = db.collection(_tombstones).doc(id).set({
+            'ownerUid': _uid,
+            'pharmacyId': pharmacyId,
+            'deletedAt': DateTime.now().millisecondsSinceEpoch,
+          });
+          if (await awaitServerAck(tomb, ackTimeout)) {
+            _setStatus(SyncStatus.synced);
+            return true;
+          }
+          _setStatus(SyncStatus.offline);
+          return false;
+        } on FirebaseException {
+          // يسقط إلى رسالة الرفض الأصلية أدناه
+        }
+      }
       _setStatus(
         e.code == 'unavailable' ? SyncStatus.offline : SyncStatus.error,
         error: _explain(e),
@@ -340,17 +367,37 @@ class SyncService extends ChangeNotifier {
         pending,
         await MedicineDb.instance.peekPendingDeletes(),
       );
-      if (!await _commitInChunks(db, pending)) {
+      final outcome = await _commitInChunks(db, pending);
+      if (!outcome.acked) {
         // ما نزل محفوظ ومعروض؛ الرفع في الطابور الدائم حتى يعود الاتصال
         _setStatus(SyncStatus.offline);
         return localChanged;
       }
 
+      // مادة محلية معرّفها مستعمل في السحابة لمستند صيدلية أخرى: لا نراه في
+      // استعلامنا فنرفعها، فترفضها القواعد — في كل مزامنة. المادة لنا محلياً،
+      // والتعارض في المعرّف وحده: تُنقل لمعرّف جديد وتُرفع تحت صيدليتنا. مستند
+      // الصيدلية الأخرى لا يُمسّ.
+      final relinked = <String>[];
+      for (final id in outcome.denied) {
+        final mine = localById[id];
+        if (mine == null) continue;
+        final fresh = rekeyed(mine, DateTime.now());
+        await MedicineDb.instance.rekey(id, fresh);
+        final retry = await _commitInChunks(db, {fresh.id: _payload(fresh)});
+        if (retry.denied.isEmpty) relinked.add(mine.name);
+        localChanged = true;
+      }
+
+      final notes = [
+        if (skipped > 0) 'تم تخطّي $skipped سجل غير صالح في السحابة.',
+        if (relinked.isNotEmpty)
+          'أُعيد ربط ${relinked.length} مادة كانت مسجّلة باسم صيدلية أخرى: '
+              '${relinked.take(3).join('، ')}.',
+      ];
       _setStatus(
         SyncStatus.synced,
-        error: skipped > 0
-            ? 'تمت المزامنة، لكن تم تخطّي $skipped سجل غير صالح في السحابة.'
-            : null,
+        error: notes.isEmpty ? null : 'تمت المزامنة. ${notes.join(' ')}',
       );
       return localChanged;
     } on FirebaseException catch (e) {
@@ -367,6 +414,12 @@ class SyncService extends ChangeNotifier {
       return false;
     }
   }
+
+  /// نسخة من [m] بمعرّف جديد — كل ما عدا المعرّف كما هو (الختم أيضاً).
+  @visibleForTesting
+  static Medicine rekeyed(Medicine m, DateTime now) => Medicine.fromMap(
+    m.toMap()..['id'] = 'med_${now.millisecondsSinceEpoch}_r${now.microsecond}',
+  );
 
   /// يُسقط من دفعة الرفع كل معرّف دخل طابور الحذف.
   @visibleForTesting
@@ -441,8 +494,10 @@ class SyncService extends ChangeNotifier {
     if (local.isEmpty) return 0;
 
     final pending = {for (final m in local) m.id: _payload(m)};
-    // بلا تأكيد لا تُعلَّم العملية «تمّت» — يلتقطه المستدعي ويُعيدها لاحقاً
-    if (!await _commitInChunks(db, pending)) {
+    // بلا تأكيد لا تُعلَّم العملية «تمّت». المرفوض فرادى يعالجه syncAll
+    // بإعادة ربطه بمعرّف جديد، فلا يمنع إتمام هذه العملية.
+    final outcome = await _commitInChunks(db, pending);
+    if (!outcome.acked) {
       throw TimeoutException('لم يؤكّد الخادم رفع السجلات');
     }
     return pending.length;
@@ -460,24 +515,69 @@ class SyncService extends ChangeNotifier {
   static Future<bool> awaitServerAck(Future<void> write, Duration timeout) =>
       write.then((_) => true).timeout(timeout, onTimeout: () => false);
 
-  /// كتابة دفعية مقسّمة — دفعة Firestore الواحدة تفشل كاملة فوق 500 عملية،
-  /// وأول مزامنة لجهاز جديد بعد بضع فواتير تتجاوز ذلك بسهولة.
+  /// كتابة دفعية مقسّمة مع عزل المرفوض.
+  ///
+  /// الدفعة ذرّية: مستند واحد ترفضه القواعد (معرّف مستعمل لمستند صيدلية
+  /// أخرى مثلاً) كان يُفشلها كلها **في كل مزامنة** — فلا يُرفع أي تعديل من
+  /// ذلك الجهاز، ويظهر «تعذّرت المزامنة» بلا سبب مفهوم. الآن: عند الرفض تُعاد
+  /// مستندات الدفعة فرادى، ويُعاد المرفوض منها في [CommitOutcome.denied].
+  /// إن رُفضت كلها فهو رفض حقيقي (العضوية مثلاً) فيُعاد رميه كما هو.
+  @visibleForTesting
+  static Future<CommitOutcome> commitIsolated(
+    List<String> ids, {
+    required Future<void> Function(List<String> ids) commit,
+    required Duration timeout,
+    int limit = _batchLimit,
+  }) async {
+    final denied = <String>[];
+    for (var i = 0; i < ids.length; i += limit) {
+      final chunk = ids.sublist(i, (i + limit).clamp(0, ids.length));
+      try {
+        if (!await awaitServerAck(commit(chunk), timeout)) {
+          return CommitOutcome(acked: false, denied: denied);
+        }
+      } on FirebaseException catch (e) {
+        if (e.code != 'permission-denied') rethrow;
+        var accepted = 0;
+        FirebaseException? last;
+        for (final id in chunk) {
+          try {
+            if (!await awaitServerAck(commit([id]), timeout)) {
+              return CommitOutcome(acked: false, denied: denied);
+            }
+            accepted++;
+          } on FirebaseException catch (one) {
+            if (one.code != 'permission-denied') rethrow;
+            last = one;
+            denied.add(id);
+          }
+        }
+        if (accepted == 0 && last != null) throw last;
+      }
+    }
+    return CommitOutcome(acked: true, denied: denied);
+  }
+
   /// يُرجع false إن لم يؤكّد الخادم دفعةً خلال [ackTimeout] (بلا إنترنت).
-  Future<bool> _commitInChunks(
+  /// المرفوضة تُعاد في [CommitOutcome.denied].
+  Future<CommitOutcome> _commitInChunks(
     FirebaseFirestore db,
     Map<String, Map<String, Object?>> items,
-  ) async {
-    if (items.isEmpty) return true;
-    final entries = items.entries.toList();
-    for (var i = 0; i < entries.length; i += _batchLimit) {
-      final end = (i + _batchLimit).clamp(0, entries.length);
-      final batch = db.batch();
-      for (final e in entries.sublist(i, end)) {
-        batch.set(db.collection(_collection).doc(e.key), e.value);
-      }
-      if (!await awaitServerAck(batch.commit(), ackTimeout)) return false;
+  ) {
+    if (items.isEmpty) {
+      return Future.value(const CommitOutcome(acked: true, denied: []));
     }
-    return true;
+    return commitIsolated(
+      items.keys.toList(),
+      timeout: ackTimeout,
+      commit: (ids) {
+        final batch = db.batch();
+        for (final id in ids) {
+          batch.set(db.collection(_collection).doc(id), items[id]!);
+        }
+        return batch.commit();
+      },
+    );
   }
 
   /// تحويل صورة base64 (data URL) من نسخة الويب إلى ملف محلي.

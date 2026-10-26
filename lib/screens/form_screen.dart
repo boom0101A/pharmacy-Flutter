@@ -219,7 +219,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         ? await widget.pickImagePath!(source)
         : (await ImagePicker().pickImage(
             source: source,
-            maxWidth: 1200,
+            // دقة أعلى للقص؛ الناتج يُصغَّر إلى 1200 بعده (ProductCropper)
+            maxWidth: 2400,
             imageQuality: 85,
           ))?.path;
     if (path == null || !mounted) return;

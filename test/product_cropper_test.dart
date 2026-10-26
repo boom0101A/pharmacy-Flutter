@@ -36,12 +36,13 @@ void main() {
   const image = Size(1000, 800);
 
   group('suggestCrop', () {
-    test('يضيف هامشاً حول العلبة', () {
+    test('يضيف هامش 20% من كل جهة حول العلبة', () {
       final r = ProductCropper.suggestCrop(
-        const Rect.fromLTWH(400, 300, 200, 200),
+        const Rect.fromLTWH(350, 250, 300, 300),
         image,
       );
-      expect(r.width, closeTo(224, .01));
+      expect(r.width, closeTo(420, .01));
+      expect(r.height, closeTo(420, .01));
       expect(r.center, const Offset(500, 400));
     });
 
@@ -67,13 +68,22 @@ void main() {
       expect(r.width, closeTo(850, .01));
     });
 
-    test('صندوق صغير جداً يُوسَّع لحد أدنى', () {
+    test('صندوق ضئيل (ضجيج، أقل من 8%) ← إطار وسطي 85%', () {
       final r = ProductCropper.suggestCrop(
         const Rect.fromLTWH(500, 400, 10, 10),
         image,
       );
-      expect(r.width, closeTo(200, .01));
-      expect(r.height, closeTo(200, .01));
+      expect(r.width, closeTo(850, .01));
+    });
+
+    test('الإطار لا يقل عن نصف أصغر بُعد', () {
+      // 300×240 = 9% من الصورة: ليس ضجيجاً؛ الارتفاع ×1.4 = 336 أقل من 400
+      final r = ProductCropper.suggestCrop(
+        const Rect.fromLTWH(350, 280, 300, 240),
+        image,
+      );
+      expect(r.width, closeTo(420, .01));
+      expect(r.height, closeTo(400, .01));
     });
   });
 
@@ -84,6 +94,15 @@ void main() {
     )!;
     expect(out.width, 50);
     expect(out.height, 30);
+  });
+
+  test('cropBytes يصغّر الناتج الكبير إلى 1200 لأطول بُعد', () {
+    final src = img.encodeJpg(img.Image(width: 2400, height: 1800));
+    final out = img.decodeImage(
+      ProductCropper.cropBytes((src, 0, 0, 2400, 1800)),
+    )!;
+    expect(out.width, 1200);
+    expect(out.height, 900);
   });
 
   Future<Object?> openCrop(WidgetTester tester, _FakeCropper cropper) async {
@@ -156,12 +175,12 @@ void main() {
     expect(result, isA<File>());
   });
 
-  testWidgets('بلا قص يعيد الأصلية دون قص', (tester) async {
+  testWidgets('بلا قص يحفظ الصورة كاملة (مصغّرة) بلا قطع', (tester) async {
     final cropper = _FakeCropper(null);
     await openCrop(tester, cropper);
     await tester.tap(find.byKey(const Key('cropSkip')));
     await tester.pumpAndSettle();
-    expect(cropper.croppedTo, isNull);
+    expect(cropper.croppedTo, Offset.zero & const Size(1000, 800));
     expect(find.text('open'), findsOneWidget);
   });
 }

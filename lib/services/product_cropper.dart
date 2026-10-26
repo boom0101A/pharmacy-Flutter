@@ -62,10 +62,11 @@ class ProductCropper {
 
   /// إطار القص المقترح من صندوق الاكتشاف — دالة صِرفة.
   ///
-  /// - هامش ~6% حول العلبة حتى لا تُقصّ حوافها، محصور داخل الصورة.
-  /// - لا اكتشاف، أو صندوق يغطي ≥92% من الصورة (فشل فعلي في التمييز) ←
-  ///   إطار وسطي بنسبة 85%.
-  /// - صندوق صغير جداً (ضجيج) يُوسَّع إلى ربع أصغر بُعد على الأقل.
+  /// - هامش 20% من كل جهة: صندوق ML Kit كثيراً ما يحيط بجزء من العلبة فقط
+  ///   (الملصق، الوجه الأمامي) — هامش 6% كان يقصّ العلبة نفسها فتظهر مكبّرة.
+  /// - لا اكتشاف، أو صندوق يغطي ≥92% من الصورة (فشل في التمييز)، أو أقل
+  ///   من 8% منها (ضجيج: حرف أو ظل) ← إطار وسطي بنسبة 85%.
+  /// - الإطار لا يقل عن نصف أصغر بُعد في الصورة.
   static ui.Rect suggestCrop(ui.Rect? box, ui.Size image) {
     final full = ui.Offset.zero & image;
     ui.Rect fallback() => ui.Rect.fromCenter(
@@ -75,11 +76,11 @@ class ProductCropper {
     );
     if (box == null || box.isEmpty) return fallback();
     final covered = (box.width * box.height) / (image.width * image.height);
-    if (covered >= .92) return fallback();
+    if (covered >= .92 || covered < .08) return fallback();
 
-    final minSide = math.min(image.width, image.height) / 4;
-    final w = math.max(box.width * 1.12, minSide);
-    final h = math.max(box.height * 1.12, minSide);
+    final minSide = math.min(image.width, image.height) / 2;
+    final w = math.max(box.width * 1.4, minSide);
+    final h = math.max(box.height * 1.4, minSide);
     final grown = ui.Rect.fromCenter(center: box.center, width: w, height: h);
     return grown.intersect(full);
   }
@@ -103,10 +104,14 @@ class ProductCropper {
   }
 
   /// يعمل في عزلة منفصلة — دالة عليا. يصحّح دوران EXIF أولاً حتى تطابق
-  /// إحداثيات القص ما رآه المستخدم.
+  /// إحداثيات القص ما رآه المستخدم، ثم يصغّر الناتج إلى [maxSide]: الصورة
+  /// تُلتقط بدقة أعلى حتى لا يُكبَّر جزء صغير منها فيتشوّش.
   @visibleForTesting
   static Uint8List cropBytes((Uint8List, int, int, int, int) a) =>
       _cropBytes(a);
+
+  /// أطول بُعد للصورة المحفوظة — بحجم الصور السابقة نفسه.
+  static const maxSide = 1200;
 
   static Uint8List _cropBytes((Uint8List, int, int, int, int) a) {
     final (bytes, x, y, w, h) = a;
@@ -122,6 +127,12 @@ class ProductCropper {
       width: w.clamp(1, upright.width - cx),
       height: h.clamp(1, upright.height - cy),
     );
-    return img.encodeJpg(cropped, quality: 88);
+    final longest = math.max(cropped.width, cropped.height);
+    final out = longest <= maxSide
+        ? cropped
+        : cropped.width >= cropped.height
+        ? img.copyResize(cropped, width: maxSide)
+        : img.copyResize(cropped, height: maxSide);
+    return img.encodeJpg(out, quality: 88);
   }
 }

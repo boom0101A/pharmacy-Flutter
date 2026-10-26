@@ -27,6 +27,99 @@ Medicine m(
 );
 
 void main() {
+  group('findSimilarGroups', () {
+    List<List<String>> ids(List<Medicine> items, {Set<String>? exclude}) => [
+      for (final g in findSimilarGroups(items, exclude: exclude ?? {}))
+        g.items.map((x) => x.id).toList()..sort(),
+    ];
+
+    test('خطأ إملائي بحرف ← متشابهة', () {
+      expect(
+        ids([
+          m('a', name: 'لوشن جونسون اطفال'),
+          m('b', name: 'لوشن جونسن اطفال'),
+        ]),
+        [
+          ['a', 'b'],
+        ],
+      );
+    });
+
+    test('اسم ناقص كلمة ← متشابهة', () {
+      expect(
+        ids([m('a', name: 'Panadol Extra'), m('b', name: 'Panadol Extra Tab')]),
+        [
+          ['a', 'b'],
+        ],
+      );
+    });
+
+    test('تركيز مختلف ← يُعرض (قرار المستخدم)', () {
+      expect(
+        ids([
+          m('a', name: 'Amaryl 4 mg ( 30 tab )'),
+          m('b', name: 'Amaryl 2 mg ( 30 tab )'),
+        ]),
+        hasLength(1),
+      );
+    });
+
+    test('باركودان صالحان مختلفان ← لا', () {
+      expect(
+        ids([
+          m('a', name: 'لوشن جونسون اطفال', barcode: '6285128013338'),
+          m('b', name: 'لوشن جونسن اطفال', barcode: '06291100000012'),
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('قسمان مختلفان ← لا', () {
+      expect(
+        ids([
+          m('a', name: 'لوشن جونسون اطفال', type: ItemType.medicine),
+          m('b', name: 'لوشن جونسن اطفال'),
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('كلمة عامة قصيرة لا تطابق كل ما يحتويها', () {
+      expect(
+        ids([m('a', name: 'جل'), m('b', name: 'جل مزلق جاكوار')]),
+        isEmpty,
+      );
+    });
+
+    test('أسماء مختلفة تماماً ← لا', () {
+      expect(
+        ids([m('a', name: 'شاش طبي'), m('b', name: 'شامبو اطفال')]),
+        isEmpty,
+      );
+    });
+
+    test('المستبعَد (في مجموعة مؤكّدة) لا يتكرر، والمفتاح مستقل', () {
+      final items = [
+        m('a', name: 'لوشن جونسون اطفال'),
+        m('b', name: 'لوشن جونسن اطفال'),
+      ];
+      expect(ids(items, exclude: {'a'}), isEmpty);
+      final g = findSimilarGroups(items).single;
+      expect(g.key, startsWith('sim:'));
+      expect(g.isSimilar, isTrue);
+      expect(findSimilarGroups(items, dismissed: {g.key}), isEmpty);
+    });
+
+    test('المجموعة لا تتجاوز 6 مواد', () {
+      final items = [
+        for (var i = 0; i < 9; i++) m('$i', name: 'سرنج ${i}CC كورنر'),
+      ];
+      for (final g in findSimilarGroups(items)) {
+        expect(g.items.length, lessThanOrEqualTo(6));
+      }
+    });
+  });
+
   group('findDuplicateGroups', () {
     test('نفس الاسم المطبَّع في نفس القسم = مجموعة', () {
       final g = findDuplicateGroups([

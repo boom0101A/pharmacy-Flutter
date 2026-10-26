@@ -325,6 +325,16 @@ class MedicineDb {
     return skipped;
   }
 
+  /// نقل مادة إلى معرّف جديد في معاملة واحدة — القديم يُحذف قبل كتابة الجديد
+  /// (الباركود نفسه، فالترتيب المعاكس يصطدم بالفهرس الفريد).
+  Future<void> rekey(String oldId, Medicine fresh) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_table, where: 'id = ?', whereArgs: [oldId]);
+      await _writeChecked(txn, fresh);
+    });
+  }
+
   Future<void> delete(String id) async {
     final db = await database;
     await db.delete(_table, where: 'id = ?', whereArgs: [id]);

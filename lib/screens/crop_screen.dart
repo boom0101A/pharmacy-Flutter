@@ -62,8 +62,10 @@ class _CropScreenState extends State<CropScreen> {
     });
   }
 
-  Future<void> _done() async {
-    final rect = _rect;
+  /// [rect] بإحداثيات الصورة. «بلا قص» يمرّ هنا بالإطار الكامل حتى يُصغَّر
+  /// كغيره — الصورة تُلتقط بدقة عالية للقص ولا تُحفظ بها.
+  Future<void> _done([Rect? whole]) async {
+    final rect = whole ?? _rect;
     if (rect == null || _busy) return;
     setState(() => _busy = true);
     try {
@@ -204,7 +206,7 @@ class _CropScreenState extends State<CropScreen> {
           Expanded(
             child: GradientButton(
               key: const Key('cropDone'),
-              onPressed: ready && !_busy ? _done : null,
+              onPressed: ready && !_busy ? () => _done() : null,
               child: _busy
                   ? const SizedBox(
                       width: 18,
@@ -226,7 +228,9 @@ class _CropScreenState extends State<CropScreen> {
             key: const Key('cropSkip'),
             onPressed: _busy
                 ? null
-                : () => Navigator.of(context).pop(widget.file),
+                : () => _image == null
+                      ? Navigator.of(context).pop(widget.file)
+                      : _done(Offset.zero & _image!),
             child: const Text('بلا قص'),
           ),
         ],

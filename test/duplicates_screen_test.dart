@@ -122,6 +122,22 @@ void main() {
     expect(store.deleted, isEmpty);
   });
 
+  testWidgets('الأسماء المتشابهة في قسم منفصل، ويمكن دمجها أو إخفاؤها', (
+    tester,
+  ) async {
+    cloud = [
+      m('a', 'معجون اسنان كين كالسيوم اطفال', qty: 3, updated: 200),
+      m('b', 'معجون اسنان كين كالسبوم اطفال', qty: 2, updated: 100),
+    ];
+    await open(tester);
+    expect(find.byKey(const Key('similarSection')), findsOneWidget);
+    expect(find.textContaining('أسماء متشابهة بنسبة'), findsOneWidget);
+
+    await tester.tap(find.text('ليست مكرّرة'));
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد تكرارات ✅'), findsOneWidget);
+  });
+
   testWidgets('الدمج متوقف ما دام الحذف السحابي لم يصل', (tester) async {
     pending = 3;
     await open(tester);
