@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,6 +13,7 @@ import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
+import '../widgets/product_image.dart';
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
 import 'scanner_screen.dart';
@@ -621,7 +621,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               _Label(_isSupply ? '📷 صورة المستلزم' : '📷 صورة الدواء'),
               // صندوق الصورة: توهّج تيل خفيف وحدّ لامع (`.photo-box` في ملف التصميم)
               Container(
-                height: 180,
+                // بلا صورة: صندوق ثابت. بصورة: الارتفاع من اتجاهها الحقيقي
+                height: imagePath == null ? 180 : null,
                 decoration: BoxDecoration(
                   gradient: const RadialGradient(
                     center: Alignment(-0.4, -0.6),
@@ -634,10 +635,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
-                  fit: StackFit.expand,
+                  fit: imagePath == null ? StackFit.expand : StackFit.loose,
                   children: [
                     if (imagePath != null)
-                      Image.file(File(imagePath), fit: BoxFit.cover)
+                      AdaptiveProductImage(path: imagePath)
                     else
                       const Center(
                         child: Text('💊', style: TextStyle(fontSize: 48)),

@@ -439,7 +439,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                   File(imagePath),
                   width: 56,
                   height: 56,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const SizedBox(width: 56),
                 ),
               ),

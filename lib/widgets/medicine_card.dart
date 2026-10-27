@@ -123,9 +123,11 @@ class MedicineCard extends StatelessWidget {
                       child: imagePath != null
                           ? Hero(
                               tag: 'medicine-image-${medicine.id}',
+                              // كاملة باتجاهها: العلبة العمودية لا تُقصّ
+                              // لشريط أفقي من وسطها (cover كان يفعل ذلك)
                               child: Image.file(
                                 File(imagePath),
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 cacheWidth: _decodeWidth,
                                 // ظهور ناعم بدل قفزة الصورة عند اكتمال فك الترميز
                                 frameBuilder: (_, child, frame, wasSyncLoaded) {
