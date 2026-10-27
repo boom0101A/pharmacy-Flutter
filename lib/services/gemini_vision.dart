@@ -84,6 +84,24 @@ class ValidatedLine {
   final List<LineIssue> issues;
 }
 
+/// رأس الفاتورة كما طُبع — كل حقل null إن لم يظهر (بلا تخمين).
+class InvoiceHeader {
+  const InvoiceHeader({this.supplier, this.number, this.date, this.total});
+
+  /// اسم المجهّز/المذخر.
+  final String? supplier;
+  final String? number;
+
+  /// نص التاريخ كما طُبع — يُحوَّل في الشاشة حين يمكن.
+  final String? date;
+
+  /// المجموع النهائي المطبوع.
+  final double? total;
+
+  bool get isEmpty =>
+      supplier == null && number == null && date == null && total == null;
+}
+
 /// نتيجة قراءة صورة فاتورة.
 class InvoiceResult {
   const InvoiceResult._(
@@ -91,6 +109,7 @@ class InvoiceResult {
     this.lines,
     this.error, {
     this.usedFallback = false,
+    this.header,
   });
 
   final bool ok;
@@ -101,15 +120,26 @@ class InvoiceResult {
   /// الواجهة لمراجعة الأسطر بانتباه أكبر.
   final bool usedFallback;
 
+  /// الرأس — يُستخرج في الطلب نفسه، بلا استهلاك إضافي للحصة.
+  final InvoiceHeader? header;
+
   factory InvoiceResult.success(
     List<InvoiceLine> lines, {
     bool usedFallback = false,
-  }) => InvoiceResult._(true, lines, null, usedFallback: usedFallback);
+    InvoiceHeader? header,
+  }) => InvoiceResult._(
+    true,
+    lines,
+    null,
+    usedFallback: usedFallback,
+    header: header,
+  );
   factory InvoiceResult.failure(String reason) =>
       InvoiceResult._(false, const [], reason);
 
-  InvoiceResult _viaFallback() =>
-      ok ? InvoiceResult.success(lines, usedFallback: true) : this;
+  InvoiceResult _viaFallback() => ok
+      ? InvoiceResult.success(lines, usedFallback: true, header: header)
+      : this;
 }
 
 /// سبب فشل القراءة بنموذج واحد — يقرّر الانتقال إلى البديل.
@@ -436,6 +466,13 @@ class GeminiVision {
 - uncertain: true إن كان أي جزء من السطر مقطوعاً أو مطموساً أو غير مقروء
   بوضوح، وإلا false.
 
+ورأس الفاتورة في header (مرة واحدة، من أعلى الصفحة أو أسفلها):
+- supplier: اسم المجهّز أو المذخر أو الشركة البائعة كما طُبع.
+- invoice_number: رقم الفاتورة كما طُبع.
+- date: تاريخ الفاتورة كما طُبع بلا تحويل.
+- total: المجموع النهائي المطلوب دفعه (رقم).
+أي حقل لا يظهر بوضوح اتركه null — لا تخمّن ولا تحسب المجموع بنفسك.
+
 لا تُضف مواد ليست في الصورة. القيمة غير المؤكدة اتركها null.
 ''';
 
@@ -459,6 +496,17 @@ class GeminiVision {
             'uncertain': {'type': 'BOOLEAN'},
           },
           'required': ['name'],
+        },
+      },
+      // رأس الفاتورة في الطلب نفسه — بلا استهلاك إضافي للحصة
+      'header': {
+        'type': 'OBJECT',
+        'nullable': true,
+        'properties': {
+          'supplier': {'type': 'STRING', 'nullable': true},
+          'invoice_number': {'type': 'STRING', 'nullable': true},
+          'date': {'type': 'STRING', 'nullable': true},
+          'total': {'type': 'NUMBER', 'nullable': true},
         },
       },
     },
@@ -524,7 +572,7 @@ class GeminiVision {
           ),
         );
       }
-      return InvoiceResult.success(lines);
+      return InvoiceResult.success(lines, header: _parseHeader(decoded));
     } catch (e) {
       return InvoiceResult.failure('تعذّر فهم صيغة الأسطر: $e');
     }
@@ -555,6 +603,27 @@ class GeminiVision {
   }
 
   /// يحوّل أي حقل نص إلى string منظّف أو null.
+  /// رأس تالف أو غائب لا يُسقط الأسطر — يعود null فقط.
+  static InvoiceHeader? _parseHeader(Map<String, Object?> decoded) {
+    final h = decoded['header'];
+    if (h is! Map) return null;
+    final header = InvoiceHeader(
+      supplier: _clean(h['supplier']),
+      number: _clean(h['invoice_number']),
+      date: _clean(h['date']),
+      total: _money(h['total']),
+    );
+    return header.isEmpty ? null : header;
+  }
+
+  /// مبلغ قد يصل نصاً بفواصل آلاف («1,250,000» أو «1٬250٬000»).
+  static double? _money(Object? v) {
+    if (v is num) return v.toDouble();
+    final s = _clean(v);
+    if (s == null) return null;
+    return double.tryParse(s.replaceAll(RegExp(r'[,٬\s]'), ''));
+  }
+
   static String? _clean(Object? v) {
     if (v == null) return null;
     final s = v.toString().trim();

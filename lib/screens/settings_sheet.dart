@@ -10,7 +10,9 @@ import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
+import '../state/invoice_store.dart';
 import 'duplicates_screen.dart';
+import 'invoices_screen.dart';
 import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
 
@@ -332,7 +334,8 @@ class _SettingsSheet extends StatelessWidget {
         backgroundColor: AppColors.bgCard,
         title: const Text('استرجاع النسخة'),
         content: Text(
-          'الملف يحتوي ${contents.items.length} مادة.\n'
+          'الملف يحتوي ${contents.items.length} مادة'
+          '${contents.invoices.isEmpty ? '' : ' و${contents.invoices.length} فاتورة'}.\n'
           'سيُضاف الجديد ويُحدَّث الأقدم — لا يُحذف شيء موجود.',
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
@@ -351,6 +354,7 @@ class _SettingsSheet extends StatelessWidget {
 
     if (confirmed != true || !context.mounted) return;
     final r = await store.importBackup(contents.items);
+    await InvoiceStore.instance.importAll(contents.invoices);
     if (!context.mounted) return;
     _toast(
       context,
@@ -423,6 +427,20 @@ class _SettingsSheet extends StatelessWidget {
           ),
           icon: const Icon(Icons.manage_search_rounded, size: 18),
           label: const Text('مراجعة التكرارات'),
+        ),
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          key: const Key('settingsInvoices'),
+          onPressed: () => Navigator.of(context).push(
+            SmoothPageRoute<void>(
+              builder: (_) => InvoicesScreen(store: InvoiceStore.instance),
+            ),
+          ),
+          icon: const Text('📚'),
+          label: Text('الفواتير (${InvoiceStore.instance.count})'),
         ),
       ),
     ],

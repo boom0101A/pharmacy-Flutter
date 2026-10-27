@@ -4,14 +4,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 import '../services/gemini_vision.dart';
 import '../services/gs1_parser.dart';
+import '../state/invoice_store.dart';
 import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
+import '../widgets/medicine_card.dart' show formatPrice;
+import 'invoices_screen.dart';
 import 'scanner_screen.dart';
 
 /// يختار صورة صفحة (كاميرا أو معرض) — قابل للحقن في الاختبار.
@@ -36,9 +40,13 @@ class InvoiceScanScreen extends StatefulWidget {
     this.pickPage,
     this.readPage,
     this.scanBarcode,
+    this.invoices,
   });
 
   final MedicineStore store;
+
+  /// سجل الفواتير — يُحقن في الاختبار، وإلا [InvoiceStore.instance].
+  final InvoiceStore? invoices;
 
   /// النوع الافتراضي لأسطر الفاتورة — قابل للتغيير لكل سطر أو جماعياً.
   final ItemType initialType;
@@ -73,6 +81,12 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   bool _flaggedOnly = false;
 
   ItemType _bulkType = ItemType.supply;
+
+  // رأس الفاتورة — يملؤه Gemini من الطلب نفسه، والمستخدم يصحّحه قبل الحفظ
+  final _supplier = TextEditingController();
+  final _number = TextEditingController();
+  final _date = TextEditingController();
+  final _total = TextEditingController();
 
   InvoicePagePicker get _pick => widget.pickPage ?? _defaultPick;
 
@@ -112,6 +126,9 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   void dispose() {
     for (final line in _lines) {
       line.dispose();
+    }
+    for (final c in [_supplier, _number, _date, _total]) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -199,8 +216,39 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       page.state = _PageState.done;
       page.usedFallback = result.usedFallback;
       _lines = [..._lines, ...added];
+      _fillHeader(result.header);
     });
   }
+
+  /// يملأ الخانات الفارغة فقط — لا يدهس تصحيحاً كتبه المستخدم.
+  void _fillHeader(InvoiceHeader? h) {
+    if (h == null) return;
+    void fill(TextEditingController c, String? v) {
+      if (c.text.trim().isEmpty && v != null) c.text = v;
+    }
+
+    fill(_supplier, h.supplier);
+    fill(_number, h.number);
+    fill(_date, h.date);
+    final total = h.total;
+    fill(
+      _total,
+      total == null
+          ? null
+          : (total == total.roundToDouble()
+                ? total.toInt().toString()
+                : total.toString()),
+    );
+  }
+
+  /// مجموع الأسطر كما عُدّلت (الكمية × السعر).
+  double get _linesTotal => _lines.fold(
+    0,
+    (s, l) =>
+        s +
+        (parseLocalizedNumber(l.price.text) ?? 0) *
+            ((parseLocalizedInt(l.quantity.text) ?? 0) - l.bonus),
+  );
 
   /// حذف صفحة مع أسطرها — بنفس نمط [_removeLine] الآمن.
   void _removePage(_InvoicePage page) {
@@ -276,9 +324,43 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       });
       return;
     }
+    // سجل الفاتورة بعد نجاح المواد — فشله لا يُلغي ما حُفظ في المخزون
     if (!mounted) return;
+    // في الخلفية: ضغط الصفحات يأخذ ثانية تقريباً، ولا داعي لإبقاء المستخدم
+    // ينتظر — المواد محفوظة أصلاً. الرسالة تظهر في الرئيسية إن فشل.
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    unawaited(
+      (widget.invoices ?? InvoiceStore.instance)
+          .add(_buildInvoice(result), [for (final p in _pages) p.image])
+          .then<void>((_) {})
+          .catchError((Object e) {
+            debugPrint('تعذّر حفظ سجل الفاتورة: $e');
+            messenger?.showSnackBar(
+              const SnackBar(
+                content: Text('حُفظت المواد، وتعذّر حفظ سجل الفاتورة'),
+                backgroundColor: AppColors.warning,
+              ),
+            );
+          }),
+    );
     setState(() => _leaving = true);
     Navigator.of(context).pop(result);
+  }
+
+  Invoice _buildInvoice(InvoiceSaveResult result) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final dateText = _orNull(_date.text);
+    return Invoice(
+      id: 'invrec_$now',
+      supplier: _orNull(_supplier.text),
+      number: _orNull(_number.text),
+      dateText: dateText,
+      dateMs: InvoiceLineToMedicine.parseExpiry(dateText),
+      total: parseLocalizedNumber(_total.text),
+      lines: result.records,
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 
   /// يُرفع قبل الخروج المقصود (حفظ، أو تأكيد الخروج) فيتخطّى سؤال التأكيد.
@@ -364,6 +446,18 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       appBar: GlassAppBar(
         title: const Text('🧾 فاتورة ذكية'),
         actions: [
+          IconButton(
+            key: const Key('openInvoices'),
+            tooltip: 'الفواتير المحفوظة',
+            icon: const Text('📚', style: TextStyle(fontSize: 20)),
+            onPressed: () => Navigator.of(context).push(
+              SmoothPageRoute<void>(
+                builder: (_) => InvoicesScreen(
+                  store: widget.invoices ?? InvoiceStore.instance,
+                ),
+              ),
+            ),
+          ),
           if (_lines.isNotEmpty && !_saving && !_anyReading)
             TextButton.icon(
               onPressed: _save,
@@ -520,11 +614,88 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-                  itemCount: shown.length,
-                  itemBuilder: (_, i) => _lineCard(shown[i]),
+                  itemCount: shown.length + 1,
+                  itemBuilder: (_, i) =>
+                      i == 0 ? _headerCard() : _lineCard(shown[i - 1]),
                 ),
         ),
       ],
+    );
+  }
+
+  /// بطاقة رأس الفاتورة: يملؤها Gemini وتُصحَّح هنا، مع مقارنة المجموعين.
+  Widget _headerCard() {
+    final printed = parseLocalizedNumber(_total.text);
+    final lines = _linesTotal;
+    final off =
+        printed != null &&
+        printed > 0 &&
+        (lines - printed).abs() > printed * .01;
+    return GlassSurface(
+      key: const Key('invoiceHeader'),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '🧾 بيانات الفاتورة',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: const Key('headerSupplier'),
+            controller: _supplier,
+            decoration: const InputDecoration(labelText: '🏪 المجهّز'),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('headerNumber'),
+                  controller: _number,
+                  decoration: const InputDecoration(labelText: 'رقم الفاتورة'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  key: const Key('headerDate'),
+                  controller: _date,
+                  decoration: const InputDecoration(labelText: '📅 التاريخ'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            key: const Key('headerTotal'),
+            controller: _total,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: '💰 مجموع الفاتورة (د.ع)',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'مجموع الأسطر: ${formatPrice(lines)} د.ع'
+            '${printed == null ? '' : ' · المطبوع: ${formatPrice(printed)} د.ع'}',
+            key: const Key('headerCompare'),
+            style: TextStyle(
+              fontSize: 12,
+              color: off ? AppColors.warning : AppColors.textSecondary,
+              fontWeight: off ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          if (off)
+            const Text(
+              '⚠️ المجموعان مختلفان — راجع الكميات والأسعار',
+              style: TextStyle(fontSize: 12, color: AppColors.warning),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1037,9 +1208,14 @@ class InvoiceSaveResult {
     required this.addedNew,
     required this.mergedExisting,
     required this.mergedWithinInvoice,
+    this.records = const [],
   });
 
   final List<Medicine> items;
+
+  /// نسخة أسطر الفاتورة كما حُفظت — لسجل الفواتير: كمية الفاتورة نفسها
+  /// (لا رصيد المخزون بعد الدمج) ووجهتها في المخزون.
+  final List<InvoiceRecordLine> records;
 
   /// مواد جديدة تماماً لم تكن موجودة من قبل.
   final int addedNew;
@@ -1139,6 +1315,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
   var mergedExisting = 0;
   var mergedWithinInvoice = 0;
   final items = <Medicine>[];
+  final records = <InvoiceRecordLine>[];
   // مادة موجودة تطابقها مجموعتان (واحدة بالباركود وأخرى بالاسم) — تُجمع في
   // عنصر واحد، وإلا حمل الحفظ نفس المعرّف مرتين وبقي الأخير وحده.
   final indexById = <String, int>{};
@@ -1157,6 +1334,16 @@ InvoiceSaveResult buildInvoiceSaveItems({
         store.findExistingByName(d.name, d.type, barcode: d.barcode);
     final ts = now.millisecondsSinceEpoch;
     final already = existing == null ? null : indexById[existing.id];
+    records.add(
+      InvoiceRecordLine(
+        name: d.name,
+        quantity: d.quantity,
+        price: d.price,
+        medicineId:
+            existing?.id ?? 'inv_${ts}_${now.microsecond}_${items.length}',
+        merged: existing != null,
+      ),
+    );
     if (already != null) {
       final prev = items[already];
       items[already] = prev.copyWith(
@@ -1212,6 +1399,7 @@ InvoiceSaveResult buildInvoiceSaveItems({
     addedNew: addedNew,
     mergedExisting: mergedExisting,
     mergedWithinInvoice: mergedWithinInvoice,
+    records: records,
   );
 }
 

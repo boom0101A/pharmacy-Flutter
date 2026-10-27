@@ -15,6 +15,7 @@ import '../services/notification_service.dart';
 import '../services/pharmacy_service.dart';
 import '../services/sync_service.dart';
 import '../util/number_parse.dart';
+import 'invoice_store.dart';
 
 enum QuickFilter {
   lowStock,
@@ -329,6 +330,7 @@ class MedicineStore extends ChangeNotifier {
     }
     unawaited(SyncService.instance.pruneOrphanImages());
     unawaited(DuplicateDismissals.instance.syncWithCloud());
+    unawaited(InvoiceStore.instance.sync());
     _scheduleDigestIfEnabled();
   }
 

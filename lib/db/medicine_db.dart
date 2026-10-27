@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 
 /// طبقة قاعدة البيانات المحلية — البديل عن IndexedDB في نسخة الويب.
@@ -19,6 +20,9 @@ class MedicineDb {
   /// إدراج السجل الذي دُمج، ويتكرر ذلك بلا نهاية.
   static const _pendingDeletes = 'pending_deletes';
 
+  /// سجل فواتير المجهّزين (الرأس + نسخة الأسطر + أسماء صورها المحلية).
+  static const _invoices = 'invoices';
+
   /// مدة تجاهل الباركود الذي لم يُعثر عليه، قبل إعادة المحاولة.
   /// قصيرة عمداً لأن القاموس المشترك ينمو باستمرار.
   static const missTtl = Duration(days: 7);
@@ -26,7 +30,7 @@ class MedicineDb {
   Database? _db;
 
   /// إصدار المخطط الحالي — يُصدَّر ليقارن به الاختبار.
-  static const schemaVersion = 8;
+  static const schemaVersion = 9;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -78,6 +82,7 @@ class MedicineDb {
           'ALTER TABLE $_table ADD COLUMN noBarcode INTEGER NOT NULL DEFAULT 0',
         );
       }
+      if (oldVersion < 9) await _createInvoices(db);
     },
     onCreate: (db, version) async {
       await db.execute('''
@@ -103,8 +108,50 @@ class MedicineDb {
       await db.execute(_uniqueBarcodeIndex);
       await _createMissTable(db);
       await _createPendingDeletes(db);
+      await _createInvoices(db);
     },
   );
+
+  static Future<void> _createInvoices(DatabaseExecutor db) async {
+    await db.execute('''
+        CREATE TABLE IF NOT EXISTS $_invoices (
+          id TEXT PRIMARY KEY,
+          supplier TEXT,
+          number TEXT,
+          dateMs INTEGER,
+          dateText TEXT,
+          total REAL,
+          lines TEXT NOT NULL DEFAULT '[]',
+          imageFiles TEXT NOT NULL DEFAULT '[]',
+          createdAt INTEGER NOT NULL,
+          updatedAt INTEGER NOT NULL
+        )
+      ''');
+  }
+
+  // ---------- الفواتير ----------
+
+  Future<void> upsertInvoice(Invoice invoice) async {
+    final db = await database;
+    await db.insert(
+      _invoices,
+      invoice.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// الأحدث تاريخاً أولاً.
+  Future<List<Invoice>> allInvoices() async {
+    final db = await database;
+    final rows = await db.query(_invoices);
+    return [for (final r in rows) Invoice.fromMap(r)]
+      ..sort((a, b) => b.sortDate.compareTo(a.sortDate));
+  }
+
+  Future<void> deleteInvoice(String id) async {
+    final db = await database;
+    await db.delete(_invoices, where: 'id = ?', whereArgs: [id]);
+  }
 
   /// توجيه المفرد إلى قاعدة اختبار مفتوحة مسبقاً.
   @visibleForTesting

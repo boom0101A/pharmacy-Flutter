@@ -50,6 +50,7 @@ void main() {
         ${version >= 4 ? "itemType TEXT NOT NULL DEFAULT 'medicine'," : ''}
         ${version >= 6 ? 'category TEXT,' : ''}
         ${version >= 7 ? 'company TEXT,' : ''}
+        ${version >= 8 ? 'noBarcode INTEGER NOT NULL DEFAULT 0,' : ''}
         createdAt INTEGER NOT NULL,
         updatedAt INTEGER NOT NULL
       )
@@ -827,6 +828,40 @@ void main() {
       expect(row['company'], 'Juman');
       await db.update(table, {'noBarcode': 1});
       expect((await db.query(table)).single['noBarcode'], 1);
+      await db.close();
+    });
+  });
+
+  group('ترقية 8 ← 9 — سجل الفواتير', () {
+    test('ينشئ جدول الفواتير بلا فقدان للمواد', () async {
+      final path = nextPath();
+      var db = await buildLegacy(path, 8);
+      await db.insert(table, {
+        'id': 'm1',
+        'barcode': '',
+        'name': 'دواء',
+        'price': 100,
+        'quantity': 2,
+        'itemType': 'medicine',
+        'noBarcode': 1,
+        'createdAt': 0,
+        'updatedAt': 0,
+      });
+      await db.close();
+
+      db = await MedicineDb.openAt(path);
+      expect(await db.getVersion(), MedicineDb.schemaVersion);
+      expect((await db.query(table)).single['noBarcode'], 1);
+      await db.insert('invoices', {
+        'id': 'i1',
+        'supplier': 'مذخر',
+        'lines': '[{"name":"A","quantity":1,"price":5}]',
+        'imageFiles': '["p.jpg"]',
+        'createdAt': 1,
+        'updatedAt': 1,
+      });
+      final row = (await db.query('invoices')).single;
+      expect(row['supplier'], 'مذخر');
       await db.close();
     });
   });

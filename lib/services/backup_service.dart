@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../db/medicine_db.dart';
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 
 /// نسخة احتياطية إلى ملف على الجهاز — مستقلة تماماً عن الحساب والسحابة.
@@ -25,11 +26,14 @@ class BackupService {
   /// الصور لا تُضمَّن (قد تبلغ مئات الميغابايت) — تُذكر أسماؤها فقط.
   static Future<String> export() async {
     final items = await MedicineDb.instance.getAll();
+    final invoices = await MedicineDb.instance.allInvoices();
     final payload = {
       'format': _formatVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'count': items.length,
       'items': items.map((m) => m.toMap()).toList(),
+      // سجل الفواتير بلا صورها (محلية وكبيرة)
+      'invoices': invoices.map((i) => i.toCloud()).toList(),
     };
 
     final dir = await getApplicationDocumentsDirectory();
@@ -119,7 +123,22 @@ class BackupService {
         }
       }
 
-      return BackupContents(items: items, skipped: skipped);
+      // نسخ أقدم بلا فواتير — تُقرأ عادياً
+      final invoices = <Invoice>[];
+      final rawInvoices = root['invoices'];
+      if (rawInvoices is List) {
+        for (final raw in rawInvoices) {
+          try {
+            if (raw is Map) {
+              invoices.add(Invoice.fromMap(Map<String, Object?>.from(raw)));
+            }
+          } catch (_) {
+            skipped++;
+          }
+        }
+      }
+
+      return BackupContents(items: items, invoices: invoices, skipped: skipped);
     } catch (e) {
       debugPrint('تعذّرت قراءة النسخة الاحتياطية: $e');
       return BackupContents(error: 'تعذّرت قراءة الملف: $e');
@@ -149,12 +168,18 @@ class BackupService {
 
 class BackupContents {
   final List<Medicine> items;
+  final List<Invoice> invoices;
 
   /// سجلات تعذّرت قراءتها ولم توقف الاستيراد.
   final int skipped;
   final String? error;
 
-  const BackupContents({this.items = const [], this.skipped = 0, this.error});
+  const BackupContents({
+    this.items = const [],
+    this.invoices = const [],
+    this.skipped = 0,
+    this.error,
+  });
 
   bool get ok => error == null;
 }

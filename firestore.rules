@@ -151,6 +151,17 @@ service cloud.firestore {
       allow delete: if isMemberOfPharmacy(resource.data.pharmacyId) || ownsExisting();
     }
 
+    // ---------------- سجل فواتير المجهّزين ----------------
+    // الرأس + نسخة الأسطر (بلا صور — تبقى على الهاتف الذي صوّرها). أعضاء
+    // الصيدلية فقط. حذف مستند غير موجود (resource == null) مسموح: لا يكشف ولا
+    // يغيّر شيئاً، ومنعه كان يُعلق طابور الحذف للأبد.
+    match /invoices/{id} {
+      allow read: if isMemberOfPharmacy(resource.data.pharmacyId);
+      allow create, update: if isMemberOfPharmacy(request.resource.data.pharmacyId);
+      allow delete: if resource == null
+                    || isMemberOfPharmacy(resource.data.pharmacyId);
+    }
+
     // ---------------- قرارات «ليست مكرّرة» (مشتركة لأجهزة الصيدلية) ----------------
     // مستند واحد لكل صيدلية بمفتاح معرّفها: قائمة مفاتيح مجموعات قرّر أحد
     // الأعضاء أنها منتجات مختلفة. للأعضاء فقط، ولا يُحذف.

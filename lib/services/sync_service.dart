@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 import '../db/medicine_db.dart';
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 import 'app_settings.dart';
 import 'auth_service.dart';
@@ -444,6 +445,115 @@ class SyncService extends ChangeNotifier {
     for (final id in queued) {
       pending.remove(id);
     }
+  }
+
+  // ---------------- الفواتير ----------------
+  //
+  // أعدادها صغيرة (فاتورة أو اثنتان يومياً)، فالمزامنة مستند مستند بلا دفعات.
+  // الكتابات بلا تأكيد خادم محفوظة في طابور Firestore الدائم وتُرفع وحدها.
+
+  static const _invoices = 'invoices';
+
+  Map<String, Object?> _invoicePayload(Invoice inv) => inv.toCloud()
+    ..['ownerUid'] = _uid
+    ..['pharmacyId'] = AppSettings.instance.pharmacyId;
+
+  /// رفع فاتورة (بعد الحفظ المحلي). لا يرمي.
+  Future<void> pushInvoice(Invoice inv) async {
+    final db = _db;
+    if (db == null || !isEnabled || AppSettings.instance.pharmacyId == null) {
+      return;
+    }
+    try {
+      await awaitServerAck(
+        db.collection(_invoices).doc(inv.id).set(_invoicePayload(inv)),
+        ackTimeout,
+      );
+    } catch (e) {
+      debugPrint('تعذّر رفع الفاتورة: $e');
+    }
+  }
+
+  /// حذف فاتورة من السحابة مع شاهد حذف حتى لا يعيدها هاتف آخر. لا يرمي.
+  Future<void> deleteInvoice(String id) async {
+    final db = _db;
+    final pharmacyId = AppSettings.instance.pharmacyId;
+    if (db == null || !isEnabled || pharmacyId == null) return;
+    try {
+      final batch = db.batch()
+        ..delete(db.collection(_invoices).doc(id))
+        ..set(db.collection(_tombstones).doc(id), {
+          'ownerUid': _uid,
+          'pharmacyId': pharmacyId,
+          'kind': 'invoice',
+          'deletedAt': DateTime.now().millisecondsSinceEpoch,
+        });
+      await awaitServerAck(batch.commit(), ackTimeout);
+    } catch (e) {
+      debugPrint('تعذّر حذف الفاتورة من السحابة: $e');
+    }
+  }
+
+  /// مزامنة الفواتير في الاتجاهين، تُرجع القائمة المحلية الجديدة أو null إن
+  /// تعذّرت. الأحدث `updatedAt` يفوز، وأسماء الصور المحلية لا تُمس أبداً.
+  Future<List<Invoice>?> syncInvoices(List<Invoice> local) async {
+    final db = _db;
+    final uid = _uid;
+    final pharmacyId = AppSettings.instance.pharmacyId;
+    if (db == null || uid == null || pharmacyId == null || !isEnabled) {
+      return null;
+    }
+    try {
+      final snap = await db
+          .collection(_invoices)
+          .where('pharmacyId', isEqualTo: pharmacyId)
+          .get();
+      final deleted = await _tombstoneIds(db, pharmacyId, uid);
+      final result = mergeInvoices(
+        local: local,
+        remote: [
+          for (final d in snap.docs)
+            Invoice.fromMap(Map<String, Object?>.from(d.data())..['id'] = d.id),
+        ],
+        deleted: deleted,
+      );
+      for (final inv in result.upload) {
+        unawaited(pushInvoice(inv));
+      }
+      return result.merged;
+    } catch (e) {
+      debugPrint('تعذّرت مزامنة الفواتير: $e');
+      return null;
+    }
+  }
+
+  /// دمج صِرف للفواتير المحلية والسحابية — قابل للاختبار بلا Firestore.
+  @visibleForTesting
+  static ({List<Invoice> merged, List<Invoice> upload}) mergeInvoices({
+    required List<Invoice> local,
+    required List<Invoice> remote,
+    required Set<String> deleted,
+  }) {
+    final byId = {for (final i in local) i.id: i};
+    final remoteById = {for (final r in remote) r.id: r};
+    final upload = <Invoice>[];
+    for (final r in remote) {
+      if (deleted.contains(r.id)) continue;
+      final mine = byId[r.id];
+      if (mine == null || r.updatedAt > mine.updatedAt) {
+        // صور هذا الهاتف (إن كانت) تبقى — السحابة لا تحملها
+        byId[r.id] = mine == null ? r : r.copyWith(imageFiles: mine.imageFiles);
+      }
+    }
+    for (final mine in local) {
+      final r = remoteById[mine.id];
+      if (deleted.contains(mine.id)) continue;
+      if (r == null || mine.updatedAt > r.updatedAt) upload.add(mine);
+    }
+    byId.removeWhere((id, _) => deleted.contains(id));
+    final merged = byId.values.toList()
+      ..sort((a, b) => b.sortDate.compareTo(a.sortDate));
+    return (merged: merged, upload: upload);
   }
 
   /// معرّفات كل شواهد الحذف المرئية لهذا الجهاز.
