@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/medicine_db.dart';
 import '../models/invoice.dart';
@@ -126,7 +128,9 @@ class SyncService extends ChangeNotifier {
       Map<String, Object?>.from(m.toMap())
         ..remove('imagePath')
         ..['ownerUid'] = _uid
-        ..['pharmacyId'] = AppSettings.instance.pharmacyId;
+        ..['pharmacyId'] = AppSettings.instance.pharmacyId
+        // ختم الخادم: المزامنة التزايدية تقرأ ما تغيّر بعده فقط
+        ..['syncedAt'] = FieldValue.serverTimestamp();
 
   /// رفع دواء واحد (بعد الحفظ المحلي). لا يرمي استثناءً أبداً.
   Future<void> pushMedicine(Medicine medicine) async {
@@ -177,6 +181,7 @@ class SyncService extends ChangeNotifier {
         'ownerUid': _uid,
         'pharmacyId': pharmacyId,
         'deletedAt': DateTime.now().millisecondsSinceEpoch,
+        'syncedAt': FieldValue.serverTimestamp(),
       });
       if (!await awaitServerAck(batch.commit(), ackTimeout)) {
         // في الطابور الدائم؛ المعرّف يبقى في pending_deletes ويُعاد لاحقاً
@@ -194,6 +199,7 @@ class SyncService extends ChangeNotifier {
             'ownerUid': _uid,
             'pharmacyId': pharmacyId,
             'deletedAt': DateTime.now().millisecondsSinceEpoch,
+            'syncedAt': FieldValue.serverTimestamp(),
           });
           if (await awaitServerAck(tomb, ackTimeout)) {
             _setStatus(SyncStatus.synced);
@@ -254,8 +260,67 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  /// مزامنة كاملة في الاتجاهين. ترجع true إذا تغيّرت البيانات المحلية.
-  Future<bool> syncAll() async {
+  // ---------------- المزامنة التزايدية ----------------
+  //
+  // المزامنة الكاملة تقرأ كل المواد وكل شواهد الحذف (~2,500 قراءة) في كل
+  // تشغيل — والحد المجاني 50,000 يومياً للمشروع كله، أي ~20 تشغيلاً للهاتفين.
+  // كل كتابة صارت تحمل `syncedAt` (ختم الخادم، لا ساعة الهاتف)، فيقرأ الجهاز
+  // ما تغيّر بعد آخر ختم رآه فقط. الكاملة تبقى شبكة أمان: أول مرة، والسحب
+  // اليدوي، وأسبوعياً.
+
+  static const _kSeenMed = 'sync_seen_medicines';
+  static const _kSeenTomb = 'sync_seen_tombstones';
+  static const _kSeenInv = 'sync_seen_invoices';
+  static const _kPushMed = 'sync_push_medicines';
+  static const _kPushInv = 'sync_push_invoices';
+  static const _kLastFull = 'sync_last_full';
+
+  /// مزامنة كاملة أسبوعية حتى لو سار كل شيء تزايدياً بلا خطأ.
+  static const fullEvery = Duration(days: 7);
+
+  /// هامش للكتابات التي وصلت للخادم أثناء القراءة السابقة — التكرار لا يضر
+  /// (المقارنة بـ updatedAt)، أما الفوات فيضر.
+  static const _overlap = Duration(minutes: 2);
+
+  /// شواهد الحذف المقروءة في آخر [syncAll] — تعيد مزامنة الفواتير استعمالها
+  /// بدل قراءتها مرة ثانية.
+  Set<String>? _lastTombstones;
+
+  /// هل تكون هذه الدورة كاملة؟ دالة صِرفة.
+  @visibleForTesting
+  static bool needsFull({
+    required int? seenMs,
+    required int? lastFullMs,
+    required bool manual,
+    required int nowMs,
+  }) =>
+      manual ||
+      seenMs == null ||
+      lastFullMs == null ||
+      nowMs - lastFullMs > fullEvery.inMilliseconds;
+
+  /// أكبر ختم `syncedAt` في المستندات، أو null إن لم يحمله أي منها.
+  static int? _maxSynced(
+    Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    int? max;
+    for (final d in docs) {
+      final ts = d.data()['syncedAt'];
+      if (ts is Timestamp) {
+        final ms = ts.millisecondsSinceEpoch;
+        if (max == null || ms > max) max = ms;
+      }
+    }
+    return max;
+  }
+
+  static Timestamp _since(int seenMs) => Timestamp.fromMillisecondsSinceEpoch(
+    (seenMs - _overlap.inMilliseconds).clamp(0, seenMs),
+  );
+
+  /// مزامنة في الاتجاهين — تزايدية افتراضياً، وكاملة عند [manual] أو حين
+  /// يلزم ([needsFull]). ترجع true إذا تغيّرت البيانات المحلية.
+  Future<bool> syncAll({bool manual = false}) async {
     final db = _db;
     final uid = _uid;
     final pharmacyId = AppSettings.instance.pharmacyId;
@@ -263,6 +328,18 @@ class SyncService extends ChangeNotifier {
 
     _setStatus(SyncStatus.syncing);
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final cycleStart = DateTime.now().millisecondsSinceEpoch;
+      final seenMed = prefs.getInt(_kSeenMed);
+      final seenTomb = prefs.getInt(_kSeenTomb) ?? 0;
+      final pushMed = prefs.getInt(_kPushMed) ?? 0;
+      var full = needsFull(
+        seenMs: seenMed,
+        lastFullMs: prefs.getInt(_kLastFull),
+        manual: manual,
+        nowMs: cycleStart,
+      );
+
       final local = await MedicineDb.instance.getAll();
       final localById = {for (final m in local) m.id: m};
 
@@ -270,10 +347,38 @@ class SyncService extends ChangeNotifier {
       // pharmacy_service.dart). سجلات لم تُوسَم بـ pharmacyId بعد لا تُقرأ
       // هنا — خطوة الهجرة في MedicineStore.refreshFromCloud هي ما تمنحها
       // هذا الوسم من النسخة المحلية قبل أول استدعاء لهذه الدالة.
-      final snapshot = await db
+      final base = db
           .collection(_collection)
-          .where('pharmacyId', isEqualTo: pharmacyId)
-          .get();
+          .where('pharmacyId', isEqualTo: pharmacyId);
+      QuerySnapshot<Map<String, dynamic>>? snapshot;
+      Set<String>? deletedIds;
+      int? maxTomb;
+      if (!full) {
+        try {
+          snapshot = await base
+              .where('syncedAt', isGreaterThan: _since(seenMed!))
+              .get();
+          final tombs = await db
+              .collection(_tombstones)
+              .where('pharmacyId', isEqualTo: pharmacyId)
+              .where('syncedAt', isGreaterThan: _since(seenTomb))
+              .get();
+          deletedIds = {for (final t in tombs.docs) t.id};
+          maxTomb = _maxSynced(tombs.docs);
+        } on FirebaseException catch (e) {
+          // فهرس (pharmacyId + syncedAt) لم يُنشأ بعد: الرسالة تحمل رابط
+          // إنشائه. المزامنة لا تتعطّل — تعود كاملة كما كانت.
+          if (e.code != 'failed-precondition') rethrow;
+          debugPrint('المزامنة التزايدية تحتاج فهرساً: ${e.message}');
+          full = true;
+        }
+      }
+      if (full) {
+        snapshot = await base.get();
+        deletedIds = await _tombstoneIds(db, pharmacyId, uid);
+      }
+      _lastTombstones = {...deletedIds!};
+      final maxMed = _maxSynced(snapshot!.docs);
       final remoteById = <String, Medicine>{};
       final legacyImages = <String, String>{}; // id -> data URL من نسخة الويب
       var skipped = 0;
@@ -295,8 +400,6 @@ class SyncService extends ChangeNotifier {
           debugPrint('تخطّي مستند غير صالح ${doc.id}: $e');
         }
       }
-
-      final deletedIds = await _tombstoneIds(db, pharmacyId, uid);
 
       // حماية: أي معرّف ما زال في طابور الحذف المحلي (لأن الحذف السحابي فشل
       // ولم يُثبَّت شاهد بعد) يُعامَل كمحذوف لهذه المزامنة — بلا هذا يظل
@@ -356,11 +459,14 @@ class SyncService extends ChangeNotifier {
         localChanged = true;
       }
 
-      // صعود: ما هو محلي وأحدث (أو غير موجود في السحابة) وليس محذوفاً
+      // صعود: ما هو محلي وأحدث وليس محذوفاً. في الكاملة: غير الموجود في
+      // السحابة أو الأقدم فيها. في التزايدية لا نرى السحابة كلها، فنرفع ما
+      // عُدّل محلياً بعد آخر دورة ناجحة (والحفظ يرفع فوراً أصلاً).
       for (final mine in local) {
         if (deletedIds.contains(mine.id)) continue;
         final remote = remoteById[mine.id];
-        if (remote == null || mine.updatedAt > remote.updatedAt) {
+        final newer = remote == null || mine.updatedAt > remote.updatedAt;
+        if (full ? newer : (newer && mine.updatedAt > pushMed)) {
           pending[mine.id] = _payload(mine);
         }
       }
@@ -403,6 +509,13 @@ class SyncService extends ChangeNotifier {
         if (retry.denied.isEmpty) relinked.add(mine.name);
         localChanged = true;
       }
+
+      // الدورة اكتملت: يتقدّم المؤشر. بلا ختم في أي مستند (كلها أقدم من
+      // هذه النسخة) يصير 0 — فتلتقط التزايدية التالية كل ما يُكتب بعد الآن.
+      await prefs.setInt(_kSeenMed, math.max(seenMed ?? 0, maxMed ?? 0));
+      await prefs.setInt(_kSeenTomb, math.max(seenTomb, maxTomb ?? 0));
+      await prefs.setInt(_kPushMed, cycleStart);
+      if (full) await prefs.setInt(_kLastFull, cycleStart);
 
       final notes = [
         if (skipped > 0) 'تم تخطّي $skipped سجل غير صالح في السحابة.',
@@ -456,7 +569,8 @@ class SyncService extends ChangeNotifier {
 
   Map<String, Object?> _invoicePayload(Invoice inv) => inv.toCloud()
     ..['ownerUid'] = _uid
-    ..['pharmacyId'] = AppSettings.instance.pharmacyId;
+    ..['pharmacyId'] = AppSettings.instance.pharmacyId
+    ..['syncedAt'] = FieldValue.serverTimestamp();
 
   /// رفع فاتورة (بعد الحفظ المحلي). لا يرمي.
   Future<void> pushInvoice(Invoice inv) async {
@@ -487,6 +601,7 @@ class SyncService extends ChangeNotifier {
           'pharmacyId': pharmacyId,
           'kind': 'invoice',
           'deletedAt': DateTime.now().millisecondsSinceEpoch,
+          'syncedAt': FieldValue.serverTimestamp(),
         });
       await awaitServerAck(batch.commit(), ackTimeout);
     } catch (e) {
@@ -496,7 +611,13 @@ class SyncService extends ChangeNotifier {
 
   /// مزامنة الفواتير في الاتجاهين، تُرجع القائمة المحلية الجديدة أو null إن
   /// تعذّرت. الأحدث `updatedAt` يفوز، وأسماء الصور المحلية لا تُمس أبداً.
-  Future<List<Invoice>?> syncInvoices(List<Invoice> local) async {
+  ///
+  /// تزايدية كالمواد: ما تغيّر بعد آخر ختم فقط، وشواهد الحذف من آخر
+  /// [syncAll] بدل قراءتها مرة ثانية. كاملة عند [manual] أو حين يلزم.
+  Future<List<Invoice>?> syncInvoices(
+    List<Invoice> local, {
+    bool manual = false,
+  }) async {
     final db = _db;
     final uid = _uid;
     final pharmacyId = AppSettings.instance.pharmacyId;
@@ -504,11 +625,33 @@ class SyncService extends ChangeNotifier {
       return null;
     }
     try {
-      final snap = await db
+      final prefs = await SharedPreferences.getInstance();
+      final cycleStart = DateTime.now().millisecondsSinceEpoch;
+      final seen = prefs.getInt(_kSeenInv);
+      var full = needsFull(
+        seenMs: seen,
+        lastFullMs: prefs.getInt(_kLastFull),
+        manual: manual,
+        nowMs: cycleStart,
+      );
+      final base = db
           .collection(_invoices)
-          .where('pharmacyId', isEqualTo: pharmacyId)
-          .get();
-      final deleted = await _tombstoneIds(db, pharmacyId, uid);
+          .where('pharmacyId', isEqualTo: pharmacyId);
+      QuerySnapshot<Map<String, dynamic>>? snap;
+      if (!full) {
+        try {
+          snap = await base
+              .where('syncedAt', isGreaterThan: _since(seen!))
+              .get();
+        } on FirebaseException catch (e) {
+          if (e.code != 'failed-precondition') rethrow;
+          debugPrint('مزامنة الفواتير التزايدية تحتاج فهرساً: ${e.message}');
+          full = true;
+        }
+      }
+      snap ??= await base.get();
+      final deleted =
+          _lastTombstones ?? await _tombstoneIds(db, pharmacyId, uid);
       final result = mergeInvoices(
         local: local,
         remote: [
@@ -516,10 +659,16 @@ class SyncService extends ChangeNotifier {
             Invoice.fromMap(Map<String, Object?>.from(d.data())..['id'] = d.id),
         ],
         deleted: deleted,
+        uploadSince: full ? null : prefs.getInt(_kPushInv) ?? 0,
       );
       for (final inv in result.upload) {
         unawaited(pushInvoice(inv));
       }
+      await prefs.setInt(
+        _kSeenInv,
+        math.max(seen ?? 0, _maxSynced(snap.docs) ?? 0),
+      );
+      await prefs.setInt(_kPushInv, cycleStart);
       return result.merged;
     } catch (e) {
       debugPrint('تعذّرت مزامنة الفواتير: $e');
@@ -528,11 +677,13 @@ class SyncService extends ChangeNotifier {
   }
 
   /// دمج صِرف للفواتير المحلية والسحابية — قابل للاختبار بلا Firestore.
+  /// [uploadSince] (تزايدية): يُرفع ما عُدّل محلياً بعده فقط.
   @visibleForTesting
   static ({List<Invoice> merged, List<Invoice> upload}) mergeInvoices({
     required List<Invoice> local,
     required List<Invoice> remote,
     required Set<String> deleted,
+    int? uploadSince,
   }) {
     final byId = {for (final i in local) i.id: i};
     final remoteById = {for (final r in remote) r.id: r};
@@ -548,7 +699,11 @@ class SyncService extends ChangeNotifier {
     for (final mine in local) {
       final r = remoteById[mine.id];
       if (deleted.contains(mine.id)) continue;
-      if (r == null || mine.updatedAt > r.updatedAt) upload.add(mine);
+      final newer = r == null || mine.updatedAt > r.updatedAt;
+      // تزايدية: [remote] ما تغيّر فقط، فغيابها لا يعني أنها غير مرفوعة
+      if (newer && (uploadSince == null || mine.updatedAt > uploadSince)) {
+        upload.add(mine);
+      }
     }
     byId.removeWhere((id, _) => deleted.contains(id));
     final merged = byId.values.toList()

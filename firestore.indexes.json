@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "medicines",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pharmacyId", "order": "ASCENDING" },
+        { "fieldPath": "syncedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tombstones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pharmacyId", "order": "ASCENDING" },
+        { "fieldPath": "syncedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "invoices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pharmacyId", "order": "ASCENDING" },
+        { "fieldPath": "syncedAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

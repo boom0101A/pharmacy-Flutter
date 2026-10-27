@@ -322,7 +322,8 @@ class MedicineStore extends ChangeNotifier {
     // المزامنة أولاً ثم تفريغ طابور الحذف: المزامنة تعامل ما في الطابور كمحذوف
     // (فلا تعيد تنزيله)، وتزيل منه أولاً أي أثر تعارض باركود قبل أن يحاول
     // التفريغ حذف مخزون حقيقي من السحابة.
-    final changed = await SyncService.instance.syncAll();
+    // السحب اليدوي كامل (شبكة أمان)، والتشغيل العادي تزايدي
+    final changed = await SyncService.instance.syncAll(manual: manual);
     await _flushPendingDeletes();
     if (changed) {
       _all = await _db.getAll();
@@ -330,7 +331,7 @@ class MedicineStore extends ChangeNotifier {
     }
     unawaited(SyncService.instance.pruneOrphanImages());
     unawaited(DuplicateDismissals.instance.syncWithCloud());
-    unawaited(InvoiceStore.instance.sync());
+    unawaited(InvoiceStore.instance.sync(manual: manual));
     _scheduleDigestIfEnabled();
   }
 

@@ -92,14 +92,19 @@ class InvoiceStore extends ChangeNotifier {
   }
 
   /// مزامنة مع السحابة — تُستدعى ضمن دورة تحديث المخزون. لا ترمي.
-  Future<void> sync() async {
+  Future<void> sync({bool manual = false}) async {
     await _ensureLoaded();
-    final merged = await SyncService.instance.syncInvoices(_all);
+    final merged = await SyncService.instance.syncInvoices(
+      _all,
+      manual: manual,
+    );
     if (merged == null) return;
+    final before = {for (final i in _all) i.id: i.updatedAt};
     final gone = {for (final i in _all) i.id}
       ..removeAll(merged.map((i) => i.id));
+    // ما تغيّر فقط — كتابة كل الفواتير في كل دورة تكبر مع السجل
     for (final inv in merged) {
-      await _write(inv);
+      if (before[inv.id] != inv.updatedAt) await _write(inv);
     }
     for (final old in _all.where((i) => gone.contains(i.id))) {
       await _remove(old.id);
