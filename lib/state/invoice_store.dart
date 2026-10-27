@@ -111,6 +111,20 @@ class InvoiceStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// لكل مادة في المخزون: أحدث فاتورة محفوظة ورد فيها سطرها.
+  Map<String, Invoice> latestInvoiceByMedicine() {
+    final out = <String, Invoice>{};
+    for (final inv in _all) {
+      for (final line in inv.lines) {
+        final id = line.medicineId;
+        if (id == null) continue;
+        final prev = out[id];
+        if (prev == null || inv.sortDate > prev.sortDate) out[id] = inv;
+      }
+    }
+    return out;
+  }
+
   /// استرجاع من نسخة احتياطية: يضيف الغائب ويحدّث الأقدم، ولا يحذف شيئاً.
   /// صور هذا الهاتف (إن وُجدت) تبقى. يُرجع عدد ما أُضيف أو حُدّث.
   Future<int> importAll(List<Invoice> incoming) async {

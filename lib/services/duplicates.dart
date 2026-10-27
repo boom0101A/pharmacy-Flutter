@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 import '../state/medicine_store.dart';
 import 'gs1_parser.dart';
@@ -24,6 +25,52 @@ class DuplicateGroup {
   String get key =>
       '${isSimilar ? 'sim:' : ''}'
       '${(items.map((m) => m.id).toList()..sort()).join('|')}';
+}
+
+/// بعد دمج جزء من مجموعة: مفاتيح المجموعات التي تُخفى نهائياً.
+///
+/// المستخدم اختار ما يُدمج، فغير المختارة **قراره أنها مختلفة** — لا تعود
+/// للظهور مع الباقية، ولا فيما بينها. [survivors] = الباقية + غير المختارة.
+/// تُخفى كل مجموعة (مؤكّدة أو متشابهة، بعد الدمج) كل موادها ضمن [survivors].
+List<String> keysToDismissAfterMerge(
+  List<Medicine> itemsAfterMerge,
+  Set<String> survivors,
+) {
+  final exact = findDuplicateGroups(itemsAfterMerge);
+  final inExact = {
+    for (final g in exact)
+      for (final m in g.items) m.id,
+  };
+  final similar = findSimilarGroups(itemsAfterMerge, exclude: inExact);
+  return [
+    for (final g in [...exact, ...similar])
+      if (g.items.every((m) => survivors.contains(m.id))) g.key,
+  ];
+}
+
+/// «🧾 فاتورة …» بجانب المادة في المراجعة — يساعد على التمييز بين نسختين:
+/// - أحدث فاتورة محفوظة ورد فيها سطرها، بتاريخها ومجهّزها.
+/// - وإلا مادة أنشأتها «فاتورة ذكية» قبل حفظ الفواتير (معرّفها `inv_`):
+///   تاريخ إضافتها هو تاريخ تلك الفاتورة.
+/// - مادة مُدخلة يدوياً: null.
+String? invoiceLabel(Medicine m, Invoice? latest) {
+  String date(int ms) {
+    final d = DateTime.fromMillisecondsSinceEpoch(ms);
+    return '${d.year}/${d.month.toString().padLeft(2, '0')}/'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+
+  if (latest != null) {
+    final when = latest.dateMs != null
+        ? date(latest.dateMs!)
+        : (latest.dateText ?? date(latest.createdAt));
+    final from = latest.supplier;
+    return '🧾 فاتورة $when${from == null ? '' : ' · $from'}';
+  }
+  if (m.id.startsWith('inv_')) {
+    return '🧾 من فاتورة بتاريخ ${date(m.createdAt)}';
+  }
+  return null;
 }
 
 /// أقصى حجم لمجموعة متشابهة — أكبر من ذلك تصير المراجعة متعبة وغير دقيقة.

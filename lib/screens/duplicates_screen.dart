@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../models/invoice.dart';
 import '../models/medicine.dart';
 import '../services/duplicate_dismissals.dart';
 import '../services/duplicates.dart';
+import '../state/invoice_store.dart';
 import '../state/medicine_store.dart';
+import '../util/number_parse.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
@@ -19,9 +22,13 @@ class DuplicatesScreen extends StatefulWidget {
     required this.store,
     this.loadItems,
     this.pendingCloudDeletes,
+    this.invoices,
   });
 
   final MedicineStore store;
+
+  /// سجل الفواتير لتاريخ فاتورة كل مادة — يُحقن في الاختبار.
+  final InvoiceStore? invoices;
   final Future<List<Medicine>> Function()? loadItems;
   final Future<int> Function()? pendingCloudDeletes;
 
@@ -34,7 +41,13 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   String? _error;
   List<Medicine> _items = const [];
   int _pending = 0;
-  final Map<String, String> _keeperByGroup = {};
+
+  /// المواد المختارة للدمج في كل مجموعة — لا شيء مختار افتراضياً: الاختيار
+  /// قرار المستخدم صراحةً، فالمجموعة كثيراً ما تخلط منتجات مختلفة.
+  final Map<String, Set<String>> _selectedByGroup = {};
+
+  /// أحدث فاتورة محفوظة لكل مادة.
+  Map<String, Invoice> _invoiceOf = const {};
 
   /// «أسماء متشابهة» — مقارنة أزواج مكلفة نسبياً، فتُحسب خارج واجهة المستخدم
   /// عند التحميل وبعد كل دمج، لا في كل بناء.
@@ -60,6 +73,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           widget.pendingCloudDeletes ?? widget.store.pendingCloudDeleteCount;
       final items = await load();
       final pending = await pendingFn();
+      final invoices = widget.invoices ?? InvoiceStore.instance;
+      if (invoices.all.isEmpty) await invoices.load();
+      final invoiceOf = invoices.latestInvoiceByMedicine();
       if (!mounted) return;
       final similar = await _findSimilar(items);
       if (!mounted) return;
@@ -67,6 +83,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         _items = items;
         _similarAll = similar;
         _pending = pending;
+        _invoiceOf = invoiceOf;
         _loading = false;
       });
     } catch (e) {
@@ -102,45 +119,45 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     return compute(_similarInIsolate, (items, exact));
   }
 
-  String _keeperOf(DuplicateGroup g) =>
-      _keeperByGroup[g.key] ??
-      (([
-        ...g.items,
-      ]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt))).first.id);
+  Set<String> _selected(DuplicateGroup g) =>
+      _selectedByGroup.putIfAbsent(g.key, () => <String>{});
+
+  static Medicine _newest(Iterable<Medicine> items) =>
+      ([...items]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt))).first;
+
+  /// لـ«فصل الباركود»: المادة المختارة إن كانت واحدة، وإلا الأحدث.
+  String _keeperOf(DuplicateGroup g) {
+    final sel = _selected(g);
+    return sel.length == 1 ? sel.first : _newest(g.items).id;
+  }
 
   Future<void> _dismiss(DuplicateGroup g) async {
     await DuplicateDismissals.instance.add(g.key);
     if (mounted) setState(() {});
   }
 
+  /// دمج **المختارة** فقط: نافذة الاسم الباقي والسعر والكمية النهائيين، ثم
+  /// غير المختارة تُخفى من المراجعة نهائياً (قرار المستخدم أنها مختلفة).
   Future<void> _merge(DuplicateGroup g) async {
-    final keeperId = _keeperOf(g);
-    final merged = mergeGroup(g.items, keeperId, DateTime.now());
-    final losers = g.items.where((m) => m.id != keeperId).toList();
+    final selectedIds = _selected(g);
+    final selected = [
+      for (final m in g.items)
+        if (selectedIds.contains(m.id)) m,
+    ];
+    if (selected.length < 2) return;
 
-    final ok = await showGlassDialog<bool>(
+    final choice = await showGlassDialog<MergeChoice>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        title: const Text('دمج المواد'),
-        content: Text(
-          'ستبقى «${merged.name}» بكمية ${merged.quantity}، وتُحذف '
-          '${losers.length} مادة أخرى من هذا الهاتف ومن كل الأجهزة المشتركة.',
-          style: const TextStyle(fontSize: 13, height: 1.6),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ادمج'),
-          ),
-        ],
-      ),
+      builder: (_) => MergeDialog(items: selected),
     );
-    if (ok != true || !mounted) return;
+    if (choice == null || !mounted) return;
+
+    final merged = mergeGroup(
+      selected,
+      choice.keeperId,
+      DateTime.now(),
+    ).copyWith(price: choice.price, quantity: choice.quantity);
+    final losers = selected.where((m) => m.id != choice.keeperId).toList();
 
     // عملية واحدة: إن فشلت لا يُحذف شيء ولا تضيع كمية
     try {
@@ -155,9 +172,21 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       for (final m in _items)
         if (m.id == merged.id) merged else if (!loserIds.contains(m.id)) m,
     ];
+
+    // الباقية + غير المختارة: لا تعود مجموعة منها للمراجعة، على كل الأجهزة
+    final survivors = {
+      merged.id,
+      for (final m in g.items)
+        if (!selectedIds.contains(m.id)) m.id,
+    };
+    for (final key in keysToDismissAfterMerge(items, survivors)) {
+      await DuplicateDismissals.instance.add(key);
+    }
+
     final similar = await _findSimilar(items);
     if (!mounted) return;
     setState(() {
+      _selectedByGroup.remove(g.key);
       _items = items;
       _similarAll = similar;
     });
@@ -240,8 +269,8 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '${groups.length} مجموعة — اختر المادة التي تبقى ثم «دمج»، أو '
-              '«ليست مكرّرة» إن كانت منتجات مختلفة.',
+              '${groups.length} مجموعة — علّم ما هو نفس المنتج ثم «دمج '
+              'المختارة»، أو «ليست مكرّرة» إن كانت كلها منتجات مختلفة.',
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -290,9 +319,12 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   );
 
   Widget _groupCard(DuplicateGroup g) {
-    final keeper = _keeperOf(g);
-    final total = g.items.fold<int>(0, (n, m) => n + m.quantity);
+    final selected = _selected(g);
+    final total = g.items
+        .where((m) => selected.contains(m.id))
+        .fold<int>(0, (n, m) => n + m.quantity);
     final locked = _pending > 0;
+    final canMerge = !locked && selected.length >= 2;
     return Card(
       key: ValueKey(g.key),
       margin: const EdgeInsets.only(bottom: 12),
@@ -315,59 +347,63 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                     : AppColors.primary,
               ),
             ),
-            RadioGroup<String>(
-              groupValue: keeper,
-              onChanged: (v) {
-                if (v != null) setState(() => _keeperByGroup[g.key] = v);
-              },
-              child: Column(
-                children: [
-                  // الصف المختار بخلفية تيل خفيفة وحدّ (`.radio.on`)
-                  for (final m in g.items)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: RadioListTile<String>(
-                        value: m.id,
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                        ),
-                        tileColor: m.id == keeper
-                            ? const Color(0x1A2DD4BF)
-                            : Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: m.id == keeper
-                                ? const Color(0x592DD4BF)
-                                : Colors.transparent,
-                          ),
-                        ),
-                        title: Text(
-                          m.name,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          _details(m),
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'علّم المواد التي هي نفس المنتج ثم «دمج المختارة» — غير '
+                'المعلّمة تبقى كما هي وتُزال من المراجعة.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
             ),
+            // الصف المختار بخلفية تيل خفيفة وحدّ (`.radio.on`)
+            for (final m in g.items)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: CheckboxListTile(
+                  key: ValueKey('pick-${m.id}'),
+                  value: selected.contains(m.id),
+                  onChanged: (v) => setState(() {
+                    v == true ? selected.add(m.id) : selected.remove(m.id);
+                  }),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  tileColor: selected.contains(m.id)
+                      ? const Color(0x1A2DD4BF)
+                      : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: selected.contains(m.id)
+                          ? const Color(0x592DD4BF)
+                          : Colors.transparent,
+                    ),
+                  ),
+                  title: Text(
+                    m.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    _details(m),
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              ),
             Wrap(
               spacing: 8,
               runSpacing: 6,
               children: [
                 GradientFilled(
-                  enabled: !locked,
+                  enabled: canMerge,
                   child: FilledButton.icon(
-                    onPressed: locked ? null : () => _merge(g),
+                    key: ValueKey('merge-${g.key}'),
+                    onPressed: canMerge ? () => _merge(g) : null,
                     icon: const Icon(Icons.merge_type_rounded, size: 18),
-                    label: Text('دمج (الكمية $total)'),
+                    label: Text(
+                      selected.length < 2
+                          ? 'اختر مادتين للدمج'
+                          : 'دمج المختارة (${selected.length}) · الكمية $total',
+                    ),
                   ),
                 ),
                 OutlinedButton(
@@ -394,6 +430,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       if (m.expiryDate != null) 'الصلاحية ${_date(m.expiryDate!)}',
       if (m.barcode.isNotEmpty) m.barcode,
       if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
+      ?invoiceLabel(m, _invoiceOf[m.id]),
       'عُدّلت ${_date(m.updatedAt)}',
       m.type.label,
     ];
@@ -409,3 +446,145 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
 
 List<DuplicateGroup> _similarInIsolate((List<Medicine>, Set<String>) a) =>
     findSimilarGroups(a.$1, exclude: a.$2);
+
+/// ما اختاره المستخدم في نافذة الدمج.
+class MergeChoice {
+  const MergeChoice({
+    required this.keeperId,
+    required this.price,
+    required this.quantity,
+  });
+
+  final String keeperId;
+  final double price;
+  final int quantity;
+}
+
+/// نافذة الدمج: الاسم الباقي من المختارة، والسعر والكمية النهائيان.
+///
+/// الكمية الافتراضية مجموع المختارة والسعر سعر الأحدث — لكن المستخدم يكتب
+/// النهائي بنفسه (قد يكون جرد الرف غير المجموع، أو سعر إحدى النسخ قديماً).
+class MergeDialog extends StatefulWidget {
+  const MergeDialog({super.key, required this.items});
+
+  final List<Medicine> items;
+
+  @override
+  State<MergeDialog> createState() => _MergeDialogState();
+}
+
+class _MergeDialogState extends State<MergeDialog> {
+  late String _keeper;
+  late final TextEditingController _price;
+  late final TextEditingController _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    final byNewest = [...widget.items]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    _keeper = byNewest.first.id;
+    final price = byNewest
+        .map((m) => m.price)
+        .firstWhere((p) => p > 0, orElse: () => 0);
+    final qty = widget.items.fold<int>(0, (n, m) => n + m.quantity);
+    _price = TextEditingController(
+      text: price == price.roundToDouble()
+          ? price.toInt().toString()
+          : price.toString(),
+    );
+    _quantity = TextEditingController(text: '$qty');
+  }
+
+  @override
+  void dispose() {
+    _price.dispose();
+    _quantity.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final price = parseLocalizedNumber(_price.text);
+    final qty = parseLocalizedInt(_quantity.text);
+    final valid = price != null && price >= 0 && qty != null && qty >= 0;
+    return AlertDialog(
+      backgroundColor: AppColors.bgCard,
+      title: Text('دمج ${widget.items.length} مواد'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'الاسم الذي يبقى',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            RadioGroup<String>(
+              groupValue: _keeper,
+              onChanged: (v) {
+                if (v != null) setState(() => _keeper = v);
+              },
+              child: Column(
+                children: [
+                  for (final m in widget.items)
+                    RadioListTile<String>(
+                      key: ValueKey('keep-${m.id}'),
+                      value: m.id,
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(m.name, style: const TextStyle(fontSize: 13)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const Key('mergePrice'),
+              controller: _price,
+              onChanged: (_) => setState(() {}),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: '💰 السعر النهائي (د.ع)',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              key: const Key('mergeQuantity'),
+              controller: _quantity,
+              onChanged: (_) => setState(() {}),
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: '📦 الكمية النهائية',
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'تُحذف ${widget.items.length - 1} مادة من هذا الهاتف ومن كل '
+              'الأجهزة المشتركة.',
+              style: const TextStyle(fontSize: 12, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          key: const Key('mergeSave'),
+          onPressed: valid
+              ? () => Navigator.pop(
+                  context,
+                  MergeChoice(keeperId: _keeper, price: price, quantity: qty),
+                )
+              : null,
+          child: const Text('حفظ'),
+        ),
+      ],
+    );
+  }
+}

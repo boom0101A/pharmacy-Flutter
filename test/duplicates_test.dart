@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:saydaliyati/models/invoice.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/services/duplicate_dismissals.dart';
 import 'package:saydaliyati/services/duplicates.dart';
@@ -27,6 +28,64 @@ Medicine m(
 );
 
 void main() {
+  group('keysToDismissAfterMerge', () {
+    test('غير المختارة تُخفى مع الباقية وفيما بينها', () {
+      // بعد دمج j2 في j1: يبقى j1 + غير المختارتين t وr
+      final after = [
+        m('j1', name: 'بلاستر انف بعد عمليات ورقي m3 جوزي'),
+        m('t', name: 'بلاسترانف بعد عمليات ورقي m3 شفاف'),
+        m('r', name: 'بلاستر انة بعد عمليات ورقي m3 جوري'),
+        m('other', name: 'شاش طبي'),
+      ];
+      final keys = keysToDismissAfterMerge(after, {'j1', 't', 'r'});
+      expect(keys, isNotEmpty);
+      final shown = [
+        ...findDuplicateGroups(after, dismissed: keys.toSet()),
+        ...findSimilarGroups(after, dismissed: keys.toSet()),
+      ];
+      expect(shown, isEmpty);
+    });
+
+    test('مجموعة فيها مادة من خارج المجموعة الأصلية لا تُخفى', () {
+      final after = [
+        m('keep', name: 'لوشن جونسون اطفال'),
+        m('new', name: 'لوشن جونسن اطفال'),
+      ];
+      expect(keysToDismissAfterMerge(after, {'keep'}), isEmpty);
+    });
+  });
+
+  group('invoiceLabel', () {
+    test('من فاتورة محفوظة: تاريخها ومجهّزها', () {
+      final inv = Invoice(
+        id: 'i',
+        supplier: 'مذخر الشفاء',
+        dateMs: DateTime(2026, 10, 12).millisecondsSinceEpoch,
+        createdAt: 1,
+        updatedAt: 1,
+      );
+      expect(invoiceLabel(m('a'), inv), '🧾 فاتورة 2026/10/12 · مذخر الشفاء');
+    });
+
+    test('أنشأتها فاتورة ذكية قبل حفظ الفواتير: تاريخ إضافتها', () {
+      final created = DateTime(2026, 8, 10).millisecondsSinceEpoch;
+      final item = Medicine(
+        id: 'inv_${created}_1_0',
+        barcode: '',
+        name: 'x',
+        price: 0,
+        quantity: 1,
+        createdAt: created,
+        updatedAt: created,
+      );
+      expect(invoiceLabel(item, null), '🧾 من فاتورة بتاريخ 2026/08/10');
+    });
+
+    test('مُدخلة يدوياً: بلا تسمية', () {
+      expect(invoiceLabel(m('med_1'), null), isNull);
+    });
+  });
+
   group('findSimilarGroups', () {
     List<List<String>> ids(List<Medicine> items, {Set<String>? exclude}) => [
       for (final g in findSimilarGroups(items, exclude: exclude ?? {}))
