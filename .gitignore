@@ -44,9 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Secrets: key.properties never committed. .env and google-services.json ARE
-# tracked on purpose (private repo) — purge from history before going public.
+# Secrets: key.properties and .env (Gemini key) never committed — keep a
+# private copy of .env; .env.example shows its shape. google-services.json is
+# tracked on purpose (private repo).
 /android/key.properties
+/.env
 
 .superpowers/
 
