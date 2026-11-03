@@ -15,6 +15,7 @@ class AppSettings extends ChangeNotifier {
   static const _kNotifications = 'stock_notifications_enabled';
   static const _kPharmacyId = 'pharmacy_id';
   static const _kPharmacyBackfill = 'pharmacy_backfill_done';
+  static const _kWelcomeSeen = 'welcome_seen';
 
   SharedPreferences? _prefs;
 
@@ -47,6 +48,11 @@ class AppSettings extends ChangeNotifier {
   bool _pharmacyBackfillDone = false;
   bool get pharmacyBackfillDone => _pharmacyBackfillDone;
 
+  /// هل رأى هذا الجهاز شرائح الترحيب؟ تظهر في أول تشغيل فقط، ويعيدها
+  /// المستخدم من الإعدادات.
+  bool _welcomeSeen = false;
+  bool get welcomeSeen => _welcomeSeen;
+
   /// المفتاح المستخدَم دائماً هو المفتاح المضمّن من ملف .env
   String get geminiKey => ApiKeys.geminiDefault;
 
@@ -61,7 +67,18 @@ class AppSettings extends ChangeNotifier {
     _stockNotificationsEnabled = _prefs?.getBool(_kNotifications) ?? true;
     _pharmacyId = _prefs?.getString(_kPharmacyId);
     _pharmacyBackfillDone = _prefs?.getBool(_kPharmacyBackfill) ?? false;
+    _welcomeSeen = _prefs?.getBool(_kWelcomeSeen) ?? false;
     notifyListeners();
+  }
+
+  Future<void> markWelcomeSeen() async {
+    _welcomeSeen = true;
+    await _prefs?.setBool(_kWelcomeSeen, true);
+  }
+
+  Future<void> resetWelcome() async {
+    _welcomeSeen = false;
+    await _prefs?.setBool(_kWelcomeSeen, false);
   }
 
   Future<void> markPriceRepairDone() async {
