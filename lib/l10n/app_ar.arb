@@ -272,5 +272,91 @@
       }
     }
   },
-  "listSeparator": "، "
+  "listSeparator": "، ",
+  "expiredDaysAgo": "منتهية منذ {n} يوماً",
+  "@expiredDaysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "expiresToday": "تنتهي اليوم",
+  "daysLeft": "متبقٍ {n} يوماً",
+  "@daysLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "itemDeleted": "حُذفت هذه المادة",
+  "shareLinePrice": "السعر: {v}",
+  "@shareLinePrice": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "shareLineQty": "الكمية: {v}",
+  "@shareLineQty": {
+    "placeholders": {
+      "v": {
+        "type": "int"
+      }
+    }
+  },
+  "shareLineExpiry": "الصلاحية: {v}",
+  "@shareLineExpiry": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "shareLineBarcode": "الباركود: {v}",
+  "@shareLineBarcode": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "shareLineCompany": "الشركة: {v}",
+  "@shareLineCompany": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "share": "مشاركة",
+  "rowExpiry": "📅 الصلاحية",
+  "rowBarcode": "📊 الباركود",
+  "barcodeCopied": "نُسخ الباركود",
+  "rowCompany": "🏭 الشركة",
+  "rowCategory": "🧪 نوع المادة",
+  "rowSection": "🗂️ القسم",
+  "rowAdded": "➕ الإضافة",
+  "addedOn": "أُضيفت {date}",
+  "@addedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "rowUpdated": "🕓 آخر تعديل",
+  "invoiceHistory": "🧾 سجل الفواتير",
+  "noInvoicesForItem": "لا فواتير محفوظة لهذه المادة",
+  "unknownSupplier": "مجهّز غير معروف",
+  "badgeExpired": "⛔ منتهية الصلاحية",
+  "badgeExpiring": "⏳ قاربت الانتهاء",
+  "badgeSoldOut": "🚫 نافدة",
+  "badgeLowStock": "⚠️ مخزون منخفض",
+  "badgeIncomplete": "📝 بيانات ناقصة",
+  "increase": "زيادة",
+  "decrease": "إنقاص",
+  "stockValue": "قيمة المخزون"
 }

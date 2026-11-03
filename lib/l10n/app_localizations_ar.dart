@@ -416,4 +416,110 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listSeparator => '، ';
+
+  @override
+  String expiredDaysAgo(int n) {
+    return 'منتهية منذ $n يوماً';
+  }
+
+  @override
+  String get expiresToday => 'تنتهي اليوم';
+
+  @override
+  String daysLeft(int n) {
+    return 'متبقٍ $n يوماً';
+  }
+
+  @override
+  String get itemDeleted => 'حُذفت هذه المادة';
+
+  @override
+  String shareLinePrice(String v) {
+    return 'السعر: $v';
+  }
+
+  @override
+  String shareLineQty(int v) {
+    return 'الكمية: $v';
+  }
+
+  @override
+  String shareLineExpiry(String v) {
+    return 'الصلاحية: $v';
+  }
+
+  @override
+  String shareLineBarcode(String v) {
+    return 'الباركود: $v';
+  }
+
+  @override
+  String shareLineCompany(String v) {
+    return 'الشركة: $v';
+  }
+
+  @override
+  String get share => 'مشاركة';
+
+  @override
+  String get rowExpiry => '📅 الصلاحية';
+
+  @override
+  String get rowBarcode => '📊 الباركود';
+
+  @override
+  String get barcodeCopied => 'نُسخ الباركود';
+
+  @override
+  String get rowCompany => '🏭 الشركة';
+
+  @override
+  String get rowCategory => '🧪 نوع المادة';
+
+  @override
+  String get rowSection => '🗂️ القسم';
+
+  @override
+  String get rowAdded => '➕ الإضافة';
+
+  @override
+  String addedOn(String date) {
+    return 'أُضيفت $date';
+  }
+
+  @override
+  String get rowUpdated => '🕓 آخر تعديل';
+
+  @override
+  String get invoiceHistory => '🧾 سجل الفواتير';
+
+  @override
+  String get noInvoicesForItem => 'لا فواتير محفوظة لهذه المادة';
+
+  @override
+  String get unknownSupplier => 'مجهّز غير معروف';
+
+  @override
+  String get badgeExpired => '⛔ منتهية الصلاحية';
+
+  @override
+  String get badgeExpiring => '⏳ قاربت الانتهاء';
+
+  @override
+  String get badgeSoldOut => '🚫 نافدة';
+
+  @override
+  String get badgeLowStock => '⚠️ مخزون منخفض';
+
+  @override
+  String get badgeIncomplete => '📝 بيانات ناقصة';
+
+  @override
+  String get increase => 'زيادة';
+
+  @override
+  String get decrease => 'إنقاص';
+
+  @override
+  String get stockValue => 'قيمة المخزون';
 }

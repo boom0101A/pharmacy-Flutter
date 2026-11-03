@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/l10n/l10n.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
+import 'package:saydaliyati/screens/medicine_detail_screen.dart';
+import 'package:saydaliyati/state/invoice_store.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/screens/welcome_view.dart';
 import 'package:saydaliyati/services/app_settings.dart';
@@ -105,6 +107,36 @@ void main() {
       expect(find.text(r'$1.00'), findsOneWidget);
       expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
     });
+  });
+
+  testWidgets('التفاصيل بالإنجليزية', (tester) async {
+    tester.view.physicalSize = const Size(420, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = _Store()..seed([_med('m1', 'شراب أطفال', 7877)]);
+    await tester.pumpWidget(
+      englishHost(
+        MedicineDetailScreen(
+          store: store,
+          medicineId: 'm1',
+          onEdit: () {},
+          onDelete: () {},
+          invoices: InvoiceStore(
+            loadAll: () async => [],
+            write: (_) async {},
+            remove: (_) async {},
+            savePage: (_) async => '',
+            deletePage: (_) async {},
+            push: (_) async {},
+            pushDelete: (_) async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Stock value'), findsOneWidget);
+    expect(find.text('7,877 IQD'), findsOneWidget);
+    expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
   });
 
   group('الترحيب بالإنجليزية', () {

@@ -799,6 +799,186 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'، '**
   String get listSeparator;
+
+  /// No description provided for @expiredDaysAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهية منذ {n} يوماً'**
+  String expiredDaysAgo(int n);
+
+  /// No description provided for @expiresToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي اليوم'**
+  String get expiresToday;
+
+  /// No description provided for @daysLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقٍ {n} يوماً'**
+  String daysLeft(int n);
+
+  /// No description provided for @itemDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت هذه المادة'**
+  String get itemDeleted;
+
+  /// No description provided for @shareLinePrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر: {v}'**
+  String shareLinePrice(String v);
+
+  /// No description provided for @shareLineQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية: {v}'**
+  String shareLineQty(int v);
+
+  /// No description provided for @shareLineExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية: {v}'**
+  String shareLineExpiry(String v);
+
+  /// No description provided for @shareLineBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود: {v}'**
+  String shareLineBarcode(String v);
+
+  /// No description provided for @shareLineCompany.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشركة: {v}'**
+  String shareLineCompany(String v);
+
+  /// No description provided for @share.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get share;
+
+  /// No description provided for @rowExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 الصلاحية'**
+  String get rowExpiry;
+
+  /// No description provided for @rowBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 الباركود'**
+  String get rowBarcode;
+
+  /// No description provided for @barcodeCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نُسخ الباركود'**
+  String get barcodeCopied;
+
+  /// No description provided for @rowCompany.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏭 الشركة'**
+  String get rowCompany;
+
+  /// No description provided for @rowCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧪 نوع المادة'**
+  String get rowCategory;
+
+  /// No description provided for @rowSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗂️ القسم'**
+  String get rowSection;
+
+  /// No description provided for @rowAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'➕ الإضافة'**
+  String get rowAdded;
+
+  /// No description provided for @addedOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيفت {date}'**
+  String addedOn(String date);
+
+  /// No description provided for @rowUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'🕓 آخر تعديل'**
+  String get rowUpdated;
+
+  /// No description provided for @invoiceHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧾 سجل الفواتير'**
+  String get invoiceHistory;
+
+  /// No description provided for @noInvoicesForItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا فواتير محفوظة لهذه المادة'**
+  String get noInvoicesForItem;
+
+  /// No description provided for @unknownSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجهّز غير معروف'**
+  String get unknownSupplier;
+
+  /// No description provided for @badgeExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'⛔ منتهية الصلاحية'**
+  String get badgeExpired;
+
+  /// No description provided for @badgeExpiring.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ قاربت الانتهاء'**
+  String get badgeExpiring;
+
+  /// No description provided for @badgeSoldOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'🚫 نافدة'**
+  String get badgeSoldOut;
+
+  /// No description provided for @badgeLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ مخزون منخفض'**
+  String get badgeLowStock;
+
+  /// No description provided for @badgeIncomplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'📝 بيانات ناقصة'**
+  String get badgeIncomplete;
+
+  /// No description provided for @increase.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة'**
+  String get increase;
+
+  /// No description provided for @decrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص'**
+  String get decrease;
+
+  /// No description provided for @stockValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة المخزون'**
+  String get stockValue;
 }
 
 class _AppLocalizationsDelegate

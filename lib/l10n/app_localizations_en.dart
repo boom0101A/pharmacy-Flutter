@@ -435,4 +435,122 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listSeparator => ', ';
+
+  @override
+  String expiredDaysAgo(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return 'Expired $_temp0 ago';
+  }
+
+  @override
+  String get expiresToday => 'Expires today';
+
+  @override
+  String daysLeft(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return '$_temp0 left';
+  }
+
+  @override
+  String get itemDeleted => 'This item was deleted';
+
+  @override
+  String shareLinePrice(String v) {
+    return 'Price: $v';
+  }
+
+  @override
+  String shareLineQty(int v) {
+    return 'Quantity: $v';
+  }
+
+  @override
+  String shareLineExpiry(String v) {
+    return 'Expiry: $v';
+  }
+
+  @override
+  String shareLineBarcode(String v) {
+    return 'Barcode: $v';
+  }
+
+  @override
+  String shareLineCompany(String v) {
+    return 'Company: $v';
+  }
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get rowExpiry => '📅 Expiry';
+
+  @override
+  String get rowBarcode => '📊 Barcode';
+
+  @override
+  String get barcodeCopied => 'Barcode copied';
+
+  @override
+  String get rowCompany => '🏭 Company';
+
+  @override
+  String get rowCategory => '🧪 Form';
+
+  @override
+  String get rowSection => '🗂️ Section';
+
+  @override
+  String get rowAdded => '➕ Added';
+
+  @override
+  String addedOn(String date) {
+    return 'Added $date';
+  }
+
+  @override
+  String get rowUpdated => '🕓 Last edited';
+
+  @override
+  String get invoiceHistory => '🧾 Invoice history';
+
+  @override
+  String get noInvoicesForItem => 'No saved invoices for this item';
+
+  @override
+  String get unknownSupplier => 'Unknown supplier';
+
+  @override
+  String get badgeExpired => '⛔ Expired';
+
+  @override
+  String get badgeExpiring => '⏳ Expiring soon';
+
+  @override
+  String get badgeSoldOut => '🚫 Sold out';
+
+  @override
+  String get badgeLowStock => '⚠️ Low stock';
+
+  @override
+  String get badgeIncomplete => '📝 Incomplete data';
+
+  @override
+  String get increase => 'Increase';
+
+  @override
+  String get decrease => 'Decrease';
+
+  @override
+  String get stockValue => 'Stock value';
 }

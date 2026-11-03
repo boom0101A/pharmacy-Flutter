@@ -24,16 +24,16 @@ String _date(int ms) {
 }
 
 /// «متبقٍ N يوماً» أو «منتهية منذ N يوماً» — بالأيام التقويمية.
-String _expiryLeft(DateTime expiry) {
+String _expiryLeft(AppLocalizations l, DateTime expiry) {
   final now = DateTime.now();
   final days = DateTime(
     expiry.year,
     expiry.month,
     expiry.day,
   ).difference(DateTime(now.year, now.month, now.day)).inDays;
-  if (days < 0) return 'منتهية منذ ${-days} يوماً';
-  if (days == 0) return 'تنتهي اليوم';
-  return 'متبقٍ $days يوماً';
+  if (days < 0) return l.expiredDaysAgo(-days);
+  if (days == 0) return l.expiresToday;
+  return l.daysLeft(days);
 }
 
 /// صفحة تفاصيل المادة — تتمدّد من بطاقتها (`OpenContainer` في الرئيسية).
@@ -89,7 +89,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       final messenger = ScaffoldMessenger.maybeOf(context);
       Navigator.of(context).pop();
       messenger?.showSnackBar(
-        const SnackBar(content: Text('حُذفت هذه المادة')),
+        SnackBar(content: Text(context.l10n.itemDeleted)),
       );
     });
   }
@@ -111,13 +111,16 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
 
   String _shareText(Medicine m) {
     final expiry = m.expiry;
+    final l = context.l10n;
     return [
       m.name,
-      'السعر: ${formatMoney(m.price)}',
-      'الكمية: ${m.quantity}',
-      if (expiry != null) 'الصلاحية: ${_date(expiry.millisecondsSinceEpoch)}',
-      if (m.barcode.isNotEmpty) 'الباركود: ${m.barcode}',
-      if ((m.company ?? '').trim().isNotEmpty) 'الشركة: ${m.company!.trim()}',
+      l.shareLinePrice(formatMoney(m.price)),
+      l.shareLineQty(m.quantity),
+      if (expiry != null)
+        l.shareLineExpiry(_date(expiry.millisecondsSinceEpoch)),
+      if (m.barcode.isNotEmpty) l.shareLineBarcode(m.barcode),
+      if ((m.company ?? '').trim().isNotEmpty)
+        l.shareLineCompany(m.company!.trim()),
     ].join('\n');
   }
 
@@ -178,19 +181,19 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
             actions: [
               IconButton(
                 key: const Key('detailShare'),
-                tooltip: 'مشاركة',
+                tooltip: context.l10n.share,
                 icon: const Icon(Icons.share_rounded),
                 onPressed: () => _share(m),
               ),
               IconButton(
                 key: const Key('detailEdit'),
-                tooltip: 'تعديل',
+                tooltip: context.l10n.edit,
                 icon: const Icon(Icons.edit_rounded, color: AppColors.primary),
                 onPressed: widget.onEdit,
               ),
               IconButton(
                 key: const Key('detailDelete'),
-                tooltip: 'حذف',
+                tooltip: context.l10n.delete,
                 icon: const Icon(
                   Icons.delete_outline_rounded,
                   color: AppColors.danger,
@@ -251,45 +254,48 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
             children: [
               if (expiry != null)
                 _row(
-                  '📅 الصلاحية',
+                  context.l10n.rowExpiry,
                   '${_date(expiry.millisecondsSinceEpoch)} · '
-                      '${_expiryLeft(expiry)}',
+                  '${_expiryLeft(context.l10n, expiry)}',
                   color: m.isExpired || m.isExpiringSoon
                       ? AppColors.warning
                       : null,
                 ),
               if (m.barcode.isNotEmpty)
                 _row(
-                  '📊 الباركود',
+                  context.l10n.rowBarcode,
                   m.barcode,
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: m.barcode));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('نُسخ الباركود')),
+                      SnackBar(content: Text(context.l10n.barcodeCopied)),
                     );
                   },
                 ),
               if ((m.company ?? '').trim().isNotEmpty)
-                _row('🏭 الشركة', m.company!.trim()),
+                _row(context.l10n.rowCompany, m.company!.trim()),
               if (m.type == ItemType.medicine &&
                   (m.category ?? '').trim().isNotEmpty)
-                _row('🧪 نوع المادة', m.category!.trim()),
-              _row('🗂️ القسم', m.type.labelIn(context.l10n)),
-              _row('➕ الإضافة', 'أُضيفت ${_date(m.createdAt)}'),
-              _row('🕓 آخر تعديل', _date(m.updatedAt)),
+                _row(context.l10n.rowCategory, m.category!.trim()),
+              _row(context.l10n.rowSection, m.type.labelIn(context.l10n)),
+              _row(
+                context.l10n.rowAdded,
+                context.l10n.addedOn(_date(m.createdAt)),
+              ),
+              _row(context.l10n.rowUpdated, _date(m.updatedAt)),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          '🧾 سجل الفواتير',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        Text(
+          context.l10n.invoiceHistory,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         if (history.isEmpty)
-          const Text(
-            'لا فواتير محفوظة لهذه المادة',
-            style: TextStyle(color: AppColors.textSecondary),
+          Text(
+            context.l10n.noInvoicesForItem,
+            style: const TextStyle(color: AppColors.textSecondary),
           )
         else
           for (final h in history)
@@ -319,7 +325,8 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                h.invoice.supplier ?? 'مجهّز غير معروف',
+                                h.invoice.supplier ??
+                                    context.l10n.unknownSupplier,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -360,14 +367,15 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
     );
     return [
       if (m.isExpired)
-        badge('⛔ منتهية الصلاحية', AppColors.danger)
+        badge(context.l10n.badgeExpired, AppColors.danger)
       else if (m.isExpiringSoon)
-        badge('⏳ قاربت الانتهاء', AppColors.warning),
+        badge(context.l10n.badgeExpiring, AppColors.warning),
       if (m.isSoldOut)
-        badge('🚫 نافدة', AppColors.danger)
+        badge(context.l10n.badgeSoldOut, AppColors.danger)
       else if (m.isLowStock)
-        badge('⚠️ مخزون منخفض', AppColors.warning),
-      if (m.isIncomplete) badge('📝 بيانات ناقصة', AppColors.warning),
+        badge(context.l10n.badgeLowStock, AppColors.warning),
+      if (m.isIncomplete)
+        badge(context.l10n.badgeIncomplete, AppColors.warning),
     ];
   }
 
@@ -393,9 +401,9 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          cell('السعر', Text(formatMoney(m.price), style: big)),
+          cell(context.l10n.price, Text(formatMoney(m.price), style: big)),
           cell(
-            'الكمية',
+            context.l10n.quantity,
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -403,7 +411,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                   key: const Key('qtyPlus'),
                   child: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'زيادة',
+                    tooltip: context.l10n.increase,
                     icon: const Icon(Icons.add_rounded, size: 18),
                     onPressed: () => _changeQty(1),
                   ),
@@ -420,7 +428,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                   key: const Key('qtyMinus'),
                   child: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'إنقاص',
+                    tooltip: context.l10n.decrease,
                     icon: const Icon(Icons.remove_rounded, size: 18),
                     onPressed: m.quantity > 0 ? () => _changeQty(-1) : null,
                   ),
@@ -429,7 +437,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
             ),
           ),
           cell(
-            'قيمة المخزون',
+            context.l10n.stockValue,
             Text(
               formatMoney(m.price * m.quantity),
               style: big.copyWith(color: AppColors.primary),
