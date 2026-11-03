@@ -4,6 +4,7 @@ import '../models/invoice.dart';
 import '../models/medicine.dart';
 import '../state/medicine_store.dart';
 import 'gs1_parser.dart';
+import '../l10n/l10n.dart';
 
 /// مجموعة مواد يُشتبه أنها نفس المادة مكرّرة.
 class DuplicateGroup {
@@ -74,10 +75,10 @@ String? invoiceLabel(Medicine m, Invoice? latest) {
         ? date(latest.dateMs!)
         : (latest.dateText ?? date(latest.createdAt));
     final from = latest.supplier;
-    return '🧾 فاتورة $when${from == null ? '' : ' · $from'}';
+    return '${L10n.current.invoiceLabel(when)}${from == null ? '' : ' · $from'}';
   }
   if (m.id.startsWith('inv_')) {
-    return '🧾 من فاتورة بتاريخ ${date(m.createdAt)}';
+    return L10n.current.invoiceLabelFrom(date(m.createdAt));
   }
   return null;
 }

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import 'app_settings.dart';
 import 'auth_service.dart';
+import '../l10n/l10n.dart';
 
 /// سبب فشل طلب الانضمام برمز اقتران — يُترجَم إلى رسالة عربية في الواجهة.
 enum PairingJoinError { notFound, notOpen, expired }
@@ -217,7 +218,7 @@ class PharmacyService {
     final me = _uid;
     final pid = AppSettings.instance.pharmacyId;
     if (db == null || me == null || pid == null) {
-      throw StateError('المزامنة غير مفعّلة');
+      throw StateError(L10n.current.phSyncOff);
     }
     final ref = db.collection(_pharmacies).doc(pid);
     final data = (await ref.get()).data() ?? const {};
@@ -240,10 +241,10 @@ class PharmacyService {
     required String target,
   }) {
     if (requester != ownerUid) {
-      throw StateError('فقط صاحب المخزون يُخرج الأجهزة');
+      throw StateError(L10n.current.phOwnerOnly);
     }
-    if (target == ownerUid) throw StateError('لا يمكن إخراج صاحب المخزون');
-    if (!members.contains(target)) throw StateError('الجهاز ليس عضواً');
+    if (target == ownerUid) throw StateError(L10n.current.phCantRemoveOwner);
+    if (!members.contains(target)) throw StateError(L10n.current.phNotMember);
     return [...members]..remove(target);
   }
 

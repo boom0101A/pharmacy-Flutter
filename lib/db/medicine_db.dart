@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../models/invoice.dart';
 import '../models/medicine.dart';
+import '../l10n/l10n.dart';
 
 /// طبقة قاعدة البيانات المحلية — البديل عن IndexedDB في نسخة الويب.
 class MedicineDb {
@@ -556,5 +557,5 @@ class BarcodeConflictException implements Exception {
   final String existingId;
 
   @override
-  String toString() => 'الباركود $barcode مسجَّل لمادة أخرى';
+  String toString() => L10n.current.barcodeConflict(barcode);
 }

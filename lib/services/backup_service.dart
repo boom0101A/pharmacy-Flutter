@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../db/medicine_db.dart';
 import '../models/invoice.dart';
 import '../models/medicine.dart';
+import '../l10n/l10n.dart';
 
 /// نسخة احتياطية إلى ملف على الجهاز — مستقلة تماماً عن الحساب والسحابة.
 ///
@@ -85,12 +86,12 @@ class BackupService {
     try {
       final file = File(path);
       if (!await file.exists()) {
-        return const BackupContents(error: 'الملف غير موجود');
+        return BackupContents(error: L10n.current.backupNotFound);
       }
       return parse(await file.readAsString());
     } catch (e) {
       debugPrint('تعذّرت قراءة النسخة الاحتياطية: $e');
-      return BackupContents(error: 'تعذّرت قراءة الملف: $e');
+      return BackupContents(error: L10n.current.backupReadFailed('$e'));
     }
   }
 
@@ -100,12 +101,12 @@ class BackupService {
     try {
       final root = jsonDecode(json);
       if (root is! Map) {
-        return const BackupContents(error: 'الملف ليس نسخة احتياطية صالحة');
+        return BackupContents(error: L10n.current.backupInvalid);
       }
 
       final rawItems = root['items'];
       if (rawItems is! List) {
-        return const BackupContents(error: 'الملف لا يحتوي مواد');
+        return BackupContents(error: L10n.current.backupNoItems);
       }
 
       final items = <Medicine>[];
@@ -141,7 +142,7 @@ class BackupService {
       return BackupContents(items: items, invoices: invoices, skipped: skipped);
     } catch (e) {
       debugPrint('تعذّرت قراءة النسخة الاحتياطية: $e');
-      return BackupContents(error: 'تعذّرت قراءة الملف: $e');
+      return BackupContents(error: L10n.current.backupReadFailed('$e'));
     }
   }
 

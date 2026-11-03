@@ -2501,6 +2501,312 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً'**
   String get scDuplicateLine;
+
+  /// No description provided for @issueInvalidBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'باركود غير صالح — حُذف'**
+  String get issueInvalidBarcode;
+
+  /// No description provided for @issueTotalMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية × السعر ≠ المجموع'**
+  String get issueTotalMismatch;
+
+  /// No description provided for @issueMissingPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر ناقص'**
+  String get issueMissingPrice;
+
+  /// No description provided for @issueMissingQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية ناقصة'**
+  String get issueMissingQty;
+
+  /// No description provided for @issueUncertain.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير واضح في الصورة'**
+  String get issueUncertain;
+
+  /// No description provided for @issueSuspiciousPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ السعر غير منطقي — راجعه'**
+  String get issueSuspiciousPrice;
+
+  /// No description provided for @gmImageReadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة ملف الصورة: {error}'**
+  String gmImageReadFailed(String error);
+
+  /// No description provided for @gmNotConfigured.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الفاتورة غير مفعّلة — لم يُضبط مفتاح Gemini في ملف .env.'**
+  String get gmNotConfigured;
+
+  /// No description provided for @gmTooLarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة أكبر من {mb} ميجابايت — جرّب صورة أخفّ.'**
+  String gmTooLarge(int mb);
+
+  /// No description provided for @gmTimeout.
+  ///
+  /// In ar, this message translates to:
+  /// **'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على جزأين إن كانت طويلة جداً.'**
+  String get gmTimeout;
+
+  /// No description provided for @gmNoInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال بالإنترنت.'**
+  String get gmNoInternet;
+
+  /// No description provided for @gmConnectFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال بخدمة القراءة: {error}'**
+  String gmConnectFailed(String error);
+
+  /// No description provided for @gmUnexpected.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطأ غير متوقع: {error}'**
+  String gmUnexpected(String error);
+
+  /// No description provided for @gmEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُرجع الخدمة أي محتوى.'**
+  String get gmEmpty;
+
+  /// No description provided for @gmCutOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصفحة طويلة جداً فانقطع الرد — صوّرها على جزأين.'**
+  String get gmCutOff;
+
+  /// No description provided for @gmBadReply.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فهم ردّ الخدمة: {error}'**
+  String gmBadReply(String error);
+
+  /// No description provided for @gmBadLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فهم صيغة الأسطر: {error}'**
+  String gmBadLines(String error);
+
+  /// No description provided for @gmQuota.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — {when}.'**
+  String gmQuota(String when);
+
+  /// No description provided for @gmQuotaTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتجدد غداً'**
+  String get gmQuotaTomorrow;
+
+  /// No description provided for @gmQuotaIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتجدد بعد نحو {duration}'**
+  String gmQuotaIn(String duration);
+
+  /// No description provided for @durMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} دقيقة'**
+  String durMinutes(int n);
+
+  /// No description provided for @durHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n, plural, =1{ساعة} =2{ساعتين} other{{n} ساعات}}'**
+  String durHours(int n);
+
+  /// No description provided for @durHoursMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{hours} و{minutes}'**
+  String durHoursMinutes(String hours, String minutes);
+
+  /// No description provided for @gmTooMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.'**
+  String get gmTooMany;
+
+  /// No description provided for @gmBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة Google مزدحمة حالياً — انتظر دقيقة ثم اضغط «إعادة المحاولة».'**
+  String get gmBusy;
+
+  /// No description provided for @gmStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'Gemini استجاب {code}: {reason}'**
+  String gmStatus(int code, String reason);
+
+  /// No description provided for @notifChannel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات المخزون'**
+  String get notifChannel;
+
+  /// No description provided for @notifChannelDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية والمخزون المنخفض'**
+  String get notifChannelDesc;
+
+  /// No description provided for @notifExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} منتهية الصلاحية'**
+  String notifExpired(int n);
+
+  /// No description provided for @notifExpiring.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} تقترب من الانتهاء'**
+  String notifExpiring(int n);
+
+  /// No description provided for @notifOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} نفدت من المخزون'**
+  String notifOut(int n);
+
+  /// No description provided for @notifLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} منخفضة المخزون'**
+  String notifLow(int n);
+
+  /// No description provided for @notifTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔔 صيدليتي — يحتاج مراجعة'**
+  String get notifTitle;
+
+  /// No description provided for @invoiceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧾 فاتورة {when}'**
+  String invoiceLabel(String when);
+
+  /// No description provided for @invoiceLabelFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧾 من فاتورة بتاريخ {date}'**
+  String invoiceLabelFrom(String date);
+
+  /// No description provided for @authNoIdentity.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إنشاء هوية الجهاز'**
+  String get authNoIdentity;
+
+  /// No description provided for @authAnonDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصادقة المجهولة غير مفعّلة في Firebase.\nالحل: Console ← Authentication ← Sign-in method ← Anonymous ← Enable.'**
+  String get authAnonDisabled;
+
+  /// No description provided for @authOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال — المزامنة موقوفة مؤقتاً.'**
+  String get authOffline;
+
+  /// No description provided for @authFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت المصادقة: {error}'**
+  String authFailed(String error);
+
+  /// No description provided for @backupSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة احتياطية — صيدليتي'**
+  String get backupSubject;
+
+  /// No description provided for @backupNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف غير موجود'**
+  String get backupNotFound;
+
+  /// No description provided for @backupReadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الملف: {error}'**
+  String backupReadFailed(String error);
+
+  /// No description provided for @backupInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف ليس نسخة احتياطية صالحة'**
+  String get backupInvalid;
+
+  /// No description provided for @backupNoItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف لا يحتوي مواد'**
+  String get backupNoItems;
+
+  /// No description provided for @lookupLocal.
+  ///
+  /// In ar, this message translates to:
+  /// **'قاعدتك المحلية'**
+  String get lookupLocal;
+
+  /// No description provided for @lookupRegistry.
+  ///
+  /// In ar, this message translates to:
+  /// **'قاموس الصيدليات المشترك'**
+  String get lookupRegistry;
+
+  /// No description provided for @barcodeConflict.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود {barcode} مسجَّل لمادة أخرى'**
+  String barcodeConflict(String barcode);
+
+  /// No description provided for @phSyncOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزامنة غير مفعّلة'**
+  String get phSyncOff;
+
+  /// No description provided for @phOwnerOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'فقط صاحب المخزون يُخرج الأجهزة'**
+  String get phOwnerOnly;
+
+  /// No description provided for @phCantRemoveOwner.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن إخراج صاحب المخزون'**
+  String get phCantRemoveOwner;
+
+  /// No description provided for @phNotMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز ليس عضواً'**
+  String get phNotMember;
 }
 
 class _AppLocalizationsDelegate

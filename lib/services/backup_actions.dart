@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'backup_service.dart';
+import '../l10n/l10n.dart';
 
 /// عمليات النسخة الاحتياطية التي تلمس المنصّة (المشاركة واختيار الملفات).
 /// حقول قابلة للاستبدال كي تختبر الواجهة بلا قنوات أندرويد حقيقية.
@@ -29,7 +30,7 @@ class BackupActions {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(path, mimeType: 'application/json')],
-        subject: 'نسخة احتياطية — صيدليتي',
+        subject: L10n.current.backupSubject,
       ),
     );
   }

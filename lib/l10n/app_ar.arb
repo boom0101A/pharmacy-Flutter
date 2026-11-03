@@ -1107,5 +1107,209 @@
       }
     }
   },
-  "scDuplicateLine": "🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً"
+  "scDuplicateLine": "🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً",
+  "issueInvalidBarcode": "باركود غير صالح — حُذف",
+  "issueTotalMismatch": "الكمية × السعر ≠ المجموع",
+  "issueMissingPrice": "السعر ناقص",
+  "issueMissingQty": "الكمية ناقصة",
+  "issueUncertain": "غير واضح في الصورة",
+  "issueSuspiciousPrice": "⚠️ السعر غير منطقي — راجعه",
+  "gmImageReadFailed": "تعذّرت قراءة ملف الصورة: {error}",
+  "@gmImageReadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gmNotConfigured": "قراءة الفاتورة غير مفعّلة — لم يُضبط مفتاح Gemini في ملف .env.",
+  "gmTooLarge": "الصورة أكبر من {mb} ميجابايت — جرّب صورة أخفّ.",
+  "@gmTooLarge": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "gmTimeout": "استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على جزأين إن كانت طويلة جداً.",
+  "gmNoInternet": "لا يوجد اتصال بالإنترنت.",
+  "gmConnectFailed": "تعذّر الاتصال بخدمة القراءة: {error}",
+  "@gmConnectFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gmUnexpected": "خطأ غير متوقع: {error}",
+  "@gmUnexpected": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gmEmpty": "لم تُرجع الخدمة أي محتوى.",
+  "gmCutOff": "الصفحة طويلة جداً فانقطع الرد — صوّرها على جزأين.",
+  "gmBadReply": "تعذّر فهم ردّ الخدمة: {error}",
+  "@gmBadReply": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gmBadLines": "تعذّر فهم صيغة الأسطر: {error}",
+  "@gmBadLines": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gmQuota": "انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — {when}.",
+  "@gmQuota": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "gmQuotaTomorrow": "تتجدد غداً",
+  "gmQuotaIn": "تتجدد بعد نحو {duration}",
+  "@gmQuotaIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "durMinutes": "{n} دقيقة",
+  "@durMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "durHours": "{n, plural, =1{ساعة} =2{ساعتين} other{{n} ساعات}}",
+  "@durHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "durHoursMinutes": "{hours} و{minutes}",
+  "@durHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "gmTooMany": "طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.",
+  "gmBusy": "خدمة Google مزدحمة حالياً — انتظر دقيقة ثم اضغط «إعادة المحاولة».",
+  "gmStatus": "Gemini استجاب {code}: {reason}",
+  "@gmStatus": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "notifChannel": "تنبيهات المخزون",
+  "notifChannelDesc": "الصلاحية والمخزون المنخفض",
+  "notifExpired": "{n} منتهية الصلاحية",
+  "@notifExpired": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifExpiring": "{n} تقترب من الانتهاء",
+  "@notifExpiring": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifOut": "{n} نفدت من المخزون",
+  "@notifOut": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLow": "{n} منخفضة المخزون",
+  "@notifLow": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifTitle": "🔔 صيدليتي — يحتاج مراجعة",
+  "invoiceLabel": "🧾 فاتورة {when}",
+  "@invoiceLabel": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceLabelFrom": "🧾 من فاتورة بتاريخ {date}",
+  "@invoiceLabelFrom": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "authNoIdentity": "تعذّر إنشاء هوية الجهاز",
+  "authAnonDisabled": "المصادقة المجهولة غير مفعّلة في Firebase.\nالحل: Console ← Authentication ← Sign-in method ← Anonymous ← Enable.",
+  "authOffline": "لا يوجد اتصال — المزامنة موقوفة مؤقتاً.",
+  "authFailed": "تعذّرت المصادقة: {error}",
+  "@authFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backupSubject": "نسخة احتياطية — صيدليتي",
+  "backupNotFound": "الملف غير موجود",
+  "backupReadFailed": "تعذّرت قراءة الملف: {error}",
+  "@backupReadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backupInvalid": "الملف ليس نسخة احتياطية صالحة",
+  "backupNoItems": "الملف لا يحتوي مواد",
+  "lookupLocal": "قاعدتك المحلية",
+  "lookupRegistry": "قاموس الصيدليات المشترك",
+  "barcodeConflict": "الباركود {barcode} مسجَّل لمادة أخرى",
+  "@barcodeConflict": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  },
+  "phSyncOff": "المزامنة غير مفعّلة",
+  "phOwnerOnly": "فقط صاحب المخزون يُخرج الأجهزة",
+  "phCantRemoveOwner": "لا يمكن إخراج صاحب المخزون",
+  "phNotMember": "الجهاز ليس عضواً"
 }

@@ -5,6 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/medicine.dart';
+import '../l10n/l10n.dart';
 
 /// تنبيه صلاحية ومخزون مجدول يومياً عند الساعة 9 صباحاً — يظهر حتى والتطبيق
 /// مغلق، بمحتوى مُحسَب سلفاً من آخر بيانات حصلنا عليها (`zonedSchedule` لا
@@ -23,8 +24,8 @@ class NotificationService extends ChangeNotifier {
   static final NotificationService instance = NotificationService._();
 
   static const _channelId = 'stock_alerts';
-  static const _channelName = 'تنبيهات المخزون';
-  static const _channelDesc = 'الصلاحية والمخزون المنخفض';
+  static String get _channelName => L10n.current.notifChannel;
+  static String get _channelDesc => L10n.current.notifChannelDesc;
 
   /// إشعار الجدولة اليومية.
   static const _dailyId = 1002;
@@ -100,7 +101,7 @@ class NotificationService extends ChangeNotifier {
       );
 
       await _android?.createNotificationChannel(
-        const AndroidNotificationChannel(
+        AndroidNotificationChannel(
           _channelId,
           _channelName,
           description: _channelDesc,
@@ -174,10 +175,10 @@ class NotificationService extends ChangeNotifier {
     final lowStock = all.where((m) => m.isLowStock).length;
 
     final parts = <String>[
-      if (expired > 0) '$expired منتهية الصلاحية',
-      if (expiringSoon > 0) '$expiringSoon تقترب من الانتهاء',
-      if (outOfStock > 0) '$outOfStock نفدت من المخزون',
-      if (lowStock > 0) '$lowStock منخفضة المخزون',
+      if (expired > 0) L10n.current.notifExpired(expired),
+      if (expiringSoon > 0) L10n.current.notifExpiring(expiringSoon),
+      if (outOfStock > 0) L10n.current.notifOut(outOfStock),
+      if (lowStock > 0) L10n.current.notifLow(lowStock),
     ];
 
     return parts.isEmpty ? null : parts.join(' · ');
@@ -257,10 +258,10 @@ class NotificationService extends ChangeNotifier {
       await scheduleWithFallback(
         (mode) => _plugin.zonedSchedule(
           id: _dailyId,
-          title: '🔔 صيدليتي — يحتاج مراجعة',
+          title: L10n.current.notifTitle,
           body: summary,
           scheduledDate: scheduled,
-          notificationDetails: const NotificationDetails(
+          notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               _channelId,
               _channelName,

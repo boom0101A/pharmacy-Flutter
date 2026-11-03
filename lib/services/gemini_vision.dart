@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/medicine.dart';
 import 'app_settings.dart';
 import 'gs1_parser.dart';
+import '../l10n/l10n.dart';
 
 /// سطر واحد استُخرج من صورة فاتورة.
 ///
@@ -67,18 +68,28 @@ class InvoiceLine {
 
 /// مشكلة معروفة في سطر مقروء — تُعرض كشارة في المراجعة.
 enum LineIssue {
-  invalidBarcode('باركود غير صالح — حُذف'),
-  totalMismatch('الكمية × السعر ≠ المجموع'),
-  missingPrice('السعر ناقص'),
-  missingQuantity('الكمية ناقصة'),
-  uncertain('غير واضح في الصورة'),
+  invalidBarcode,
+  totalMismatch,
+  missingPrice,
+  missingQuantity,
+  uncertain,
 
   /// أقل من 100 دينار — مستحيل بالدينار العراقي، والأرجح أن فاصلة الآلاف
   /// قُرئت عشرية («1,100» ← 1.1).
-  suspiciousPrice('⚠️ السعر غير منطقي — راجعه');
+  suspiciousPrice;
 
-  const LineIssue(this.label);
-  final String label;
+  /// بلغة الواجهة.
+  String get label {
+    final l = L10n.current;
+    return switch (this) {
+      invalidBarcode => l.issueInvalidBarcode,
+      totalMismatch => l.issueTotalMismatch,
+      missingPrice => l.issueMissingPrice,
+      missingQuantity => l.issueMissingQty,
+      uncertain => l.issueUncertain,
+      suspiciousPrice => l.issueSuspiciousPrice,
+    };
+  }
 }
 
 /// سطر بعد التحقق: قد يُعدَّل (حذف باركود غير صالح) مع قائمة مشكلاته.
@@ -201,20 +212,18 @@ class GeminiVision {
       final bytes = await imageFile.readAsBytes();
       return await readInvoiceBytes(bytes);
     } catch (e) {
-      return InvoiceResult.failure('تعذّرت قراءة ملف الصورة: $e');
+      return InvoiceResult.failure(L10n.current.gmImageReadFailed('$e'));
     }
   }
 
   /// يقرأ فاتورة من بايتات مباشرة — نقطة الدخول الوحيدة القابلة للاختبار.
   static Future<InvoiceResult> readInvoiceBytes(Uint8List bytes) async {
     if (!isConfigured) {
-      return InvoiceResult.failure(
-        'قراءة الفاتورة غير مفعّلة — لم يُضبط مفتاح Gemini في ملف .env.',
-      );
+      return InvoiceResult.failure(L10n.current.gmNotConfigured);
     }
     if (bytes.length > _maxBytes) {
       return InvoiceResult.failure(
-        'الصورة أكبر من ${_maxBytes ~/ (1024 * 1024)} ميجابايت — جرّب صورة أخفّ.',
+        L10n.current.gmTooLarge(_maxBytes ~/ (1024 * 1024)),
       );
     }
 
@@ -299,16 +308,13 @@ class GeminiVision {
         attempt++;
       }
     } on TimeoutException {
-      return _otherFailure(
-        'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على '
-        'جزأين إن كانت طويلة جداً.',
-      );
+      return _otherFailure(L10n.current.gmTimeout);
     } on SocketException {
-      return _otherFailure('لا يوجد اتصال بالإنترنت.');
+      return _otherFailure(L10n.current.gmNoInternet);
     } on http.ClientException catch (e) {
-      return _otherFailure('تعذّر الاتصال بخدمة القراءة: ${e.message}');
+      return _otherFailure(L10n.current.gmConnectFailed(e.message));
     } catch (e) {
-      return _otherFailure('خطأ غير متوقع: $e');
+      return _otherFailure(L10n.current.gmUnexpected('$e'));
     }
   }
 
@@ -529,14 +535,12 @@ class GeminiVision {
       final root = jsonDecode(responseBody) as Map<String, Object?>;
       final candidates = root['candidates'] as List?;
       if (candidates == null || candidates.isEmpty) {
-        return InvoiceResult.failure('لم تُرجع الخدمة أي محتوى.');
+        return InvoiceResult.failure(L10n.current.gmEmpty);
       }
       final first = candidates.first as Map;
       // ردّ مقطوع عند حدّ التوكنات = JSON ناقص لا يُفهم؛ رسالة صريحة أنفع
       if (first['finishReason'] == 'MAX_TOKENS') {
-        return InvoiceResult.failure(
-          'الصفحة طويلة جداً فانقطع الرد — صوّرها على جزأين.',
-        );
+        return InvoiceResult.failure(L10n.current.gmCutOff);
       }
       final parts = ((first['content'] as Map?)?['parts'] as List?) ?? const [];
       // نماذج «التفكير» قد تسبق الجواب بأجزاء تفكير — الجواب أول نص غيرها
@@ -546,11 +550,11 @@ class GeminiVision {
           .map((p) => p['text'] as String)
           .firstOrNull;
       if (raw == null) {
-        return InvoiceResult.failure('لم تُرجع الخدمة أي محتوى.');
+        return InvoiceResult.failure(L10n.current.gmEmpty);
       }
       return parseInvoiceJson(raw);
     } catch (e) {
-      return InvoiceResult.failure('تعذّر فهم ردّ الخدمة: $e');
+      return InvoiceResult.failure(L10n.current.gmBadReply('$e'));
     }
   }
 
@@ -583,7 +587,7 @@ class GeminiVision {
       }
       return InvoiceResult.success(lines, header: _parseHeader(decoded));
     } catch (e) {
-      return InvoiceResult.failure('تعذّر فهم صيغة الأسطر: $e');
+      return InvoiceResult.failure(L10n.current.gmBadLines('$e'));
     }
   }
 
@@ -679,16 +683,20 @@ class GeminiVision {
     return (daily: daily, retryAfter: retryAfter);
   }
 
-  static String _quotaMessage(Duration? wait) =>
-      'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — '
-      '${wait == null ? 'تتجدد غداً' : 'تتجدد بعد نحو ${_arabicDuration(wait)}'}.';
+  static String _quotaMessage(Duration? wait) {
+    final l = L10n.current;
+    return l.gmQuota(
+      wait == null ? l.gmQuotaTomorrow : l.gmQuotaIn(_duration(wait)),
+    );
+  }
 
-  /// «ساعة و29 دقيقة» / «12 دقيقة».
-  static String _arabicDuration(Duration d) {
+  /// «ساعة و29 دقيقة» / «12 دقيقة» (أو بالإنجليزية).
+  static String _duration(Duration d) {
+    final l = L10n.current;
     final h = d.inHours, m = d.inMinutes % 60;
-    if (h == 0) return '${m < 1 ? 1 : m} دقيقة';
-    final hours = h == 1 ? 'ساعة' : (h == 2 ? 'ساعتين' : '$h ساعات');
-    return m == 0 ? hours : '$hours و$m دقيقة';
+    if (h == 0) return l.durMinutes(m < 1 ? 1 : m);
+    final hours = l.durHours(h);
+    return m == 0 ? hours : l.durHoursMinutes(hours, l.durMinutes(m));
   }
 
   static String _explainHttpError(http.Response r) {
@@ -696,10 +704,10 @@ class GeminiVision {
     if (r.statusCode == 429) {
       final q = quotaInfo(r.body);
       if (q.daily) return _quotaMessage(q.retryAfter);
-      return 'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.';
+      return L10n.current.gmTooMany;
     }
     if (_transientStatuses.contains(r.statusCode)) {
-      return 'خدمة Google مزدحمة حالياً — انتظر دقيقة ثم اضغط «إعادة المحاولة».';
+      return L10n.current.gmBusy;
     }
     // Gemini يعيد رسالة الخطأ داخل حقل `error.message` عادةً.
     try {
@@ -708,7 +716,7 @@ class GeminiVision {
       final msg = err?['message']?.toString();
       if (msg != null && msg.isNotEmpty) return 'Gemini ${r.statusCode}: $msg';
     } catch (_) {}
-    return 'Gemini استجاب ${r.statusCode}: ${r.reasonPhrase ?? ""}';
+    return L10n.current.gmStatus(r.statusCode, r.reasonPhrase ?? '');
   }
 }
 

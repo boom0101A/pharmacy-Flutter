@@ -1438,4 +1438,211 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get scDuplicateLine =>
       '🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً';
+
+  @override
+  String get issueInvalidBarcode => 'باركود غير صالح — حُذف';
+
+  @override
+  String get issueTotalMismatch => 'الكمية × السعر ≠ المجموع';
+
+  @override
+  String get issueMissingPrice => 'السعر ناقص';
+
+  @override
+  String get issueMissingQty => 'الكمية ناقصة';
+
+  @override
+  String get issueUncertain => 'غير واضح في الصورة';
+
+  @override
+  String get issueSuspiciousPrice => '⚠️ السعر غير منطقي — راجعه';
+
+  @override
+  String gmImageReadFailed(String error) {
+    return 'تعذّرت قراءة ملف الصورة: $error';
+  }
+
+  @override
+  String get gmNotConfigured =>
+      'قراءة الفاتورة غير مفعّلة — لم يُضبط مفتاح Gemini في ملف .env.';
+
+  @override
+  String gmTooLarge(int mb) {
+    return 'الصورة أكبر من $mb ميجابايت — جرّب صورة أخفّ.';
+  }
+
+  @override
+  String get gmTimeout =>
+      'استغرقت القراءة وقتاً طويلاً — أعد المحاولة، أو صوّر الصفحة على جزأين إن كانت طويلة جداً.';
+
+  @override
+  String get gmNoInternet => 'لا يوجد اتصال بالإنترنت.';
+
+  @override
+  String gmConnectFailed(String error) {
+    return 'تعذّر الاتصال بخدمة القراءة: $error';
+  }
+
+  @override
+  String gmUnexpected(String error) {
+    return 'خطأ غير متوقع: $error';
+  }
+
+  @override
+  String get gmEmpty => 'لم تُرجع الخدمة أي محتوى.';
+
+  @override
+  String get gmCutOff => 'الصفحة طويلة جداً فانقطع الرد — صوّرها على جزأين.';
+
+  @override
+  String gmBadReply(String error) {
+    return 'تعذّر فهم ردّ الخدمة: $error';
+  }
+
+  @override
+  String gmBadLines(String error) {
+    return 'تعذّر فهم صيغة الأسطر: $error';
+  }
+
+  @override
+  String gmQuota(String when) {
+    return 'انتهت القراءات المجانية لهذا اليوم (حدّ Google المجاني) — $when.';
+  }
+
+  @override
+  String get gmQuotaTomorrow => 'تتجدد غداً';
+
+  @override
+  String gmQuotaIn(String duration) {
+    return 'تتجدد بعد نحو $duration';
+  }
+
+  @override
+  String durMinutes(int n) {
+    return '$n دقيقة';
+  }
+
+  @override
+  String durHours(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n ساعات',
+      two: 'ساعتين',
+      one: 'ساعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durHoursMinutes(String hours, String minutes) {
+    return '$hours و$minutes';
+  }
+
+  @override
+  String get gmTooMany =>
+      'طلبات كثيرة على خدمة القراءة — انتظر قليلاً ثم أعد المحاولة.';
+
+  @override
+  String get gmBusy =>
+      'خدمة Google مزدحمة حالياً — انتظر دقيقة ثم اضغط «إعادة المحاولة».';
+
+  @override
+  String gmStatus(int code, String reason) {
+    return 'Gemini استجاب $code: $reason';
+  }
+
+  @override
+  String get notifChannel => 'تنبيهات المخزون';
+
+  @override
+  String get notifChannelDesc => 'الصلاحية والمخزون المنخفض';
+
+  @override
+  String notifExpired(int n) {
+    return '$n منتهية الصلاحية';
+  }
+
+  @override
+  String notifExpiring(int n) {
+    return '$n تقترب من الانتهاء';
+  }
+
+  @override
+  String notifOut(int n) {
+    return '$n نفدت من المخزون';
+  }
+
+  @override
+  String notifLow(int n) {
+    return '$n منخفضة المخزون';
+  }
+
+  @override
+  String get notifTitle => '🔔 صيدليتي — يحتاج مراجعة';
+
+  @override
+  String invoiceLabel(String when) {
+    return '🧾 فاتورة $when';
+  }
+
+  @override
+  String invoiceLabelFrom(String date) {
+    return '🧾 من فاتورة بتاريخ $date';
+  }
+
+  @override
+  String get authNoIdentity => 'تعذّر إنشاء هوية الجهاز';
+
+  @override
+  String get authAnonDisabled =>
+      'المصادقة المجهولة غير مفعّلة في Firebase.\nالحل: Console ← Authentication ← Sign-in method ← Anonymous ← Enable.';
+
+  @override
+  String get authOffline => 'لا يوجد اتصال — المزامنة موقوفة مؤقتاً.';
+
+  @override
+  String authFailed(String error) {
+    return 'تعذّرت المصادقة: $error';
+  }
+
+  @override
+  String get backupSubject => 'نسخة احتياطية — صيدليتي';
+
+  @override
+  String get backupNotFound => 'الملف غير موجود';
+
+  @override
+  String backupReadFailed(String error) {
+    return 'تعذّرت قراءة الملف: $error';
+  }
+
+  @override
+  String get backupInvalid => 'الملف ليس نسخة احتياطية صالحة';
+
+  @override
+  String get backupNoItems => 'الملف لا يحتوي مواد';
+
+  @override
+  String get lookupLocal => 'قاعدتك المحلية';
+
+  @override
+  String get lookupRegistry => 'قاموس الصيدليات المشترك';
+
+  @override
+  String barcodeConflict(String barcode) {
+    return 'الباركود $barcode مسجَّل لمادة أخرى';
+  }
+
+  @override
+  String get phSyncOff => 'المزامنة غير مفعّلة';
+
+  @override
+  String get phOwnerOnly => 'فقط صاحب المخزون يُخرج الأجهزة';
+
+  @override
+  String get phCantRemoveOwner => 'لا يمكن إخراج صاحب المخزون';
+
+  @override
+  String get phNotMember => 'الجهاز ليس عضواً';
 }

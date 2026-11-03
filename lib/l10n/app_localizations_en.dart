@@ -1535,4 +1535,217 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get scDuplicateLine =>
       '🔗 Repeats another line in this invoice — they\'ll be merged automatically';
+
+  @override
+  String get issueInvalidBarcode => 'Invalid barcode — removed';
+
+  @override
+  String get issueTotalMismatch => 'Quantity × price ≠ total';
+
+  @override
+  String get issueMissingPrice => 'Price missing';
+
+  @override
+  String get issueMissingQty => 'Quantity missing';
+
+  @override
+  String get issueUncertain => 'Unclear in the image';
+
+  @override
+  String get issueSuspiciousPrice => '⚠️ Implausible price — check it';
+
+  @override
+  String gmImageReadFailed(String error) {
+    return 'Couldn\'t read the image file: $error';
+  }
+
+  @override
+  String get gmNotConfigured =>
+      'Invoice reading is off — no Gemini key is set in the .env file.';
+
+  @override
+  String gmTooLarge(int mb) {
+    return 'The image is larger than $mb MB — try a lighter one.';
+  }
+
+  @override
+  String get gmTimeout =>
+      'Reading took too long — try again, or photograph the page in two parts if it\'s very long.';
+
+  @override
+  String get gmNoInternet => 'No internet connection.';
+
+  @override
+  String gmConnectFailed(String error) {
+    return 'Couldn\'t reach the reading service: $error';
+  }
+
+  @override
+  String gmUnexpected(String error) {
+    return 'Unexpected error: $error';
+  }
+
+  @override
+  String get gmEmpty => 'The service returned no content.';
+
+  @override
+  String get gmCutOff =>
+      'The page is too long and the reply was cut off — photograph it in two parts.';
+
+  @override
+  String gmBadReply(String error) {
+    return 'Couldn\'t understand the service\'s reply: $error';
+  }
+
+  @override
+  String gmBadLines(String error) {
+    return 'Couldn\'t understand the lines\' format: $error';
+  }
+
+  @override
+  String gmQuota(String when) {
+    return 'Today\'s free reads are used up (Google\'s free limit) — $when.';
+  }
+
+  @override
+  String get gmQuotaTomorrow => 'they renew tomorrow';
+
+  @override
+  String gmQuotaIn(String duration) {
+    return 'they renew in about $duration';
+  }
+
+  @override
+  String durMinutes(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n minutes',
+      one: '1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durHours(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n hours',
+      one: '1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String durHoursMinutes(String hours, String minutes) {
+    return '$hours $minutes';
+  }
+
+  @override
+  String get gmTooMany =>
+      'Too many requests to the reading service — wait a little, then try again.';
+
+  @override
+  String get gmBusy =>
+      'Google\'s service is busy right now — wait a minute, then tap “Retry”.';
+
+  @override
+  String gmStatus(int code, String reason) {
+    return 'Gemini responded $code: $reason';
+  }
+
+  @override
+  String get notifChannel => 'Stock alerts';
+
+  @override
+  String get notifChannelDesc => 'Expiry and low stock';
+
+  @override
+  String notifExpired(int n) {
+    return '$n expired';
+  }
+
+  @override
+  String notifExpiring(int n) {
+    return '$n expiring soon';
+  }
+
+  @override
+  String notifOut(int n) {
+    return '$n out of stock';
+  }
+
+  @override
+  String notifLow(int n) {
+    return '$n low in stock';
+  }
+
+  @override
+  String get notifTitle => '🔔 Saydaliyati — needs review';
+
+  @override
+  String invoiceLabel(String when) {
+    return '🧾 Invoice $when';
+  }
+
+  @override
+  String invoiceLabelFrom(String date) {
+    return '🧾 From an invoice dated $date';
+  }
+
+  @override
+  String get authNoIdentity => 'Couldn\'t create a device identity';
+
+  @override
+  String get authAnonDisabled =>
+      'Anonymous authentication is disabled in Firebase.\nFix: Console → Authentication → Sign-in method → Anonymous → Enable.';
+
+  @override
+  String get authOffline => 'No connection — sync is paused for now.';
+
+  @override
+  String authFailed(String error) {
+    return 'Authentication failed: $error';
+  }
+
+  @override
+  String get backupSubject => 'Backup — Saydaliyati';
+
+  @override
+  String get backupNotFound => 'File not found';
+
+  @override
+  String backupReadFailed(String error) {
+    return 'Couldn\'t read the file: $error';
+  }
+
+  @override
+  String get backupInvalid => 'The file isn\'t a valid backup';
+
+  @override
+  String get backupNoItems => 'The file contains no items';
+
+  @override
+  String get lookupLocal => 'your local database';
+
+  @override
+  String get lookupRegistry => 'the shared pharmacy dictionary';
+
+  @override
+  String barcodeConflict(String barcode) {
+    return 'Barcode $barcode belongs to another item';
+  }
+
+  @override
+  String get phSyncOff => 'Sync is not enabled';
+
+  @override
+  String get phOwnerOnly => 'Only the inventory owner can remove devices';
+
+  @override
+  String get phCantRemoveOwner => 'The inventory owner can\'t be removed';
+
+  @override
+  String get phNotMember => 'The device isn\'t a member';
 }

@@ -9,6 +9,7 @@ import '../db/medicine_db.dart';
 import 'barcode_registry.dart';
 import 'gs1_parser.dart';
 import 'image_store.dart';
+import '../l10n/l10n.dart';
 
 enum LookupSource { local, registry, openFoodFacts, openFda }
 
@@ -34,8 +35,8 @@ class DrugInfo {
   });
 
   String get sourceLabel => switch (source) {
-    LookupSource.local => 'قاعدتك المحلية',
-    LookupSource.registry => 'قاموس الصيدليات المشترك',
+    LookupSource.local => L10n.current.lookupLocal,
+    LookupSource.registry => L10n.current.lookupRegistry,
     LookupSource.openFoodFacts => 'Open Food Facts',
     LookupSource.openFda => 'FDA',
   };

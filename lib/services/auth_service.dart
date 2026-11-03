@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import '../l10n/l10n.dart';
 
 /// هوية الجهاز في السحابة — مصادقة مجهولة بلا أي تسجيل دخول يراه المستخدم.
 ///
@@ -29,21 +30,19 @@ class AuthService {
       final auth = FirebaseAuth.instance;
       final current = auth.currentUser ?? (await auth.signInAnonymously()).user;
       _uid = current?.uid;
-      _error = _uid == null ? 'تعذّر إنشاء هوية الجهاز' : null;
+      _error = _uid == null ? L10n.current.authNoIdentity : null;
     } on FirebaseAuthException catch (e) {
       _uid = null;
       _error = switch (e.code) {
         // الأشيع: لم يُفعَّل مزوّد Anonymous في Console
-        'operation-not-allowed' =>
-          'المصادقة المجهولة غير مفعّلة في Firebase.\n'
-              'الحل: Console ← Authentication ← Sign-in method ← Anonymous ← Enable.',
-        'network-request-failed' => 'لا يوجد اتصال — المزامنة موقوفة مؤقتاً.',
-        _ => 'تعذّرت المصادقة: ${e.code}',
+        'operation-not-allowed' => L10n.current.authAnonDisabled,
+        'network-request-failed' => L10n.current.authOffline,
+        _ => L10n.current.authFailed(e.code),
       };
       debugPrint('فشل تسجيل الدخول المجهول: ${e.code}');
     } catch (e) {
       _uid = null;
-      _error = 'تعذّرت المصادقة: $e';
+      _error = L10n.current.authFailed('$e');
       debugPrint('فشل تسجيل الدخول المجهول: $e');
     }
   }
