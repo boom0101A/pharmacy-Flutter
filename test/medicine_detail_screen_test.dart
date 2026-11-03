@@ -120,6 +120,24 @@ void main() {
     expect(find.text('أُضيفت 2026/08/03'), findsOneWidget);
   });
 
+  // OpenContainer يرسم البطاقة مكبّرة خلف الصفحة أثناء الرجوع؛ شريط العنوان
+  // الزجاجي فوق خلفية شفافة كان يُظهرها — «تداخل أعلى البطاقة» على الهاتف.
+  testWidgets('خلفية الصفحة معتمة فلا يظهر ما خلفها أثناء الانتقال', (
+    tester,
+  ) async {
+    await open(tester, _med());
+    final scaffold = tester.widget<Scaffold>(
+      find
+          .descendant(
+            of: find.byType(MedicineDetailScreen),
+            matching: find.byType(Scaffold),
+          )
+          .first,
+    );
+    expect(scaffold.backgroundColor, AppColors.bgDark);
+    expect(scaffold.backgroundColor!.a, 1.0);
+  });
+
   testWidgets('الصلاحية مع الأيام المتبقية', (tester) async {
     final in30 = DateTime.now().add(const Duration(days: 30, hours: 2));
     await open(tester, _med(expiry: in30));

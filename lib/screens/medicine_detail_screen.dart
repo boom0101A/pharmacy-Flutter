@@ -163,6 +163,10 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           return const Scaffold(body: SizedBox.shrink());
         }
         return Scaffold(
+          // معتمة بلون حاوية OpenContainer نفسه (فلا يتغيّر المظهر): أثناء
+          // الرجوع ترسم الحاوية البطاقة مكبّرة خلف الصفحة، والشريط العلوي
+          // الشفاف كان يُظهرها فوق شريط العنوان — رُصد في لقطات الهاتف.
+          backgroundColor: AppColors.bgDark,
           appBar: GlassAppBar(
             title: Text(m.type.label),
             actions: [
