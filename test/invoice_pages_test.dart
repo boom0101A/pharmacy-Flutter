@@ -245,6 +245,20 @@ void main() {
     expect(find.textContaining('قُرئت بالنموذج البديل'), findsNothing);
   });
 
+  // لقطة الهاتف: «1764» بلا فواصل — الدينار يُقرأ «1,764» كبقية التطبيق
+  testWidgets('سعر السطر بفواصل الآلاف، والكتابة فيه كذلك', (tester) async {
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Adol', price: 1764, quantity: 12),
+    ]);
+    await pump(tester);
+    final price = find.widgetWithText(TextField, '1,764');
+    expect(price, findsOneWidget);
+
+    await tester.enterText(price, '12000');
+    await tester.pump();
+    expect(find.widgetWithText(TextField, '12,000'), findsOneWidget);
+  });
+
   // خانة الباركود: أيقونة ماسح تملؤها من صورة الباركود، والكتابة اليدوية باقية
   group('مسح باركود السطر', () {
     Future<void> scan(WidgetTester tester) async {

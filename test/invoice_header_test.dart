@@ -107,7 +107,8 @@ void main() {
     expect(text(tester, 'headerSupplier'), 'مذخر الشفاء');
     expect(text(tester, 'headerNumber'), '1452');
     expect(text(tester, 'headerDate'), '12/10/2026');
-    expect(text(tester, 'headerTotal'), '5000');
+    // بفواصل الآلاف كبقية الأسعار
+    expect(text(tester, 'headerTotal'), '5,000');
     expect(find.textContaining('المجموعان مختلفان'), findsNothing);
   });
 
@@ -115,6 +116,7 @@ void main() {
     await scan(tester, result);
     await tester.enterText(find.byKey(const Key('headerTotal')), '9000');
     await tester.pump();
+    expect(text(tester, 'headerTotal'), '9,000');
     expect(find.textContaining('المجموعان مختلفان'), findsOneWidget);
   });
 

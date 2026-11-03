@@ -705,8 +705,13 @@ class _HomeScreenState extends State<HomeScreen>
                 // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
                 // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
                 key: ValueKey('price-${type.code}-${store.filterResetCount}'),
-                initialMin: _fmt(store.priceMin),
-                initialMax: _fmt(store.priceMax),
+                money: true,
+                initialMin: store.priceMin == null
+                    ? null
+                    : formatPriceInput(store.priceMin!),
+                initialMax: store.priceMax == null
+                    ? null
+                    : formatPriceInput(store.priceMax!),
                 onChanged: (min, max) => store.setPriceRange(
                   min == null ? null : parseLocalizedNumber(min),
                   max == null ? null : parseLocalizedNumber(max),
@@ -1177,11 +1182,15 @@ class _RangeRow extends StatefulWidget {
     required this.onChanged,
     this.initialMin,
     this.initialMax,
+    this.money = false,
   });
 
   final void Function(String? min, String? max) onChanged;
   final String? initialMin;
   final String? initialMax;
+
+  /// نطاق السعر: فواصل الآلاف كبقية خانات الأسعار. الكمية بلا فواصل.
+  final bool money;
 
   @override
   State<_RangeRow> createState() => _RangeRowState();
@@ -1218,6 +1227,7 @@ class _RangeRowState extends State<_RangeRow> {
   Widget _field(TextEditingController c, String hint) => TextField(
     controller: c,
     keyboardType: TextInputType.number,
+    inputFormatters: widget.money ? [ThousandsSeparatorInputFormatter()] : null,
     onChanged: (_) => _emit(),
     decoration: InputDecoration(
       hintText: hint,

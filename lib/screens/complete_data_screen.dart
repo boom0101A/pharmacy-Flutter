@@ -87,16 +87,13 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   void _loadCurrent() {
     final m = _current;
     if (m == null) return;
-    _price.text = m.price > 0 ? _num(m.price) : '';
+    _price.text = m.price > 0 ? formatPriceInput(m.price) : '';
     _quantity.text = m.quantity > 0 ? '${m.quantity}' : '';
     _barcode.text = m.barcode;
     _noBarcode = m.noBarcode;
     _image = m.imagePath;
     _expiry = m.expiryDate;
   }
-
-  static String _num(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
   void _next({bool completed = false}) {
     setState(() {
@@ -374,6 +371,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                inputFormatters: [ThousandsSeparatorInputFormatter()],
                 decoration: const InputDecoration(labelText: '💰 السعر (د.ع)'),
               ),
             ),

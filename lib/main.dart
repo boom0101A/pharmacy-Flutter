@@ -4,7 +4,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/launch_flow.dart';
-import 'screens/pairing_sheet.dart';
 import 'services/app_settings.dart';
 import 'services/image_store.dart';
 import 'services/notification_service.dart';
@@ -79,7 +78,6 @@ class _PharmacyAppState extends State<PharmacyApp> {
       home: LaunchFlow(
         initialize: widget.initialize,
         home: (_) => HomeScreen(store: _store),
-        onJoin: (context) => showJoinPairingSheet(context, _store),
       ),
     );
   }

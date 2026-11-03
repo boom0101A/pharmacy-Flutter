@@ -186,10 +186,7 @@ class _SettingsSheet extends StatelessWidget {
                   onTap: () {
                     final home = Navigator.of(context);
                     home.pop();
-                    showWelcomeAgain(
-                      home.context,
-                      onJoin: (ctx) => showJoinPairingSheet(ctx, store),
-                    );
+                    showWelcomeAgain(home.context);
                   },
                 ),
 

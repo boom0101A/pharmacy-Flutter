@@ -286,7 +286,8 @@ void main() {
 
       expect(find.text('تعديل دواء'), findsOneWidget);
       expect(find.text('Panadol'), findsOneWidget);
-      expect(find.text('2500'), findsOneWidget);
+      // السعر في خانته بفواصل الآلاف كما يُعرض في البطاقة
+      expect(find.text('2,500'), findsOneWidget);
       expect(find.text('حفظ التعديلات'), findsOneWidget);
 
       await tester.enterText(quantityField(), '99');
@@ -414,8 +415,25 @@ void main() {
     });
   });
 
+  testWidgets('كتابة السعر تُظهر فواصل الآلاف وتُحفظ بقيمتها', (tester) async {
+    useTallSurface(tester);
+    await tester.pumpWidget(host(MedicineFormScreen(store: store)));
+    await tester.pump();
+
+    await tester.enterText(nameField(), 'دواء');
+    await tester.enterText(priceField(), '12000');
+    await tester.enterText(quantityField(), '3');
+    await tester.pump();
+    expect(find.text('12,000'), findsOneWidget);
+
+    await tapSave(tester);
+    expect(store.saved.single.price, 12000);
+  });
+
   group('حماية الأرقام السالبة (فحص أخير)', () {
-    testWidgets('سعر وكمية سالبان يُحفظان صفراً لا سالبين', (tester) async {
+    testWidgets('خانة السعر لا تقبل الإشارة السالبة، والكمية السالبة صفر', (
+      tester,
+    ) async {
       useTallSurface(tester);
       await tester.pumpWidget(host(MedicineFormScreen(store: store)));
       await tester.pump();
@@ -424,9 +442,11 @@ void main() {
       await tester.enterText(priceField(), '-500');
       await tester.enterText(quantityField(), '-3');
       await tester.pump();
+      // خانة السعر تقبل الأرقام والنقطة فقط: لا يمكن كتابة سعر سالب أصلاً
+      expect(find.text('500'), findsOneWidget);
       await tapSave(tester);
 
-      expect(store.saved.single.price, 0);
+      expect(store.saved.single.price, 500);
       expect(store.saved.single.quantity, 0);
     });
 
@@ -831,11 +851,13 @@ void main() {
       );
       await tester.pump();
 
-      await tester.enterText(priceField(), 'abc');
+      // خانة السعر نفسها ترفض الأحرف (تقبل الأرقام والنقطة فقط): أحرف
+      // كُتبت بعد السعر تسقط ويبقى السعر القديم سليماً
+      await tester.enterText(priceField(), '900abc');
       await tester.pump();
+      expect(find.text('900'), findsOneWidget);
       await tapSave(tester);
 
-      expect(find.text('السعر غير صالح — اكتب أرقاماً فقط'), findsOneWidget);
       expect(store.saved.single.price, 900);
     });
   });

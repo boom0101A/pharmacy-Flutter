@@ -12,13 +12,10 @@ import '../widgets/smooth_route.dart';
 ///
 /// شفافة: تُرسم فوق [LaunchBackdrop] الذي يضعه من يعرضها.
 class WelcomeView extends StatefulWidget {
-  const WelcomeView({super.key, required this.onDone, required this.onJoin});
+  const WelcomeView({super.key, required this.onDone});
 
   /// «تخطّي» أو «ابدأ الآن».
   final VoidCallback onDone;
-
-  /// «لديّ رمز — انضمام إلى مخزون».
-  final VoidCallback onJoin;
 
   @override
   State<WelcomeView> createState() => _WelcomeViewState();
@@ -330,61 +327,14 @@ class _WelcomeViewState extends State<WelcomeView> {
         offset: Offset(0, 18),
       ),
     ],
+    // زر «التالي» وحده (قرار المستخدم): الانضمام إلى مخزون من الإعدادات ←
+    // المشاركة، لا من الترحيب
     child: Padding(
       padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Pressable(
-            key: const Key('welcomeNext'),
-            onTap: _next,
-            child: _PrimaryButton(last: _index == _last),
-          ),
-          const SizedBox(height: 10),
-          _Pressable(
-            key: const Key('welcomeJoin'),
-            onTap: () => _finish(widget.onJoin),
-            child: SizedBox(
-              height: 50,
-              child: LaunchGlass(
-                radius: 27,
-                borderColor: AppColors.border,
-                // `.btn.ghost` بلا backdrop-filter في التصميم
-                backdrop: false,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    svgIcon(LaunchIcons.link, 20),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          'لديّ رمز — انضمام إلى مخزون',
-                          style: cairo(15, 800, color: AppColors.textPrimary),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              svgIcon(LaunchIcons.shield, 14),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'بياناتك خاصة بصيدليتك — لا يراها غيرك',
-                  style: cairo(11.5, 400, color: AppColors.textMuted),
-                ),
-              ),
-            ],
-          ),
-        ],
+      child: _Pressable(
+        key: const Key('welcomeNext'),
+        onTap: _next,
+        child: _PrimaryButton(last: _index == _last),
       ),
     ),
   );

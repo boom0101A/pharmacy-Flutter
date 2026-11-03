@@ -89,7 +89,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     final m = _target = widget.existing;
     _barcode = TextEditingController(text: m?.barcode ?? '');
     _name = TextEditingController(text: m?.name ?? '');
-    _price = TextEditingController(text: m == null ? '' : _trimNumber(m.price));
+    _price = TextEditingController(
+      text: m == null ? '' : formatPriceInput(m.price),
+    );
     _quantity = TextEditingController(
       text: m == null ? '' : m.quantity.toString(),
     );
@@ -115,9 +117,6 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _company.dispose();
     super.dispose();
   }
-
-  static String _trimNumber(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
   void _toast(String message, {Color? color}) {
     if (!mounted) return;
@@ -184,7 +183,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       }
       if (info.source == LookupSource.local) {
         if (_price.text.trim().isEmpty && info.price != null) {
-          _price.text = _trimNumber(info.price!);
+          _price.text = formatPriceInput(info.price!);
         }
         if (_quantity.text.trim().isEmpty && info.quantity != null) {
           _quantity.text = info.quantity.toString();
@@ -207,7 +206,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _target = m;
     _barcode.text = m.barcode;
     _name.text = m.name;
-    _price.text = _trimNumber(m.price);
+    _price.text = formatPriceInput(m.price);
     _quantity.text = m.quantity.toString();
     _imageFileName = m.imagePath;
     _category.text = m.category ?? '';
@@ -736,6 +735,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
+                          inputFormatters: [ThousandsSeparatorInputFormatter()],
                           decoration: const InputDecoration(hintText: '0'),
                         ),
                       ],

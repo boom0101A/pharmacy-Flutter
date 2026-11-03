@@ -18,16 +18,12 @@ class LaunchFlow extends StatefulWidget {
     super.key,
     required this.initialize,
     required this.home,
-    required this.onJoin,
     this.minDuration = const Duration(milliseconds: 1500),
   });
 
   /// تهيئة الخدمات — تجري والشعار ظاهر. فشلها لا يعلّق الشاشة.
   final Future<void> Function() initialize;
   final WidgetBuilder home;
-
-  /// «انضمام إلى مخزون» — يُستدعى بعد ظهور الرئيسية.
-  final void Function(BuildContext context) onJoin;
   final Duration minDuration;
 
   @override
@@ -132,7 +128,7 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _finishWelcome({required bool join}) async {
+  Future<void> _finishWelcome() async {
     if (_stage != _Stage.welcome || _leaving) return;
     _leaving = true;
     await AppSettings.instance.markWelcomeSeen();
@@ -145,7 +141,6 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
     }
     if (!mounted) return;
     setState(() => _welcomeGone = true);
-    if (join) widget.onJoin(context);
   }
 
   @override
@@ -202,10 +197,7 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
                 ),
                 child: IgnorePointer(
                   ignoring: _stage != _Stage.welcome,
-                  child: WelcomeView(
-                    onDone: () => _finishWelcome(join: false),
-                    onJoin: () => _finishWelcome(join: true),
-                  ),
+                  child: WelcomeView(onDone: _finishWelcome),
                 ),
               ),
             ),
@@ -381,12 +373,8 @@ class _LoaderBar extends StatelessWidget {
 }
 
 /// شرائح الترحيب من الإعدادات («عرض شاشة الترحيب»).
-Future<void> showWelcomeAgain(
-  BuildContext context, {
-  required void Function(BuildContext context) onJoin,
-}) {
-  final navigator = Navigator.of(context);
-  return navigator.push(
+Future<void> showWelcomeAgain(BuildContext context) {
+  return Navigator.of(context).push(
     PageRouteBuilder<void>(
       opaque: true,
       transitionDuration: const Duration(milliseconds: 500),
@@ -396,13 +384,7 @@ Future<void> showWelcomeAgain(
           fit: StackFit.expand,
           children: [
             const LaunchBackdrop(),
-            WelcomeView(
-              onDone: () => Navigator.of(context).pop(),
-              onJoin: () {
-                Navigator.of(context).pop();
-                onJoin(navigator.context);
-              },
-            ),
+            WelcomeView(onDone: () => Navigator.of(context).pop()),
           ],
         ),
       ),

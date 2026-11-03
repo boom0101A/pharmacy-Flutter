@@ -12,11 +12,9 @@ Future<void> settle(WidgetTester tester) async {
 
 void main() {
   late int done;
-  late int joined;
 
   setUp(() {
     done = 0;
-    joined = 0;
   });
 
   Future<void> open(
@@ -31,9 +29,7 @@ void main() {
         theme: buildAppTheme(),
         home: Directionality(
           textDirection: TextDirection.rtl,
-          child: Scaffold(
-            body: WelcomeView(onDone: () => done++, onJoin: () => joined++),
-          ),
+          child: Scaffold(body: WelcomeView(onDone: () => done++)),
         ),
       ),
     );
@@ -122,28 +118,30 @@ void main() {
     expect(activeTitle(tester), 'على كل أجهزتك');
   });
 
-  testWidgets('«انضمام» يستدعي onJoin', (tester) async {
+  testWidgets('«تخطّي» مرتين بسرعة تُنهي مرة واحدة فقط', (tester) async {
     await open(tester);
-    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
-    await settle(tester);
-    expect(joined, 1);
-    expect(done, 0);
-  });
-
-  testWidgets('ضغطتان سريعتان تُنهيان مرة واحدة فقط', (tester) async {
-    await open(tester);
-    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
-    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
+    await tester.tap(find.text('تخطّي'));
     await tester.tap(find.text('تخطّي'));
     await settle(tester);
-    expect(joined, 1);
-    expect(done, 0);
+    expect(done, 1);
   });
 
-  testWidgets('السطر القانوني مصحّح', (tester) async {
+  testWidgets('«ابدأ الآن» مرتين بسرعة تُنهي مرة واحدة فقط', (tester) async {
     await open(tester);
-    expect(find.text('بياناتك خاصة بصيدليتك — لا يراها غيرك'), findsOneWidget);
-    expect(find.textContaining('لا تغادر جهازك'), findsNothing);
+    await tester.tap(find.byKey(const Key('welcomeDot2')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('welcomeNext')));
+    await tester.tap(find.byKey(const Key('welcomeNext')));
+    await settle(tester);
+    expect(done, 1);
+  });
+
+  // قرار المستخدم: اللوحة السفلية بزر «التالي» وحده — الانضمام من الإعدادات
+  testWidgets('اللوحة السفلية: «التالي» وحده', (tester) async {
+    await open(tester);
+    expect(find.byKey(const Key('welcomeNext')), findsOneWidget);
+    expect(find.textContaining('انضمام'), findsNothing);
+    expect(find.textContaining('بياناتك خاصة'), findsNothing);
   });
 
   testWidgets('شاشة قصيرة: البطل مصغّر بلا فيضان', (tester) async {

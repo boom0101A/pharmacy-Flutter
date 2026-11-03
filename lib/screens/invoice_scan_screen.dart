@@ -231,14 +231,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     fill(_number, h.number);
     fill(_date, h.date);
     final total = h.total;
-    fill(
-      _total,
-      total == null
-          ? null
-          : (total == total.roundToDouble()
-                ? total.toInt().toString()
-                : total.toString()),
-    );
+    fill(_total, total == null ? null : formatPriceInput(total));
   }
 
   /// مجموع الأسطر كما عُدّلت (الكمية × السعر).
@@ -673,6 +666,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             key: const Key('headerTotal'),
             controller: _total,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [ThousandsSeparatorInputFormatter()],
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               labelText: '💰 مجموع الفاتورة (د.ع)',
@@ -1044,6 +1038,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    inputFormatters: [ThousandsSeparatorInputFormatter()],
                     decoration: const InputDecoration(
                       labelText: 'السعر (كلفة)',
                     ),
@@ -1421,7 +1416,7 @@ class _EditableLine {
        bonus = source.bonus ?? 0,
        name = TextEditingController(text: source.name),
        price = TextEditingController(
-         text: source.price == null ? '' : _num(source.price!),
+         text: source.price == null ? '' : formatPriceInput(source.price!),
        ),
        // البونص يصل للرف فعلاً فيُضاف للكمية، ويُعرض «+N مجاناً» تحت الحقل
        quantity = TextEditingController(
@@ -1455,7 +1450,4 @@ class _EditableLine {
     category.dispose();
     company.dispose();
   }
-
-  static String _num(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 }

@@ -10,12 +10,10 @@ import 'package:saydaliyati/widgets/launch_art.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  late int joins;
   late bool initDone;
   late bool homeBuiltBeforeInit;
 
   setUp(() {
-    joins = 0;
     initDone = false;
     homeBuiltBeforeInit = false;
   });
@@ -57,7 +55,6 @@ void main() {
                 if (!initDone) homeBuiltBeforeInit = true;
                 return const Scaffold(body: Text('HOME'));
               },
-              onJoin: (_) => joins++,
             ),
           ),
         ),
@@ -122,7 +119,6 @@ void main() {
     expect(find.byType(WelcomeView), findsNothing);
     expect(find.byType(LaunchBackdrop), findsNothing);
     expect(AppSettings.instance.welcomeSeen, isTrue);
-    expect(joins, 0);
   });
 
   testWidgets('النصوص بلا خط أصفر سفلي (لا Scaffold فوق الشاشة)', (
@@ -130,7 +126,7 @@ void main() {
   ) async {
     await start(tester, seen: false);
     await advance(tester, 3000);
-    for (final t in ['تخطّي', 'التالي', 'لديّ رمز — انضمام إلى مخزون']) {
+    for (final t in ['تخطّي', 'التالي']) {
       final rich = tester.widget<RichText>(
         find.descendant(of: find.text(t), matching: find.byType(RichText)),
       );
@@ -148,16 +144,6 @@ void main() {
     expect(find.byType(WelcomeView), findsNothing);
     expect(find.byType(LaunchBackdrop), findsNothing);
     expect(home, findsOneWidget);
-  });
-
-  testWidgets('«انضمام» ← الرئيسية ثم ورقة الانضمام', (tester) async {
-    await start(tester, seen: false);
-    await advance(tester, 3000);
-    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
-    await advance(tester, 1000);
-    expect(home, findsOneWidget);
-    expect(joins, 1);
-    expect(AppSettings.instance.welcomeSeen, isTrue);
   });
 
   testWidgets('الحركة المخفّضة: بلا انتظار أدنى', (tester) async {

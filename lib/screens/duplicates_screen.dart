@@ -563,11 +563,7 @@ class _MergeDialogState extends State<MergeDialog> {
         .map((m) => m.price)
         .firstWhere((p) => p > 0, orElse: () => 0);
     final qty = widget.items.fold<int>(0, (n, m) => n + m.quantity);
-    _price = TextEditingController(
-      text: price == price.roundToDouble()
-          ? price.toInt().toString()
-          : price.toString(),
-    );
+    _price = TextEditingController(text: formatPriceInput(price));
     _quantity = TextEditingController(text: '$qty');
   }
 
@@ -621,6 +617,7 @@ class _MergeDialogState extends State<MergeDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [ThousandsSeparatorInputFormatter()],
               decoration: const InputDecoration(
                 labelText: '💰 السعر النهائي (د.ع)',
               ),
