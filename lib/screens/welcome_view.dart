@@ -128,7 +128,19 @@ class _WelcomeViewState extends State<WelcomeView> {
     });
   }
 
+  /// الإنهاء مرة واحدة فقط: ضغطتان سريعتان كانتا تفتحان ورقتَي انضمام، وفي
+  /// «عرض شاشة الترحيب» من الإعدادات كانتا تغلقان الرئيسية نفسها.
+  bool _finished = false;
+
+  void _finish(VoidCallback callback) {
+    if (_finished) return;
+    _finished = true;
+    _auto?.cancel();
+    callback();
+  }
+
   void _show(int i) {
+    if (_finished) return;
     setState(() => _index = i);
     _restartAuto();
   }
@@ -137,8 +149,7 @@ class _WelcomeViewState extends State<WelcomeView> {
     if (_index < _last) {
       _show(_index + 1);
     } else {
-      _auto?.cancel();
-      widget.onDone();
+      _finish(widget.onDone);
     }
   }
 
@@ -224,10 +235,7 @@ class _WelcomeViewState extends State<WelcomeView> {
       ),
       _Pressable(
         key: const Key('welcomeSkip'),
-        onTap: () {
-          _auto?.cancel();
-          widget.onDone();
-        },
+        onTap: () => _finish(widget.onDone),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 44),
           child: SizedBox(
@@ -335,10 +343,7 @@ class _WelcomeViewState extends State<WelcomeView> {
           const SizedBox(height: 10),
           _Pressable(
             key: const Key('welcomeJoin'),
-            onTap: () {
-              _auto?.cancel();
-              widget.onJoin();
-            },
+            onTap: () => _finish(widget.onJoin),
             child: SizedBox(
               height: 50,
               child: LaunchGlass(

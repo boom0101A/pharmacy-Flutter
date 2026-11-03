@@ -130,6 +130,16 @@ void main() {
     expect(done, 0);
   });
 
+  testWidgets('ضغطتان سريعتان تُنهيان مرة واحدة فقط', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
+    await tester.tap(find.text('لديّ رمز — انضمام إلى مخزون'));
+    await tester.tap(find.text('تخطّي'));
+    await settle(tester);
+    expect(joined, 1);
+    expect(done, 0);
+  });
+
   testWidgets('السطر القانوني مصحّح', (tester) async {
     await open(tester);
     expect(find.text('بياناتك خاصة بصيدليتك — لا يراها غيرك'), findsOneWidget);

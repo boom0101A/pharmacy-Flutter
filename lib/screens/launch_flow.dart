@@ -41,6 +41,7 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
   bool _splashGone = false;
   bool _welcomeGone = false;
   bool _viaWelcome = false;
+  bool _leaving = false;
   bool _started = false;
   late bool _reduced;
 
@@ -132,7 +133,8 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
   }
 
   Future<void> _finishWelcome({required bool join}) async {
-    if (_stage != _Stage.welcome) return;
+    if (_stage != _Stage.welcome || _leaving) return;
+    _leaving = true;
     await AppSettings.instance.markWelcomeSeen();
     if (!mounted) return;
     setState(() => _stage = _Stage.home);
