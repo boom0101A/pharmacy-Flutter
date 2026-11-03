@@ -483,11 +483,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get rowAdded => '➕ الإضافة';
 
   @override
-  String addedOn(String date) {
-    return 'أُضيفت $date';
-  }
-
-  @override
   String get rowUpdated => '🕓 آخر تعديل';
 
   @override

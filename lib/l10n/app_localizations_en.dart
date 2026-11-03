@@ -514,11 +514,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rowAdded => '➕ Added';
 
   @override
-  String addedOn(String date) {
-    return 'Added $date';
-  }
-
-  @override
   String get rowUpdated => '🕓 Last edited';
 
   @override

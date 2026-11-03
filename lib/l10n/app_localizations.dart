@@ -902,12 +902,6 @@ abstract class AppLocalizations {
   /// **'➕ الإضافة'**
   String get rowAdded;
 
-  /// No description provided for @addedOn.
-  ///
-  /// In ar, this message translates to:
-  /// **'أُضيفت {date}'**
-  String addedOn(String date);
-
   /// No description provided for @rowUpdated.
   ///
   /// In ar, this message translates to:

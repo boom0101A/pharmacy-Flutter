@@ -278,10 +278,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                   (m.category ?? '').trim().isNotEmpty)
                 _row(context.l10n.rowCategory, m.category!.trim()),
               _row(context.l10n.rowSection, m.type.labelIn(context.l10n)),
-              _row(
-                context.l10n.rowAdded,
-                context.l10n.addedOn(_date(m.createdAt)),
-              ),
+              _row(context.l10n.rowAdded, _date(m.createdAt)),
               _row(context.l10n.rowUpdated, _date(m.updatedAt)),
             ],
           ),
@@ -404,16 +401,19 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           cell(context.l10n.price, Text(formatMoney(m.price), style: big)),
           cell(
             context.l10n.quantity,
+            // «− العدد +» من اليسار لليمين في اللغتين، كعدّاد الأرقام المعتاد —
+            // بلا هذا كان يُعكس بالإنجليزية فيصير + يساراً
             Row(
+              textDirection: TextDirection.ltr,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  key: const Key('qtyPlus'),
+                  key: const Key('qtyMinus'),
                   child: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
-                    tooltip: context.l10n.increase,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    onPressed: () => _changeQty(1),
+                    tooltip: context.l10n.decrease,
+                    icon: const Icon(Icons.remove_rounded, size: 18),
+                    onPressed: m.quantity > 0 ? () => _changeQty(-1) : null,
                   ),
                 ),
                 Padding(
@@ -425,12 +425,12 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                   ),
                 ),
                 SizedBox(
-                  key: const Key('qtyMinus'),
+                  key: const Key('qtyPlus'),
                   child: IconButton.filledTonal(
                     visualDensity: VisualDensity.compact,
-                    tooltip: context.l10n.decrease,
-                    icon: const Icon(Icons.remove_rounded, size: 18),
-                    onPressed: m.quantity > 0 ? () => _changeQty(-1) : null,
+                    tooltip: context.l10n.increase,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    onPressed: () => _changeQty(1),
                   ),
                 ),
               ],

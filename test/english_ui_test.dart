@@ -199,6 +199,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Stock value'), findsOneWidget);
+    // بالإنجليزية أيضاً: − يسار + (كان معكوساً من الترتيب العربي)
+    expect(
+      tester.getCenter(find.byKey(const Key('qtyMinus'))).dx,
+      lessThan(tester.getCenter(find.byKey(const Key('qtyPlus'))).dx),
+    );
+    expect(find.textContaining('Added 20'), findsNothing);
     expect(find.text('7,877 IQD'), findsOneWidget);
     expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
   });

@@ -134,7 +134,6 @@
   "rowCategory": "🧪 Form",
   "rowSection": "🗂️ Section",
   "rowAdded": "➕ Added",
-  "addedOn": "Added {date}",
   "rowUpdated": "🕓 Last edited",
   "invoiceHistory": "🧾 Invoice history",
   "noInvoicesForItem": "No saved invoices for this item",

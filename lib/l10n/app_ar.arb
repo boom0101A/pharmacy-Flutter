@@ -339,14 +339,6 @@
   "rowCategory": "🧪 نوع المادة",
   "rowSection": "🗂️ القسم",
   "rowAdded": "➕ الإضافة",
-  "addedOn": "أُضيفت {date}",
-  "@addedOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
   "rowUpdated": "🕓 آخر تعديل",
   "invoiceHistory": "🧾 سجل الفواتير",
   "noInvoicesForItem": "لا فواتير محفوظة لهذه المادة",

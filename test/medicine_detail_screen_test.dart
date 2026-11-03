@@ -118,7 +118,9 @@ void main() {
     expect(find.text('2,500 د.ع'), findsOneWidget);
     expect(find.byKey(const Key('detailQuantity')), findsOneWidget);
     expect(find.text('10,000 د.ع'), findsOneWidget);
-    expect(find.text('أُضيفت 2026/08/03'), findsOneWidget);
+    // التاريخ وحده بجانب «الإضافة» — لا «الإضافة | أُضيفت …» مكرّرة
+    expect(find.text('2026/08/03'), findsOneWidget);
+    expect(find.textContaining('أُضيفت'), findsNothing);
   });
 
   // OpenContainer يرسم البطاقة مكبّرة خلف الصفحة أثناء الرجوع؛ شريط العنوان
@@ -233,6 +235,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(deletes, 1);
     expect(find.byType(MedicineDetailScreen), findsNothing);
+  });
+
+  testWidgets('− يسار + في الواجهة (كالمعتاد)', (tester) async {
+    await open(tester, _med());
+    final minus = tester.getCenter(find.byKey(const Key('qtyMinus'))).dx;
+    final plus = tester.getCenter(find.byKey(const Key('qtyPlus'))).dx;
+    expect(minus, lessThan(plus));
   });
 
   group('تعديل سريع للكمية', () {
