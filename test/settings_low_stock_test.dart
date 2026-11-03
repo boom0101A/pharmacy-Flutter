@@ -48,7 +48,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('lowStockPlus')));
     await tester.pumpAndSettle();
-    expect(PharmacyPrefs.instance.lowStockDefault, 6);
+    expect(PharmacyPrefs.instance.lowStockDefault, 2);
 
     for (var i = 0; i < 8; i++) {
       await tester.tap(find.byKey(const Key('lowStockMinus')));

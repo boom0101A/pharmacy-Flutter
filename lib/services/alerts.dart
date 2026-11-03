@@ -33,7 +33,9 @@ class StockAlert {
   String get key => '${item.id}:${kind.name}';
 
   /// يستحق الانتباه الآن (الجرس وإشعار «جديد»).
-  bool get isCritical => kind != AlertKind.soon;
+  /// «المنخفضة» و«القريبة» للمتابعة في المركز والملخّص الأسبوعي، لا للجرس
+  /// ولا لإشعار «جديد» (قرار المستخدم بعد 587 تنبيهاً على هاتفه).
+  bool get isCritical => kind != AlertKind.soon && kind != AlertKind.low;
 }
 
 /// تنبيهات المخزون كما هي عند [now] — دالة نقية تُستعمل للجرس ومركز

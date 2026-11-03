@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/services/pharmacy_prefs.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 
 Medicine _item({
@@ -24,6 +25,10 @@ Medicine _item({
 );
 
 void main() {
+  // عتبة «منخفض» 5 صراحةً: الاختبارات هنا لمنطق المنخفض نفسه، والافتراضي صار 1
+  setUpAll(() => PharmacyPrefs.instance.debugSetLowStockDefault(5));
+  tearDownAll(PharmacyPrefs.instance.resetForTest);
+
   late MedicineStore store;
 
   setUp(() {

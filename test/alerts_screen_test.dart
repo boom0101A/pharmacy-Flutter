@@ -34,6 +34,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     PharmacyPrefs.instance.resetForTest();
+    PharmacyPrefs.instance.debugSetLowStockDefault(5);
     opened = [];
     store = _Store()
       ..seed([
@@ -153,9 +154,9 @@ void main() {
     final bell = find.byKey(const Key('alertsBell'));
     expect(bell, findsOneWidget);
     expect(
-      find.descendant(of: bell, matching: find.text('4')),
+      find.descendant(of: bell, matching: find.text('3')),
       findsOneWidget,
-      reason: 'منتهية + عاجلة + نافدة + منخفضة — «قريبة» لا تُعدّ',
+      reason: 'منتهية + عاجلة + نافدة — «المنخفضة» و«القريبة» لا تُعدّ',
     );
 
     await tester.tap(bell);
@@ -164,8 +165,8 @@ void main() {
   });
 
   test('عدّاد الجرس: الحرجة غير المخفية فقط', () {
-    expect(criticalAlertCount(store.all, dismissed: {}), 4);
-    expect(criticalAlertCount(store.all, dismissed: {'e:expired'}), 3);
+    expect(criticalAlertCount(store.all, dismissed: {}), 3);
+    expect(criticalAlertCount(store.all, dismissed: {'e:expired'}), 2);
   });
 }
 

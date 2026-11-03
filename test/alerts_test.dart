@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/services/alerts.dart';
+import 'package:saydaliyati/services/pharmacy_prefs.dart';
 
 final _now = DateTime(2026, 11, 3, 10);
 
@@ -27,6 +28,10 @@ Medicine _m(
 );
 
 void main() {
+  // «منخفض» عند 5 صراحةً: الاختبارات لمنطق المحرّك، والافتراضي صار 1
+  setUpAll(() => PharmacyPrefs.instance.debugSetLowStockDefault(5));
+  tearDownAll(PharmacyPrefs.instance.resetForTest);
+
   List<AlertKind> kinds(List<StockAlert> a) => [for (final x in a) x.kind];
 
   test('الأنواع الخمسة وترتيبها بالأولوية', () {
@@ -96,12 +101,12 @@ void main() {
     expect(a.daysLeft, 9);
   });
 
-  test('isCritical: كل شيء عدا «قريبة»', () {
+  test('isCritical: لا «المنخفضة» ولا «القريبة» (الجرس وإشعار «جديد»)', () {
     final alerts = computeAlerts([
       _m('a', inDays: -1),
       _m('b', inDays: 50),
       _m('c', qty: 2),
     ], now: _now);
-    expect([for (final a in alerts) a.isCritical], [true, true, false]);
+    expect([for (final a in alerts) a.isCritical], [true, false, false]);
   });
 }

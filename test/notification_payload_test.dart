@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/services/pharmacy_prefs.dart';
 import 'package:saydaliyati/services/notification_service.dart';
 
 /// اختبارات دالة `computePayload` — دالة صِرفة تحدّد ماذا يفتح الإشعار عليه.
@@ -31,6 +32,10 @@ Medicine make({
 );
 
 void main() {
+  // عتبة «منخفض» 5 صراحةً: الاختبارات هنا لمنطق المنخفض نفسه، والافتراضي صار 1
+  setUpAll(() => PharmacyPrefs.instance.debugSetLowStockDefault(5));
+  tearDownAll(PharmacyPrefs.instance.resetForTest);
+
   final today = DateTime.now();
   final expired = today.subtract(const Duration(days: 30));
   final soon = today.add(const Duration(days: 60)); // قارب من الانتهاء

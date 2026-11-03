@@ -19,7 +19,9 @@ class PharmacyPrefs extends ChangeNotifier {
   PharmacyPrefs._();
   static final PharmacyPrefs instance = PharmacyPrefs._();
 
-  static const defaultLowStock = 5;
+  /// 1 لا 5: أغلب مواد الصيدلية تُخزَّن بقطعة أو اثنتين، فحد 5 جعل نحو 578
+  /// مادة «منخفضة» (رُصد على الهاتف). المواد سريعة البيع ترفع حدها من نموذجها.
+  static const defaultLowStock = 1;
 
   static const _collection = 'pharmacyPrefs';
   static const _kLowStock = 'pharmacy_low_stock_default';

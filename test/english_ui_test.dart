@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/l10n/l10n.dart';
+import 'package:saydaliyati/services/pharmacy_prefs.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/alerts_screen.dart';
 import 'package:saydaliyati/screens/form_screen.dart';
@@ -73,6 +74,10 @@ Future<void> frames(WidgetTester tester, [int n = 8]) async {
 }
 
 void main() {
+  // عتبة «منخفض» 5 صراحةً: الاختبارات هنا لمنطق المنخفض نفسه، والافتراضي صار 1
+  setUpAll(() => PharmacyPrefs.instance.debugSetLowStockDefault(5));
+  tearDownAll(PharmacyPrefs.instance.resetForTest);
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await AppSettings.instance.init();

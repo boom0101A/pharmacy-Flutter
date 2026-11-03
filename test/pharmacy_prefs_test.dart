@@ -55,8 +55,8 @@ void main() {
 
   Future<void> settle() => Future<void>.delayed(Duration.zero);
 
-  test('الافتراضي 5 بلا سحابة ولا تخزين', () {
-    expect(prefs.lowStockDefault, 5);
+  test('الافتراضي 1 بلا سحابة ولا تخزين', () {
+    expect(prefs.lowStockDefault, 1);
     expect(prefs.alertDismissals, isEmpty);
   });
 
@@ -73,7 +73,7 @@ void main() {
 
   test('قيمة أقل من 1 تُرفض', () async {
     await prefs.setLowStockDefault(0);
-    expect(prefs.lowStockDefault, 5);
+    expect(prefs.lowStockDefault, 1);
   });
 
   test('حد غيّره الهاتف الآخر يصل بالمزامنة', () async {
