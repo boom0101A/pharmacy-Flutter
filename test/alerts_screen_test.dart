@@ -118,6 +118,18 @@ void main() {
     expect(PharmacyPrefs.instance.alertDismissals, isEmpty);
   });
 
+  // نقر إشعار والتطبيق مغلق: المركز يُفتح في أول إطار والمخزون لم يُحمَّل —
+  // قائمة فارغة كانت تُعدّ «كل شيء انحلّ» فتُمسح قرارات «تمّ» من الهاتفين
+  testWidgets('فتح المركز قبل تحميل المخزون لا يمسح قرارات «تمّ»', (
+    tester,
+  ) async {
+    await PharmacyPrefs.instance.dismiss('o:out');
+    store = _Store(); // لم يُحمَّل بعد: isLoading
+    expect(store.isLoading, isTrue);
+    await open(tester);
+    expect(PharmacyPrefs.instance.alertDismissals, {'o:out'});
+  });
+
   testWidgets('بلا تنبيهات: رسالة «كل شيء سليم»', (tester) async {
     store.seed([_m('ok', 'Healthy')]);
     await open(tester);

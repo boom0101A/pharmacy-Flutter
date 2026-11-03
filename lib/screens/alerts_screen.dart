@@ -40,14 +40,35 @@ class _AlertsScreenState extends State<AlertsScreen> {
   @override
   void initState() {
     super.initState();
-    // مفاتيح «تمّ» لتنبيهات انحلّت (عُدّلت المادة أو حُذفت) لا داعي لها
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final active = {
-        for (final a in computeAlerts(widget.store.all, now: DateTime.now()))
-          a.key,
-      };
-      _prefs.prune(active);
-    });
+    // مفاتيح «تمّ» لتنبيهات انحلّت (عُدّلت المادة أو حُذفت) لا داعي لها —
+    // **بعد** تحميل المخزون فقط: نقر إشعار والتطبيق مغلق يفتح المركز في أول
+    // إطار، وقائمة فارغة كانت تُعدّ «كل شيء انحلّ» فتُمسح القرارات من الهاتفين
+    if (widget.store.isLoading) {
+      widget.store.addListener(_pruneWhenLoaded);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _prune());
+    }
+  }
+
+  void _pruneWhenLoaded() {
+    if (widget.store.isLoading) return;
+    widget.store.removeListener(_pruneWhenLoaded);
+    _prune();
+  }
+
+  void _prune() {
+    if (!mounted) return;
+    final active = {
+      for (final a in computeAlerts(widget.store.all, now: DateTime.now()))
+        a.key,
+    };
+    _prefs.prune(active);
+  }
+
+  @override
+  void dispose() {
+    widget.store.removeListener(_pruneWhenLoaded);
+    super.dispose();
   }
 
   Future<void> _dismiss(StockAlert a) async {
