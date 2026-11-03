@@ -122,6 +122,32 @@ void main() {
     });
   });
 
+  test('invoicesFor: فواتير المادة بأسطرها، الأحدث أولاً', () {
+    Invoice withLine(String id, int date, String? medId, int qty) => Invoice(
+      id: id,
+      dateMs: date,
+      lines: [
+        InvoiceRecordLine(
+          name: 'X',
+          quantity: qty,
+          price: 900,
+          medicineId: medId,
+        ),
+      ],
+      createdAt: date,
+      updatedAt: date,
+    );
+    final store = InvoiceStore()
+      ..seed([
+        withLine('old', 10, 'm1', 1),
+        withLine('new', 20, 'm1', 3),
+        withLine('other', 30, 'm2', 5),
+      ]);
+    expect(store.invoicesFor('m1').map((e) => e.invoice.id), ['new', 'old']);
+    expect(store.invoicesFor('m1').first.line.quantity, 3);
+    expect(store.invoicesFor('zzz'), isEmpty);
+  });
+
   group('InvoiceStore', () {
     late List<Invoice> db;
     late List<String> pushed, pushedDeletes, deletedPages;

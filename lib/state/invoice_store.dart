@@ -116,6 +116,16 @@ class InvoiceStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// كل الفواتير المحفوظة التي ورد فيها سطر المادة [medicineId] مع سطرها،
+  /// الأحدث أولاً — لسجل الفواتير في صفحة تفاصيل المادة.
+  List<({Invoice invoice, InvoiceRecordLine line})> invoicesFor(
+    String medicineId,
+  ) => [
+    for (final inv in _all)
+      for (final line in inv.lines)
+        if (line.medicineId == medicineId) (invoice: inv, line: line),
+  ]..sort((a, b) => b.invoice.sortDate.compareTo(a.invoice.sortDate));
+
   /// لكل مادة في المخزون: أحدث فاتورة محفوظة ورد فيها سطرها.
   Map<String, Invoice> latestInvoiceByMedicine() {
     final out = <String, Invoice>{};
