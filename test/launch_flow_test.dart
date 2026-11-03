@@ -125,6 +125,23 @@ void main() {
     expect(joins, 0);
   });
 
+  testWidgets('النصوص بلا خط أصفر سفلي (لا Scaffold فوق الشاشة)', (
+    tester,
+  ) async {
+    await start(tester, seen: false);
+    await advance(tester, 3000);
+    for (final t in ['تخطّي', 'التالي', 'لديّ رمز — انضمام إلى مخزون']) {
+      final rich = tester.widget<RichText>(
+        find.descendant(of: find.text(t), matching: find.byType(RichText)),
+      );
+      expect(
+        rich.text.style?.decoration,
+        isNot(TextDecoration.underline),
+        reason: t,
+      );
+    }
+  });
+
   testWidgets('بعد رؤية الشرائح ← الرئيسية مباشرة بلا شرائح', (tester) async {
     await start(tester, seen: true);
     await advance(tester, 3000);

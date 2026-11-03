@@ -174,7 +174,7 @@ class _LaunchFlowState extends State<LaunchFlow> with TickerProviderStateMixin {
           );
     final backdropGone = _viaWelcome ? _welcomeGone : _splashGone;
 
-    return BackdropGroup(
+    return LaunchSurface(
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -391,7 +391,7 @@ Future<void> showWelcomeAgain(
       opaque: true,
       transitionDuration: const Duration(milliseconds: 500),
       reverseTransitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, _, _) => BackdropGroup(
+      pageBuilder: (context, _, _) => LaunchSurface(
         child: Stack(
           fit: StackFit.expand,
           children: [

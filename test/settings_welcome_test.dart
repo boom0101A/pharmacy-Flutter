@@ -24,9 +24,7 @@ Future<void> _frames(WidgetTester tester, int n) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('«عرض شاشة الترحيب» يفتح الشرائح، و«تخطّي» يعود', (
-    tester,
-  ) async {
+  testWidgets('«عرض شاشة الترحيب» يفتح الشرائح، و«تخطّي» يعود', (tester) async {
     tester.view.physicalSize = const Size(420, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme.dart';
@@ -283,6 +284,21 @@ class LaunchGlass extends StatelessWidget {
   }
 }
 
+/// جذر شاشتي البداية والترحيب: طبقة Material شفافة (بدونها تظهر النصوص
+/// بخطّين أصفرين — نمط Flutter الاحتياطي حين لا يوجد Scaffold، رُصد على
+/// الهاتف) + مجموعة الضبابية المشتركة.
+class LaunchSurface extends StatelessWidget {
+  const LaunchSurface({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: BackdropGroup(child: child),
+  );
+}
+
 // ───────────────────────── الخلفية ─────────────────────────
 
 /// خلفية الشاشتين: لون `--bg` + الشفق المتحرك + الحبيبات + الكبسولات العائمة.
@@ -291,15 +307,28 @@ class LaunchBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: AppColors.bgDark,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _Aurora(),
-          RepaintBoundary(child: CustomPaint(painter: _GrainPainter())),
-          _Floaters(),
-        ],
+    // الشفق يمتد تحت شريط الحالة كما في التصميم — بلا الستارة الداكنة التي
+    // يضعها Android 15 حين لا يحدّد التطبيق نمطاً (رُصدت على هاتف المستخدم).
+    // هنا فقط: الخلفية تُزال مع الشعار/الشرائح فيعود شريط الرئيسية كما هو.
+    return const AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
+        systemStatusBarContrastEnforced: false,
+      ),
+      child: ColoredBox(
+        color: AppColors.bgDark,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _Aurora(),
+            RepaintBoundary(child: CustomPaint(painter: _GrainPainter())),
+            _Floaters(),
+          ],
+        ),
       ),
     );
   }
