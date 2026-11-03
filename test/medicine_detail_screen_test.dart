@@ -8,6 +8,7 @@ import 'package:saydaliyati/screens/medicine_detail_screen.dart';
 import 'package:saydaliyati/state/invoice_store.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/theme.dart';
+import 'package:saydaliyati/widgets/glass.dart';
 
 class _Store extends MedicineStore {
   final saved = <Medicine>[];
@@ -136,6 +137,25 @@ void main() {
     );
     expect(scaffold.backgroundColor, AppColors.bgDark);
     expect(scaffold.backgroundColor!.a, 1.0);
+  });
+
+  // كان أعلى الصفحة لوناً داكناً موحّداً وتحته يبدأ الشفق — خط فاصل ظاهر
+  // أسفل شريط العنوان. الآن يمتد الشفق خلف الشريط كبقية الشاشات.
+  testWidgets('الشفق يمتد خلف شريط العنوان', (tester) async {
+    await open(tester, _med());
+    expect(tester.getRect(find.byType(AuroraBackground)).top, 0);
+  });
+
+  testWidgets('المحتوى يبدأ أسفل شريط العنوان لا تحته', (tester) async {
+    await open(tester, _med());
+    final bar = tester.getRect(find.byType(GlassAppBar));
+    final name = tester.getRect(find.textContaining('اسم طويل جداً'));
+    expect(name.top, greaterThanOrEqualTo(bar.bottom));
+    // والقائمة نفسها تبدأ تحته، فلا يمرّ المحتوى تحت الزجاج عند التمرير
+    expect(
+      tester.getRect(find.byType(ListView)).top,
+      greaterThanOrEqualTo(bar.bottom),
+    );
   });
 
   testWidgets('الصلاحية مع الأيام المتبقية', (tester) async {

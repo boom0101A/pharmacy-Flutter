@@ -167,6 +167,10 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           // الرجوع ترسم الحاوية البطاقة مكبّرة خلف الصفحة، والشريط العلوي
           // الشفاف كان يُظهرها فوق شريط العنوان — رُصد في لقطات الهاتف.
           backgroundColor: AppColors.bgDark,
+          // الشفق يمتد خلف شريط العنوان الزجاجي كبقية الشاشات (كان أعلى
+          // الصفحة داكناً موحّداً فيظهر خط فاصل). المحتوى يبقى تحته: Scaffold
+          // يضيف ارتفاع الشريط إلى الحشوة العليا، وSafeArea يحترمها.
+          extendBodyBehindAppBar: true,
           appBar: GlassAppBar(
             title: Text(m.type.label),
             actions: [
