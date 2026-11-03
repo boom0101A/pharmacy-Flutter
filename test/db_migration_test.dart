@@ -252,6 +252,31 @@ void main() {
     });
   });
 
+  group('ترقية 9 ← 10 — حد التنبيه الخاص بالمادة', () {
+    test('تضيف عمود minQuantity بلا فقدان بيانات، والقديم null', () async {
+      final path = nextPath();
+      var db = await buildLegacy(path, 9);
+      await insertLegacy(
+        db,
+        9,
+        id: 'm1',
+        barcode: '123',
+        name: 'دواء قديم',
+        itemType: 'medicine',
+        updatedAt: 1,
+      );
+      await db.close();
+
+      db = await MedicineDb.openAt(path);
+      expect(await db.getVersion(), MedicineDb.schemaVersion);
+      final rows = await db.query(table);
+      expect(rows.single['name'], 'دواء قديم');
+      expect(rows.single.containsKey('minQuantity'), isTrue);
+      expect(rows.single['minQuantity'], isNull);
+      await db.close();
+    });
+  });
+
   group('ترقية 5 ← 6 — إضافة نوع المادة', () {
     test('تضيف عمود category بلا فقدان بيانات', () async {
       final path = nextPath();
@@ -366,6 +391,7 @@ void main() {
         imagePath: 'img.jpg',
         expiryDate: 1900000000000,
         type: ItemType.medicine,
+        minQuantity: 12,
         createdAt: 10,
         updatedAt: 10,
       );
@@ -378,6 +404,7 @@ void main() {
       expect(got.price, 2500.5);
       expect(got.quantity, 7);
       expect(got.imagePath, 'img.jpg');
+      expect(got.minQuantity, 12, reason: 'حد التنبيه الخاص يُحفظ ويُقرأ');
       expect(got.type, ItemType.medicine);
       expect(got.expiryDate, 1900000000000);
     });

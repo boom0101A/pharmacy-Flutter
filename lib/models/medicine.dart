@@ -1,3 +1,5 @@
+import '../services/pharmacy_prefs.dart';
+
 /// نوع المادة — الأدوية والمستلزمات الطبية لهما مسارا إدخال مختلفان تماماً.
 enum ItemType {
   medicine('medicine', '💊 دواء'),
@@ -46,6 +48,10 @@ class Medicine {
   /// تُعدّ «ناقصة» بسبب الباركود.
   final bool noBarcode;
 
+  /// حد تنبيه المخزون المنخفض لهذه المادة (سريعة البيع تحتاج حداً أعلى).
+  /// null = الحد العام للصيدلية ([PharmacyPrefs.lowStockDefault]).
+  final int? minQuantity;
+
   final int createdAt;
   final int updatedAt;
 
@@ -61,13 +67,19 @@ class Medicine {
     this.category,
     this.company,
     this.noBarcode = false,
+    this.minQuantity,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get hasImage => imagePath != null && imagePath!.isNotEmpty;
   bool get isOutOfStock => quantity == 0;
-  bool get isLowStock => quantity > 0 && quantity <= 5;
+
+  /// الحد الفعلي: الخاص بالمادة إن وُجد، وإلا العام للصيدلية.
+  int get lowStockThreshold =>
+      minQuantity ?? PharmacyPrefs.instance.lowStockDefault;
+
+  bool get isLowStock => quantity > 0 && quantity <= lowStockThreshold;
 
   /// نفدت فعلاً: كميتها صفر ولها سعر. المادة بلا سعر وبلا كمية ليست «نافدة»
   /// بل تسجيل لم يكتمل (مُسحت ولم تُسعَّر).
@@ -86,12 +98,28 @@ class Medicine {
     return e != null && e.isBefore(DateTime.now());
   }
 
-  /// تنتهي صلاحيته خلال ستة أشهر.
-  bool get isExpiringSoon {
+  /// «قريبة»: خلال 90 يوماً (كانت 180 — شيء ما كان يقترب دائماً فيتكرّر
+  /// التنبيه نفسه كل يوم بلا قيمة).
+  static const soonDays = 90;
+
+  /// «عاجلة»: خلال 30 يوماً.
+  static const urgentDays = 30;
+
+  /// الأيام المتبقية حتى الانتهاء بالنسبة إلى [now] (سالبة للمنتهية).
+  int? daysToExpiry([DateTime? now]) {
     final e = expiry;
-    if (e == null) return false;
-    final days = e.difference(DateTime.now()).inDays;
-    return days >= 0 && days <= 180;
+    if (e == null) return null;
+    return e.difference(now ?? DateTime.now()).inDays;
+  }
+
+  bool get isExpiringSoon {
+    final days = daysToExpiry();
+    return !isExpired && days != null && days >= 0 && days <= soonDays;
+  }
+
+  bool get isExpiringUrgent {
+    final days = daysToExpiry();
+    return !isExpired && days != null && days >= 0 && days <= urgentDays;
   }
 
   Medicine copyWith({
@@ -109,6 +137,8 @@ class Medicine {
     String? company,
     bool clearCompany = false,
     bool? noBarcode,
+    int? minQuantity,
+    bool clearMinQuantity = false,
     int? updatedAt,
   }) {
     return Medicine(
@@ -123,6 +153,7 @@ class Medicine {
       category: clearCategory ? null : (category ?? this.category),
       company: clearCompany ? null : (company ?? this.company),
       noBarcode: noBarcode ?? this.noBarcode,
+      minQuantity: clearMinQuantity ? null : (minQuantity ?? this.minQuantity),
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
     );
@@ -140,6 +171,7 @@ class Medicine {
     'category': category,
     'company': company,
     'noBarcode': noBarcode ? 1 : 0,
+    'minQuantity': minQuantity,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -161,6 +193,9 @@ class Medicine {
     category: map['category'] as String?,
     company: map['company'] as String?,
     noBarcode: _asBool(map['noBarcode']),
+    minQuantity: map['minQuantity'] == null
+        ? null
+        : _asDouble(map['minQuantity']).round(),
     createdAt: _asMillis(map['createdAt']),
     updatedAt: _asMillis(map['updatedAt']),
   );

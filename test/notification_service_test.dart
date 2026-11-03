@@ -48,7 +48,7 @@ void main() {
       expect(summary, contains('1 منتهية الصلاحية'));
     });
 
-    test('قاربت الانتهاء (خلال 180 يوماً) تُحسب في عدّاد منفصل', () {
+    test('قاربت الانتهاء (خلال 90 يوماً) تُحسب في عدّاد منفصل', () {
       final all = [_item(id: 'a', expiry: now.add(const Duration(days: 30)))];
       final summary = NotificationService.buildSummary(all);
       expect(summary, contains('1 تقترب من الانتهاء'));
