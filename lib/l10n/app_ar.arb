@@ -1311,5 +1311,81 @@
   "phSyncOff": "المزامنة غير مفعّلة",
   "phOwnerOnly": "فقط صاحب المخزون يُخرج الأجهزة",
   "phCantRemoveOwner": "لا يمكن إخراج صاحب المخزون",
-  "phNotMember": "الجهاز ليس عضواً"
+  "phNotMember": "الجهاز ليس عضواً",
+  "alertsTitle": "🔔 التنبيهات",
+  "alertsTooltip": "التنبيهات",
+  "alertsSecExpired": "⛔ منتهية الصلاحية ({n})",
+  "@alertsSecExpired": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSecUrgent": "⏳ تنتهي خلال شهر ({n})",
+  "@alertsSecUrgent": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSecOut": "🚫 نافدة ({n})",
+  "@alertsSecOut": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSecLow": "⚠️ مخزون منخفض ({n})",
+  "@alertsSecLow": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSecSoon": "🕐 تنتهي خلال 3 أشهر ({n})",
+  "@alertsSecSoon": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertOutDetail": "نفدت من المخزون",
+  "alertLowDetail": "الكمية {qty} — حد التنبيه {min}",
+  "@alertLowDetail": {
+    "placeholders": {
+      "qty": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "alertDone": "تمّ",
+  "alertRestore": "إرجاع",
+  "alertHidden": "أُخفي التنبيه",
+  "alertsShowHidden": "إظهار المخفية ({n})",
+  "@alertsShowHidden": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsHideHidden": "إخفاء المخفية",
+  "alertsEmpty": "✅ لا تنبيهات — كل شيء سليم",
+  "alertsEmptySub": "تظهر هنا المواد المنتهية وقاربة الانتهاء والنافدة والمنخفضة",
+  "alertsBellCount": "{n} تنبيه",
+  "@alertsBellCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -50,7 +50,12 @@ List<StockAlert> computeAlerts(
   for (final m in all) {
     final expiry = m.expiry;
     if (expiry != null) {
-      final days = expiry.difference(now).inDays;
+      // أيام تقويمية لا ساعات: «منتهية منذ 4 أيام» كما في صفحة المادة نفسها
+      final days = DateTime(
+        expiry.year,
+        expiry.month,
+        expiry.day,
+      ).difference(DateTime(now.year, now.month, now.day)).inDays;
       final kind = expiry.isBefore(now)
           ? AlertKind.expired
           : days <= Medicine.urgentDays

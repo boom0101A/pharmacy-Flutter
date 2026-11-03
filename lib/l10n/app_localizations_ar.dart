@@ -1645,4 +1645,72 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get phNotMember => 'الجهاز ليس عضواً';
+
+  @override
+  String get alertsTitle => '🔔 التنبيهات';
+
+  @override
+  String get alertsTooltip => 'التنبيهات';
+
+  @override
+  String alertsSecExpired(int n) {
+    return '⛔ منتهية الصلاحية ($n)';
+  }
+
+  @override
+  String alertsSecUrgent(int n) {
+    return '⏳ تنتهي خلال شهر ($n)';
+  }
+
+  @override
+  String alertsSecOut(int n) {
+    return '🚫 نافدة ($n)';
+  }
+
+  @override
+  String alertsSecLow(int n) {
+    return '⚠️ مخزون منخفض ($n)';
+  }
+
+  @override
+  String alertsSecSoon(int n) {
+    return '🕐 تنتهي خلال 3 أشهر ($n)';
+  }
+
+  @override
+  String get alertOutDetail => 'نفدت من المخزون';
+
+  @override
+  String alertLowDetail(int qty, int min) {
+    return 'الكمية $qty — حد التنبيه $min';
+  }
+
+  @override
+  String get alertDone => 'تمّ';
+
+  @override
+  String get alertRestore => 'إرجاع';
+
+  @override
+  String get alertHidden => 'أُخفي التنبيه';
+
+  @override
+  String alertsShowHidden(int n) {
+    return 'إظهار المخفية ($n)';
+  }
+
+  @override
+  String get alertsHideHidden => 'إخفاء المخفية';
+
+  @override
+  String get alertsEmpty => '✅ لا تنبيهات — كل شيء سليم';
+
+  @override
+  String get alertsEmptySub =>
+      'تظهر هنا المواد المنتهية وقاربة الانتهاء والنافدة والمنخفضة';
+
+  @override
+  String alertsBellCount(int n) {
+    return '$n تنبيه';
+  }
 }

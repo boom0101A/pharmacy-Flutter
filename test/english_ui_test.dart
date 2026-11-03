@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/l10n/l10n.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/screens/alerts_screen.dart';
 import 'package:saydaliyati/screens/form_screen.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
 import 'package:saydaliyati/screens/medicine_detail_screen.dart';
@@ -121,6 +122,24 @@ void main() {
     await tester.pumpWidget(englishHost(HomeScreen(store: store)));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('مركز التنبيهات بالإنجليزية', (tester) async {
+    tester.view.physicalSize = const Size(420, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = _Store()
+      ..seed([
+        _med('a', 'شراب أطفال', 1000).copyWith(quantity: 0),
+        _med('b', 'Panadol', 1000).copyWith(quantity: 2),
+      ]);
+    await tester.pumpWidget(
+      englishHost(AlertsScreen(store: store, onOpen: (_) {})),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('🚫 Out of stock (1)'), findsOneWidget);
+    expect(find.text('Quantity 2 — alert at 5'), findsOneWidget);
+    expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
   });
 
   testWidgets('الإعدادات بالإنجليزية', (tester) async {

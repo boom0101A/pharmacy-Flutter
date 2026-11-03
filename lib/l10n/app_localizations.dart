@@ -2807,6 +2807,108 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الجهاز ليس عضواً'**
   String get phNotMember;
+
+  /// No description provided for @alertsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔔 التنبيهات'**
+  String get alertsTitle;
+
+  /// No description provided for @alertsTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات'**
+  String get alertsTooltip;
+
+  /// No description provided for @alertsSecExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'⛔ منتهية الصلاحية ({n})'**
+  String alertsSecExpired(int n);
+
+  /// No description provided for @alertsSecUrgent.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ تنتهي خلال شهر ({n})'**
+  String alertsSecUrgent(int n);
+
+  /// No description provided for @alertsSecOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'🚫 نافدة ({n})'**
+  String alertsSecOut(int n);
+
+  /// No description provided for @alertsSecLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ مخزون منخفض ({n})'**
+  String alertsSecLow(int n);
+
+  /// No description provided for @alertsSecSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'🕐 تنتهي خلال 3 أشهر ({n})'**
+  String alertsSecSoon(int n);
+
+  /// No description provided for @alertOutDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفدت من المخزون'**
+  String get alertOutDetail;
+
+  /// No description provided for @alertLowDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية {qty} — حد التنبيه {min}'**
+  String alertLowDetail(int qty, int min);
+
+  /// No description provided for @alertDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمّ'**
+  String get alertDone;
+
+  /// No description provided for @alertRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع'**
+  String get alertRestore;
+
+  /// No description provided for @alertHidden.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُخفي التنبيه'**
+  String get alertHidden;
+
+  /// No description provided for @alertsShowHidden.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المخفية ({n})'**
+  String alertsShowHidden(int n);
+
+  /// No description provided for @alertsHideHidden.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء المخفية'**
+  String get alertsHideHidden;
+
+  /// No description provided for @alertsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ لا تنبيهات — كل شيء سليم'**
+  String get alertsEmpty;
+
+  /// No description provided for @alertsEmptySub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر هنا المواد المنتهية وقاربة الانتهاء والنافدة والمنخفضة'**
+  String get alertsEmptySub;
+
+  /// No description provided for @alertsBellCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} تنبيه'**
+  String alertsBellCount(int n);
 }
 
 class _AppLocalizationsDelegate

@@ -449,5 +449,22 @@
   "phSyncOff": "Sync is not enabled",
   "phOwnerOnly": "Only the inventory owner can remove devices",
   "phCantRemoveOwner": "The inventory owner can't be removed",
-  "phNotMember": "The device isn't a member"
+  "phNotMember": "The device isn't a member",
+  "alertsTitle": "🔔 Alerts",
+  "alertsTooltip": "Alerts",
+  "alertsSecExpired": "⛔ Expired ({n})",
+  "alertsSecUrgent": "⏳ Expiring within a month ({n})",
+  "alertsSecOut": "🚫 Out of stock ({n})",
+  "alertsSecLow": "⚠️ Low stock ({n})",
+  "alertsSecSoon": "🕐 Expiring within 3 months ({n})",
+  "alertOutDetail": "Out of stock",
+  "alertLowDetail": "Quantity {qty} — alert at {min}",
+  "alertDone": "Done",
+  "alertRestore": "Restore",
+  "alertHidden": "Alert hidden",
+  "alertsShowHidden": "Show hidden ({n})",
+  "alertsHideHidden": "Hide dismissed",
+  "alertsEmpty": "✅ No alerts — all good",
+  "alertsEmptySub": "Expired, expiring, sold-out and low items appear here",
+  "alertsBellCount": "{n, plural, =1{1 alert} other{{n} alerts}}"
 }

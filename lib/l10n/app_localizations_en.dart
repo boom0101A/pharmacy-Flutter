@@ -1748,4 +1748,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phNotMember => 'The device isn\'t a member';
+
+  @override
+  String get alertsTitle => '🔔 Alerts';
+
+  @override
+  String get alertsTooltip => 'Alerts';
+
+  @override
+  String alertsSecExpired(int n) {
+    return '⛔ Expired ($n)';
+  }
+
+  @override
+  String alertsSecUrgent(int n) {
+    return '⏳ Expiring within a month ($n)';
+  }
+
+  @override
+  String alertsSecOut(int n) {
+    return '🚫 Out of stock ($n)';
+  }
+
+  @override
+  String alertsSecLow(int n) {
+    return '⚠️ Low stock ($n)';
+  }
+
+  @override
+  String alertsSecSoon(int n) {
+    return '🕐 Expiring within 3 months ($n)';
+  }
+
+  @override
+  String get alertOutDetail => 'Out of stock';
+
+  @override
+  String alertLowDetail(int qty, int min) {
+    return 'Quantity $qty — alert at $min';
+  }
+
+  @override
+  String get alertDone => 'Done';
+
+  @override
+  String get alertRestore => 'Restore';
+
+  @override
+  String get alertHidden => 'Alert hidden';
+
+  @override
+  String alertsShowHidden(int n) {
+    return 'Show hidden ($n)';
+  }
+
+  @override
+  String get alertsHideHidden => 'Hide dismissed';
+
+  @override
+  String get alertsEmpty => '✅ No alerts — all good';
+
+  @override
+  String get alertsEmptySub =>
+      'Expired, expiring, sold-out and low items appear here';
+
+  @override
+  String alertsBellCount(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n alerts',
+      one: '1 alert',
+    );
+    return '$_temp0';
+  }
 }

@@ -22,6 +22,8 @@ import 'medicine_detail_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_sheet.dart';
 import '../l10n/l10n.dart';
+import 'alerts_screen.dart';
+import '../services/pharmacy_prefs.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.store});
@@ -68,6 +70,51 @@ class _HomeScreenState extends State<HomeScreen>
   ///
   /// إذن الإنذارات الدقيقة يفتح شاشة إعدادات النظام؛ طلبه قبل `runApp()` كان
   /// يترك المستخدم أمام شاشة سوداء بلا أي واجهة حتى يعود منها.
+  /// جرس الترويسة: عدد التنبيهات التي تستحق الانتباه الآن، ويفتح مركزها.
+  Widget _alertsBell() {
+    final count = criticalAlertCount(
+      store.all,
+      dismissed: PharmacyPrefs.instance.alertDismissals,
+    );
+    return IconButton(
+      key: const Key('alertsBell'),
+      tooltip: context.l10n.alertsTooltip,
+      onPressed: _openAlerts,
+      icon: Badge(
+        isLabelVisible: count > 0,
+        backgroundColor: AppColors.danger,
+        label: Text('$count'),
+        child: const Icon(
+          Icons.notifications_rounded,
+          size: 21,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  void _openAlerts() {
+    Navigator.of(context).push(
+      SmoothPageRoute<void>(
+        builder: (_) => AlertsScreen(store: store, onOpen: _openDetail),
+      ),
+    );
+  }
+
+  /// صفحة المادة من خارج الشبكة (مركز التنبيهات) — بأزرار البطاقة نفسها.
+  void _openDetail(Medicine m) {
+    Navigator.of(context).push(
+      SmoothPageRoute<void>(
+        builder: (_) => MedicineDetailScreen(
+          store: store,
+          medicineId: m.id,
+          onEdit: () => _openForm(existing: _latest(m)),
+          onDelete: () => _deleteWithUndo(_latest(m)),
+        ),
+      ),
+    );
+  }
+
   /// رسالة لمرة واحدة بعد تصحيح أسعار قرأتها الفاتورة الذكية أصغر بألف مرة.
   void _announcePriceRepair() {
     final n = store.priceRepairCount;
@@ -569,6 +616,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const _SyncIndicator(),
+              _alertsBell(),
               IconButton(
                 icon: const Icon(Icons.settings_rounded, size: 20),
                 color: AppColors.textSecondary,
