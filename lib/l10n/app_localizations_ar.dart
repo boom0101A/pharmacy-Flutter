@@ -1713,4 +1713,56 @@ class AppLocalizationsAr extends AppLocalizations {
   String alertsBellCount(int n) {
     return '$n تنبيه';
   }
+
+  @override
+  String notifNewTitle(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n تنبيه جديد',
+      many: '$n تنبيهاً جديداً',
+      few: '$n تنبيهات جديدة',
+      two: 'تنبيهان جديدان',
+      one: 'تنبيه جديد',
+    );
+    return '🔔 $_temp0';
+  }
+
+  @override
+  String get notifWeeklyTitle => '📋 ملخّص الأسبوع — صيدليتي';
+
+  @override
+  String notifLineExpired(String name) {
+    return '⛔ $name — انتهت';
+  }
+
+  @override
+  String notifLineUrgent(String name, int n) {
+    return '⏳ $name — $n يوماً';
+  }
+
+  @override
+  String notifLineToday(String name) {
+    return '⏳ $name — تنتهي اليوم';
+  }
+
+  @override
+  String notifLineOut(String name) {
+    return '🚫 $name — نفدت';
+  }
+
+  @override
+  String notifLineLow(String name, int n) {
+    return '⚠️ $name — بقي $n';
+  }
+
+  @override
+  String notifLineSoon(String name, int n) {
+    return '🕐 $name — $n يوماً';
+  }
+
+  @override
+  String notifMore(int n) {
+    return 'و$n أخرى';
+  }
 }

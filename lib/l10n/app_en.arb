@@ -466,5 +466,14 @@
   "alertsHideHidden": "Hide dismissed",
   "alertsEmpty": "✅ No alerts — all good",
   "alertsEmptySub": "Expired, expiring, sold-out and low items appear here",
-  "alertsBellCount": "{n, plural, =1{1 alert} other{{n} alerts}}"
+  "alertsBellCount": "{n, plural, =1{1 alert} other{{n} alerts}}",
+  "notifNewTitle": "🔔 {n, plural, =1{1 new alert} other{{n} new alerts}}",
+  "notifWeeklyTitle": "📋 Weekly summary — Saydaliyati",
+  "notifLineExpired": "⛔ {name} — expired",
+  "notifLineUrgent": "⏳ {name} — {n, plural, =1{1 day} other{{n} days}}",
+  "notifLineToday": "⏳ {name} — expires today",
+  "notifLineOut": "🚫 {name} — out of stock",
+  "notifLineLow": "⚠️ {name} — {n} left",
+  "notifLineSoon": "🕐 {name} — {n, plural, =1{1 day} other{{n} days}}",
+  "notifMore": "and {n} more"
 }

@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/medicine.dart';
 import '../l10n/l10n.dart';
+import 'alerts.dart';
+import 'pharmacy_prefs.dart';
 
 /// تنبيه صلاحية ومخزون مجدول يومياً عند الساعة 9 صباحاً — يظهر حتى والتطبيق
 /// مغلق، بمحتوى مُحسَب سلفاً من آخر بيانات حصلنا عليها (`zonedSchedule` لا
@@ -223,61 +226,163 @@ class NotificationService extends ChangeNotifier {
     return null;
   }
 
-  /// يجدول (أو يُلغي) إشعار اليوميّة عند الساعة 9 صباحاً.
+  /// حمولة النقر: تفتح مركز التنبيهات.
+  static const alertsPayload = 'alerts';
+
+  static const _weeklyId = 1003;
+  static const _kNotified = 'notif_notified_keys';
+  static const _kPlanned = 'notif_planned_keys';
+  static const _kPlannedAt = 'notif_planned_at';
+
+  /// ما يُبلَّغ عنه صباح [slot]: التنبيهات الحرجة **بتاريخ ذلك الصباح** التي
+  /// لم يُبلَّغ عنها من قبل ولم تُخفَ بـ«تمّ». [notified] يُنظَّف مما انحلّ،
+  /// فإن عادت المشكلة لاحقاً تُبلَّغ من جديد.
+  @visibleForTesting
+  static ({List<StockAlert> fresh, Set<String> notified}) planNew(
+    List<Medicine> all, {
+    required DateTime slot,
+    required Set<String> notified,
+    Set<String> dismissed = const {},
+  }) {
+    final critical = computeAlerts(
+      all,
+      now: slot,
+      dismissed: dismissed,
+    ).where((a) => a.isCritical).toList();
+    final active = {for (final a in critical) a.key};
+    final keep = notified.intersection(active);
+    return (
+      fresh: [
+        for (final a in critical)
+          if (!keep.contains(a.key)) a,
+      ],
+      notified: keep,
+    );
+  }
+
+  /// سطر لكل مادة (حتى 5) ثم «و N أخرى».
+  @visibleForTesting
+  static ({List<String> lines}) buildAlertsContent(List<StockAlert> alerts) {
+    final l = L10n.current;
+    String line(StockAlert a) {
+      final name = a.item.name;
+      final days = a.daysLeft ?? 0;
+      return switch (a.kind) {
+        AlertKind.expired => l.notifLineExpired(name),
+        AlertKind.urgent =>
+          days <= 0 ? l.notifLineToday(name) : l.notifLineUrgent(name, days),
+        AlertKind.out => l.notifLineOut(name),
+        AlertKind.low => l.notifLineLow(name, a.item.quantity),
+        AlertKind.soon => l.notifLineSoon(name, days),
+      };
+    }
+
+    return (
+      lines: [
+        for (final a in alerts.take(5)) line(a),
+        if (alerts.length > 5) l.notifMore(alerts.length - 5),
+      ],
+    );
+  }
+
+  NotificationDetails _details(List<String> lines) => NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      styleInformation: BigTextStyleInformation(lines.join('\n')),
+    ),
+  );
+
+  /// يعيد جدولة الإشعارين بعد كل تغيير بيانات أو فتح للتطبيق:
   ///
-  /// - إن كان الملخّص فارغاً: يُلغي أي إشعار مجدول (لا نُزعج بلا سبب).
-  /// - وإلا: يُعيد جدولة الإشعار بمحتواه الحالي — تُستدعى بعد كل تغيير بيانات
-  ///   ليبقى ما يظهر غداً صباحاً أقرب ما يمكن للحقيقة.
+  /// - **«جديد»:** مرة واحدة صباح 9:00 التالي، بأسماء ما لم يُبلَّغ عنه بعد.
+  ///   لا جديد ← لا إشعار (كان يتكرّر النص نفسه يومياً).
+  /// - **أسبوعي:** السبت 9:00 بملخّص كامل يشمل «القريبة».
   ///
-  /// `matchDateTimeComponents: DateTimeComponents.time` يجعل الإشعار يتكرّر
-  /// يومياً في نفس الوقت حتى نلغيه — فلا نحتاج إعادة جدولة يوم بيوم.
+  /// `zonedSchedule` لا يشغّل شيفرة عند الظهور، فما جُدول يُسجَّل «مخطَّطاً»
+  /// ويصير «مُبلَّغاً عنه» عند أول فتح بعد موعده.
   Future<void> scheduleDailyDigest(List<Medicine> all) async {
     await init();
-
-    final summary = buildSummary(all);
-    final payload = computePayload(all);
-
-    // بلا داعٍ للتنبيه — ألغِ الجدولة السابقة إن وُجدت
-    if (summary == null || payload == null) {
-      try {
-        await _plugin.cancel(id: _dailyId);
-      } catch (e) {
-        debugPrint('تعذّر إلغاء الإشعار اليومي: $e');
-      }
-      return;
-    }
-
     if (!_tzInitialized) {
-      // بلا منطقة زمنية لا يمكن استعمال zonedSchedule بأمان — نتخطّى صامتاً
-      debugPrint('لا منطقة زمنية مهيّأة — تُخُطّي الجدولة اليومية');
+      debugPrint('لا منطقة زمنية مهيّأة — تُخُطّي الجدولة');
       return;
     }
-
     try {
-      final scheduled = _nextInstanceOf(_dailyHour, _dailyMinute);
-      await scheduleWithFallback(
-        (mode) => _plugin.zonedSchedule(
-          id: _dailyId,
-          title: L10n.current.notifTitle,
-          body: summary,
-          scheduledDate: scheduled,
-          notificationDetails: NotificationDetails(
-            android: AndroidNotificationDetails(
-              _channelId,
-              _channelName,
-              channelDescription: _channelDesc,
-              importance: Importance.defaultImportance,
-              priority: Priority.defaultPriority,
-            ),
-          ),
-          payload: payload,
-          androidScheduleMode: mode,
-          matchDateTimeComponents: DateTimeComponents.time,
-        ),
+      final prefs = await SharedPreferences.getInstance();
+      var notified = (prefs.getStringList(_kNotified) ?? const []).toSet();
+      final plannedAt = prefs.getInt(_kPlannedAt);
+      if (plannedAt != null &&
+          DateTime.now().millisecondsSinceEpoch >= plannedAt) {
+        notified.addAll(prefs.getStringList(_kPlanned) ?? const []);
+        await prefs.remove(_kPlanned);
+        await prefs.remove(_kPlannedAt);
+      }
+
+      final slot = _nextInstanceOf(_dailyHour, _dailyMinute);
+      final dismissed = PharmacyPrefs.instance.alertDismissals;
+      final plan = planNew(
+        all,
+        slot: slot,
+        notified: notified,
+        dismissed: dismissed,
       );
+      notified = plan.notified;
+      await prefs.setStringList(_kNotified, notified.toList());
+
+      await _plugin.cancel(id: _dailyId);
+      if (plan.fresh.isNotEmpty) {
+        final lines = buildAlertsContent(plan.fresh).lines;
+        await scheduleWithFallback(
+          (mode) => _plugin.zonedSchedule(
+            id: _dailyId,
+            title: L10n.current.notifNewTitle(plan.fresh.length),
+            body: lines.first,
+            scheduledDate: slot,
+            notificationDetails: _details(lines),
+            payload: alertsPayload,
+            androidScheduleMode: mode,
+          ),
+        );
+        await prefs.setStringList(_kPlanned, [
+          for (final a in plan.fresh) a.key,
+        ]);
+        await prefs.setInt(_kPlannedAt, slot.millisecondsSinceEpoch);
+      }
+
+      await _scheduleWeekly(all, dismissed);
     } catch (e) {
-      debugPrint('تعذّرت جدولة الإشعار اليومي: $e');
+      debugPrint('تعذّرت جدولة الإشعارات: $e');
     }
+  }
+
+  Future<void> _scheduleWeekly(
+    List<Medicine> all,
+    Set<String> dismissed,
+  ) async {
+    await _plugin.cancel(id: _weeklyId);
+    var slot = _nextInstanceOf(_dailyHour, _dailyMinute);
+    while (slot.weekday != DateTime.saturday) {
+      slot = slot.add(const Duration(days: 1));
+    }
+    final alerts = computeAlerts(all, now: slot, dismissed: dismissed);
+    final summary = buildSummary(all);
+    if (alerts.isEmpty || summary == null) return;
+    final lines = [summary, ...buildAlertsContent(alerts).lines];
+    await scheduleWithFallback(
+      (mode) => _plugin.zonedSchedule(
+        id: _weeklyId,
+        title: L10n.current.notifWeeklyTitle,
+        body: summary,
+        scheduledDate: slot,
+        notificationDetails: _details(lines),
+        payload: alertsPayload,
+        androidScheduleMode: mode,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      ),
+    );
   }
 
   /// الجدولة الدقيقة أولاً، ثم غير الدقيقة إن رُفضت.
@@ -301,6 +406,7 @@ class NotificationService extends ChangeNotifier {
   Future<void> cancelDailyDigest() async {
     try {
       await _plugin.cancel(id: _dailyId);
+      await _plugin.cancel(id: _weeklyId);
     } catch (e) {
       debugPrint('تعذّر إلغاء الإشعار اليومي: $e');
     }

@@ -2909,6 +2909,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{n} تنبيه'**
   String alertsBellCount(int n);
+
+  /// No description provided for @notifNewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔔 {n, plural, =1{تنبيه جديد} =2{تنبيهان جديدان} few{{n} تنبيهات جديدة} many{{n} تنبيهاً جديداً} other{{n} تنبيه جديد}}'**
+  String notifNewTitle(int n);
+
+  /// No description provided for @notifWeeklyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'📋 ملخّص الأسبوع — صيدليتي'**
+  String get notifWeeklyTitle;
+
+  /// No description provided for @notifLineExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'⛔ {name} — انتهت'**
+  String notifLineExpired(String name);
+
+  /// No description provided for @notifLineUrgent.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ {name} — {n} يوماً'**
+  String notifLineUrgent(String name, int n);
+
+  /// No description provided for @notifLineToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ {name} — تنتهي اليوم'**
+  String notifLineToday(String name);
+
+  /// No description provided for @notifLineOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'🚫 {name} — نفدت'**
+  String notifLineOut(String name);
+
+  /// No description provided for @notifLineLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ {name} — بقي {n}'**
+  String notifLineLow(String name, int n);
+
+  /// No description provided for @notifLineSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'🕐 {name} — {n} يوماً'**
+  String notifLineSoon(String name, int n);
+
+  /// No description provided for @notifMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'و{n} أخرى'**
+  String notifMore(int n);
 }
 
 class _AppLocalizationsDelegate

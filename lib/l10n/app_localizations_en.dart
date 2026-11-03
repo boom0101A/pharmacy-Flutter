@@ -1822,4 +1822,65 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String notifNewTitle(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n new alerts',
+      one: '1 new alert',
+    );
+    return '🔔 $_temp0';
+  }
+
+  @override
+  String get notifWeeklyTitle => '📋 Weekly summary — Saydaliyati';
+
+  @override
+  String notifLineExpired(String name) {
+    return '⛔ $name — expired';
+  }
+
+  @override
+  String notifLineUrgent(String name, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return '⏳ $name — $_temp0';
+  }
+
+  @override
+  String notifLineToday(String name) {
+    return '⏳ $name — expires today';
+  }
+
+  @override
+  String notifLineOut(String name) {
+    return '🚫 $name — out of stock';
+  }
+
+  @override
+  String notifLineLow(String name, int n) {
+    return '⚠️ $name — $n left';
+  }
+
+  @override
+  String notifLineSoon(String name, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n days',
+      one: '1 day',
+    );
+    return '🕐 $name — $_temp0';
+  }
+
+  @override
+  String notifMore(int n) {
+    return 'and $n more';
+  }
 }

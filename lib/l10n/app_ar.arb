@@ -1387,5 +1387,79 @@
         "type": "int"
       }
     }
+  },
+  "notifNewTitle": "🔔 {n, plural, =1{تنبيه جديد} =2{تنبيهان جديدان} few{{n} تنبيهات جديدة} many{{n} تنبيهاً جديداً} other{{n} تنبيه جديد}}",
+  "@notifNewTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifWeeklyTitle": "📋 ملخّص الأسبوع — صيدليتي",
+  "notifLineExpired": "⛔ {name} — انتهت",
+  "@notifLineExpired": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifLineUrgent": "⏳ {name} — {n} يوماً",
+  "@notifLineUrgent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLineToday": "⏳ {name} — تنتهي اليوم",
+  "@notifLineToday": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifLineOut": "🚫 {name} — نفدت",
+  "@notifLineOut": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifLineLow": "⚠️ {name} — بقي {n}",
+  "@notifLineLow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLineSoon": "🕐 {name} — {n} يوماً",
+  "@notifLineSoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifMore": "و{n} أخرى",
+  "@notifMore": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -174,7 +174,11 @@ class _HomeScreenState extends State<HomeScreen>
   void _onNotificationTap() {
     final payload = NotificationService.instance.pendingPayload;
     if (payload == null || !mounted) return;
-    _applyPayload(payload);
+    if (payload == NotificationService.alertsPayload) {
+      _openAlerts();
+    } else {
+      _applyPayload(payload);
+    }
     NotificationService.instance.consumePendingPayload();
   }
 
