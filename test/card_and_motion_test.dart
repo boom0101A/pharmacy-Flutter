@@ -40,7 +40,7 @@ MedicineCard _card(Medicine m, {bool animate = true}) => MedicineCard(
   animate: animate,
   onEdit: () {},
   onDelete: () {},
-  onImageTap: () {},
+  onOpen: () {},
 );
 
 void main() {

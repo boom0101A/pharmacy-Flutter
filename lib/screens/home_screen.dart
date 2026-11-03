@@ -1,12 +1,10 @@
-import 'dart:io';
-
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/medicine.dart';
 import '../services/app_settings.dart';
 import '../services/gs1_parser.dart';
-import '../services/image_store.dart';
 import '../services/notification_service.dart';
 import '../services/sync_service.dart';
 import '../state/medicine_store.dart';
@@ -19,6 +17,7 @@ import 'complete_data_screen.dart';
 import 'duplicates_screen.dart';
 import 'form_screen.dart';
 import 'invoice_scan_screen.dart';
+import 'medicine_detail_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_sheet.dart';
 
@@ -263,20 +262,12 @@ class _HomeScreenState extends State<HomeScreen>
       });
   }
 
-  void _viewImage(Medicine medicine) {
-    final path = ImageStore.fullPathSync(medicine.imagePath);
-    if (path == null) return;
-    showGlassDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Hero(
-          tag: 'medicine-image-${medicine.id}',
-          child: InteractiveViewer(child: Image.file(File(path))),
-        ),
-      ),
-    );
+  /// أحدث نسخة من المادة في المخزن (قد تكون عُدّلت منذ بناء البطاقة).
+  Medicine _latest(Medicine m) {
+    for (final x in store.all) {
+      if (x.id == m.id) return x;
+    }
+    return m;
   }
 
   @override
@@ -466,13 +457,36 @@ class _HomeScreenState extends State<HomeScreen>
           // `add` يعيد true مرة واحدة لكل مادة: أول ظهور فقط يتحرك،
           // وإعادة التدوير أثناء التمرير لا تعيد الحركة
           final firstAppearance = _animated.add(m.id);
-          return MedicineCard(
-            index: i,
-            animate: firstAppearance,
-            medicine: m,
-            onEdit: () => _openForm(existing: m),
-            onDelete: () => _deleteWithUndo(m),
-            onImageTap: () => _viewImage(m),
+          final reduceMotion =
+              MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+          // البطاقة تتمدّد إلى صفحة التفاصيل وتعود إليها عند الرجوع
+          return OpenContainer<void>(
+            closedColor: Colors.transparent,
+            openColor: AppColors.bgDark,
+            middleColor: AppColors.bgDark,
+            closedElevation: 0,
+            openElevation: 0,
+            closedShape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+            ),
+            transitionDuration: reduceMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 380),
+            closedBuilder: (_, open) => MedicineCard(
+              index: i,
+              animate: firstAppearance,
+              medicine: m,
+              onEdit: () => _openForm(existing: m),
+              onDelete: () => _deleteWithUndo(m),
+              onOpen: open,
+            ),
+            openBuilder: (_, _) => MedicineDetailScreen(
+              store: store,
+              medicineId: m.id,
+              // النسخة الحالية لا الملتقطة عند بناء الشبكة — قد تكون عُدّلت
+              onEdit: () => _openForm(existing: _latest(m)),
+              onDelete: () => _deleteWithUndo(_latest(m)),
+            ),
           );
         },
       ),

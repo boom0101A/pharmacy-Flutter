@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
+import 'package:saydaliyati/screens/medicine_detail_screen.dart';
 import 'package:saydaliyati/services/duplicate_dismissals.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/theme.dart';
@@ -585,5 +586,50 @@ void main() {
         );
       },
     );
+  });
+
+  group('البطاقة تتمدّد إلى صفحة التفاصيل', () {
+    Future<void> openHome(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(420, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('الضغط على البطاقة يفتح التفاصيل، والرجوع يعيدها', (
+      tester,
+    ) async {
+      await openHome(tester);
+      await tester.tap(find.text('Panadol'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineDetailScreen), findsOneWidget);
+      expect(find.byKey(const Key('detailQuantity')), findsOneWidget);
+
+      await tester.binding.handlePopRoute(); // زر الرجوع في الهاتف
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineDetailScreen), findsNothing);
+      expect(find.text('Panadol'), findsOneWidget);
+    });
+
+    testWidgets('أزرار التعديل والحذف في البطاقة لا تفتح التفاصيل', (
+      tester,
+    ) async {
+      await openHome(tester);
+      final card = find.ancestor(
+        of: find.text('Panadol'),
+        matching: find.byType(MedicineCard),
+      );
+      await tester.tap(
+        find
+            .descendant(
+              of: card,
+              matching: find.byIcon(Icons.delete_outline_rounded),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineDetailScreen), findsNothing);
+    });
   });
 }

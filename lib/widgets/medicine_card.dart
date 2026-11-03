@@ -19,7 +19,7 @@ class MedicineCard extends StatelessWidget {
     required this.medicine,
     required this.onEdit,
     required this.onDelete,
-    required this.onImageTap,
+    required this.onOpen,
     this.index = 0,
     this.animate = true,
   });
@@ -27,7 +27,9 @@ class MedicineCard extends StatelessWidget {
   final Medicine medicine;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final VoidCallback onImageTap;
+
+  /// يفتح صفحة التفاصيل — الضغط على البطاقة أو صورتها.
+  final VoidCallback onOpen;
 
   /// ترتيب البطاقة — لتأخير ظهورها قليلاً فيبدو الدخول متتابعاً.
   final int index;
@@ -73,7 +75,14 @@ class MedicineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCard(BuildContext context) {
+  /// البطاقة كلها (والصورة) تفتح التفاصيل؛ أزرار التعديل والحذف تبقى لها.
+  Widget _buildCard(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onOpen,
+    child: _cardBody(context),
+  );
+
+  Widget _cardBody(BuildContext context) {
     final imagePath = ImageStore.fullPathSync(medicine.imagePath);
     // كمية صفر بلا سعر: تسجيل لم يكتمل، لا مادة نفدت
     final unfinished = medicine.isOutOfStock && medicine.price <= 0;
@@ -116,35 +125,30 @@ class MedicineCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(18),
-                  child: GestureDetector(
-                    onTap: imagePath == null ? null : onImageTap,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: imagePath != null
-                          ? Hero(
-                              tag: 'medicine-image-${medicine.id}',
-                              // كاملة باتجاهها: العلبة العمودية لا تُقصّ
-                              // لشريط أفقي من وسطها (cover كان يفعل ذلك)
-                              child: Image.file(
-                                File(imagePath),
-                                fit: BoxFit.contain,
-                                cacheWidth: _decodeWidth,
-                                // ظهور ناعم بدل قفزة الصورة عند اكتمال فك الترميز
-                                frameBuilder: (_, child, frame, wasSyncLoaded) {
-                                  if (wasSyncLoaded) return child;
-                                  return AnimatedOpacity(
-                                    opacity: frame == null ? 0 : 1,
-                                    duration: const Duration(milliseconds: 220),
-                                    curve: Curves.easeOut,
-                                    child: child,
-                                  );
-                                },
-                                errorBuilder: (_, _, _) =>
-                                    _ImagePlaceholder(type: medicine.type),
-                              ),
-                            )
-                          : _ImagePlaceholder(type: medicine.type),
-                    ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: imagePath != null
+                        // كاملة باتجاهها: العلبة العمودية لا تُقصّ لشريط أفقي
+                        // من وسطها. الانتقال إلى التفاصيل يتولّاه
+                        // OpenContainer، فلا Hero هنا.
+                        ? Image.file(
+                            File(imagePath),
+                            fit: BoxFit.contain,
+                            cacheWidth: _decodeWidth,
+                            // ظهور ناعم بدل قفزة الصورة عند اكتمال فك الترميز
+                            frameBuilder: (_, child, frame, wasSyncLoaded) {
+                              if (wasSyncLoaded) return child;
+                              return AnimatedOpacity(
+                                opacity: frame == null ? 0 : 1,
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut,
+                                child: child,
+                              );
+                            },
+                            errorBuilder: (_, _, _) =>
+                                _ImagePlaceholder(type: medicine.type),
+                          )
+                        : _ImagePlaceholder(type: medicine.type),
                   ),
                 ),
               ),
