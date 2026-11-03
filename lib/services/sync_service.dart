@@ -18,6 +18,7 @@ import 'duplicate_dismissals.dart';
 import 'image_store.dart';
 import 'pharmacy_service.dart';
 import '../l10n/l10n.dart';
+import 'pharmacy_prefs.dart';
 
 enum SyncStatus { disabled, offline, syncing, synced, error }
 
@@ -102,6 +103,7 @@ class SyncService extends ChangeNotifier {
       BarcodeRegistry.attach(_db!);
       PharmacyService.attach(_db!);
       DuplicateDismissals.attach(_db!);
+      PharmacyPrefs.attach(_db!);
 
       // الهوية شرط للكتابة تحت القواعد الجديدة
       await AuthService.instance.init();

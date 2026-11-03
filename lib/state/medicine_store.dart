@@ -16,6 +16,7 @@ import '../services/pharmacy_service.dart';
 import '../services/sync_service.dart';
 import '../util/number_parse.dart';
 import 'invoice_store.dart';
+import '../services/pharmacy_prefs.dart';
 
 enum QuickFilter {
   lowStock,
@@ -83,11 +84,14 @@ class MedicineStore extends ChangeNotifier {
   MedicineStore() {
     // قرار «ليست مكرّرة» من أي جهاز يغيّر العدد الظاهر في الرئيسية
     DuplicateDismissals.instance.addListener(notifyListeners);
+    // الحد العام للمخزون المنخفض يغيّر «منخفض» وعدّاداته وفلتره
+    PharmacyPrefs.instance.addListener(notifyListeners);
   }
 
   @override
   void dispose() {
     DuplicateDismissals.instance.removeListener(notifyListeners);
+    PharmacyPrefs.instance.removeListener(notifyListeners);
     super.dispose();
   }
 
@@ -241,6 +245,7 @@ class MedicineStore extends ChangeNotifier {
 
     await _repairLegacyBarcodes();
     await DuplicateDismissals.instance.loadLocal();
+    await PharmacyPrefs.instance.loadLocal();
     _all = await _db.getAll();
     _loading = false;
     notifyListeners();
@@ -332,6 +337,7 @@ class MedicineStore extends ChangeNotifier {
     }
     unawaited(SyncService.instance.pruneOrphanImages());
     unawaited(DuplicateDismissals.instance.syncWithCloud());
+    unawaited(PharmacyPrefs.instance.syncWithCloud());
     unawaited(InvoiceStore.instance.sync(manual: manual));
     _scheduleDigestIfEnabled();
   }
