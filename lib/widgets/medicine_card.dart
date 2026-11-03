@@ -80,9 +80,10 @@ class MedicineCard extends StatelessWidget {
   }
 
   /// البطاقة كلها (والصورة) تفتح التفاصيل؛ أزرار التعديل والحذف تبقى لها.
-  /// لون النص يُحدَّد هنا لا يُورَث: `Material` الذي يضعه `OpenContainer` فوق
-  /// البطاقة (ساكنة وأثناء الانتقال) يعطي نمط نص داكناً رغم سمة التطبيق
-  /// الداكنة — فظهرت الأسماء سوداء على الهاتف.
+  /// لون النص يُحدَّد هنا لا يُورَث: حزمة animations 3 تبني `Material` من
+  /// حزمة `material_ui` المنفصلة، و`Theme` الخاص بها لا يرى سمة التطبيق
+  /// فيرجع إلى السمة الفاتحة الافتراضية — نص داكن فوق البطاقة ساكنةً وأثناء
+  /// الانتقال (ظهرت الأسماء سوداء على الهاتف).
   Widget _buildCard(BuildContext context) => DefaultTextStyle.merge(
     style: const TextStyle(color: AppColors.textPrimary),
     child: GestureDetector(
