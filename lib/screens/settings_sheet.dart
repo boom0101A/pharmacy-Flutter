@@ -51,9 +51,12 @@ class _SettingsSheet extends StatelessWidget {
               children: [
                 const SheetHandle(),
                 const SizedBox(height: 18),
-                const Text(
-                  '⚙️ الإعدادات',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+                Text(
+                  context.l10n.settingsTitle,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const LanguageCurrencySection(),
@@ -83,14 +86,16 @@ class _SettingsSheet extends StatelessWidget {
                     }
                   },
                   activeThumbColor: AppColors.success,
-                  title: const Text(
-                    'تنبيهات الصلاحية والمخزون',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  title: Text(
+                    context.l10n.settingsAlerts,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  subtitle: const Text(
-                    'إشعار يومي الساعة 9 صباحاً إذا كانت هناك مواد منتهية أو '
-                    'قاربت الانتهاء أو مخزون منخفض/نافد.',
-                    style: TextStyle(
+                  subtitle: Text(
+                    context.l10n.settingsAlertsSub,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                       height: 1.5,
@@ -109,14 +114,16 @@ class _SettingsSheet extends StatelessWidget {
                   value: settings.contributeToRegistry,
                   onChanged: settings.setContributeToRegistry,
                   activeThumbColor: AppColors.success,
-                  title: const Text(
-                    'المساهمة في القاموس المشترك',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  title: Text(
+                    context.l10n.settingsContribute,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  subtitle: const Text(
-                    'إرسال اسم الدواء وصورته فقط عند حفظه، لمساعدة بقية '
-                    'الصيدليات على التعرف عليه.',
-                    style: TextStyle(
+                  subtitle: Text(
+                    context.l10n.settingsContributeSub,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                       height: 1.5,
@@ -136,14 +143,14 @@ class _SettingsSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _row(
-                        '✅ يُرسَل',
-                        'الباركود + اسم الدواء + صورة مصغّرة',
+                        context.l10n.settingsSent,
+                        context.l10n.settingsSentWhat,
                         AppColors.success,
                       ),
                       const SizedBox(height: 8),
                       _row(
-                        '🔒 لا يُرسَل',
-                        'السعر • الكمية • اسم صيدليتك • موقعك',
+                        context.l10n.settingsNotSent,
+                        context.l10n.settingsNotSentWhat,
                         AppColors.danger,
                       ),
                     ],
@@ -153,9 +160,8 @@ class _SettingsSheet extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   settings.contributeToRegistry
-                      ? 'أنت تساهم حالياً — شكراً، هذا ما يجعل القاموس ينمو.'
-                      : 'المساهمة موقوفة. ستبقى تستفيد من القاموس عند المسح، '
-                            'لكن أدويتك لن تُضاف إليه.',
+                      ? context.l10n.settingsContributing
+                      : context.l10n.settingsNotContributing,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textMuted,
@@ -185,9 +191,12 @@ class _SettingsSheet extends StatelessWidget {
                     side: const BorderSide(color: AppColors.border),
                   ),
                   leading: const Text('👋', style: TextStyle(fontSize: 20)),
-                  title: const Text(
-                    'عرض شاشة الترحيب',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  title: Text(
+                    context.l10n.settingsShowWelcome,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   onTap: () {
                     final home = Navigator.of(context);
@@ -208,15 +217,14 @@ class _SettingsSheet extends StatelessWidget {
   Widget _backupSection(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        '💾 النسخة الاحتياطية',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      Text(
+        context.l10n.backupTitle,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 6),
-      const Text(
-        'ملف يحفظ كل المواد. عند الحفظ أرسله إلى واتساب أو Drive أو التنزيلات '
-        '— إلغاء التثبيت يمسح ما بداخل التطبيق ويغيّر هوية المزامنة.',
-        style: TextStyle(
+      Text(
+        context.l10n.backupSub,
+        style: const TextStyle(
           fontSize: 12,
           color: AppColors.textSecondary,
           height: 1.6,
@@ -233,7 +241,7 @@ class _SettingsSheet extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => _export(context),
                 icon: const Icon(Icons.save_alt_rounded, size: 18),
-                label: const Text('حفظ نسخة'),
+                label: Text(context.l10n.backupSave),
               ),
             ),
           ),
@@ -242,7 +250,7 @@ class _SettingsSheet extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _import(context),
               icon: const Icon(Icons.restore_rounded, size: 18),
-              label: const Text('استرجاع'),
+              label: Text(context.l10n.backupRestore),
             ),
           ),
         ],
@@ -260,7 +268,7 @@ class _SettingsSheet extends StatelessWidget {
           ? null
           : () {
               Clipboard.setData(ClipboardData(text: uid));
-              _toast(context, 'نُسخ معرّف المزامنة');
+              _toast(context, context.l10n.syncIdCopied);
             },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -276,8 +284,8 @@ class _SettingsSheet extends StatelessWidget {
             Expanded(
               child: Text(
                 uid == null
-                    ? (AuthService.instance.error ?? 'المزامنة غير مفعّلة')
-                    : 'معرّف المزامنة: ${uid.substring(0, 8)}… (اضغط للنسخ)',
+                    ? (AuthService.instance.error ?? context.l10n.syncDisabled)
+                    : context.l10n.syncId(uid.substring(0, 8)),
                 style: const TextStyle(
                   fontSize: 11,
                   color: AppColors.textMuted,
@@ -297,10 +305,10 @@ class _SettingsSheet extends StatelessWidget {
       if (!context.mounted) return;
       // الملف في مجلد التطبيق الخاص: لا يراه تطبيق «الملفات» ويُمسح مع
       // إلغاء التثبيت. المشاركة هي الطريق الوحيد لإخراجه إلى مكان آمن.
-      _toast(context, 'اختر أين تحفظ النسخة: واتساب، Drive، أو التنزيلات');
+      _toast(context, context.l10n.backupWhereToSave);
       await BackupActions.share(path);
     } catch (e) {
-      if (context.mounted) _toast(context, 'تعذّر الحفظ: $e');
+      if (context.mounted) _toast(context, context.l10n.saveFailed('$e'));
     }
   }
 
@@ -310,7 +318,7 @@ class _SettingsSheet extends StatelessWidget {
     try {
       await _runImport(context);
     } catch (e) {
-      if (context.mounted) _toast(context, 'تعذّر الاسترجاع: $e');
+      if (context.mounted) _toast(context, context.l10n.restoreFailed('$e'));
     }
   }
 
@@ -326,15 +334,15 @@ class _SettingsSheet extends StatelessWidget {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgCard,
-          title: const Text('استرجاع من أين؟'),
+          title: Text(context.l10n.restoreFromWhere),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('اختيار ملف…'),
+              child: Text(context.l10n.restorePickFile),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('آخر نسخة على هذا الجهاز'),
+              child: Text(context.l10n.restoreLastLocal),
             ),
           ],
         ),
@@ -362,21 +370,21 @@ class _SettingsSheet extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('استرجاع النسخة'),
+        title: Text(context.l10n.restoreTitle),
         content: Text(
-          'الملف يحتوي ${contents.items.length} مادة'
-          '${contents.invoices.isEmpty ? '' : ' و${contents.invoices.length} فاتورة'}.\n'
-          'سيُضاف الجديد ويُحدَّث الأقدم — لا يُحذف شيء موجود.',
+          '${context.l10n.restoreContainsItems(contents.items.length)}'
+          '${contents.invoices.isEmpty ? '' : context.l10n.restoreAndInvoices(contents.invoices.length)}.\n'
+          '${context.l10n.restoreNote}',
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('استرجع'),
+            child: Text(context.l10n.restoreConfirm),
           ),
         ],
       ),
@@ -386,10 +394,7 @@ class _SettingsSheet extends StatelessWidget {
     final r = await store.importBackup(contents.items);
     await InvoiceStore.instance.importAll(contents.invoices);
     if (!context.mounted) return;
-    _toast(
-      context,
-      'أُضيف ${r.added} · حُدّث ${r.updated} · بلا تغيير ${r.skipped}',
-    );
+    _toast(context, context.l10n.restoreResult(r.added, r.updated, r.skipped));
   }
 
   void _toast(BuildContext context, String message) {
@@ -401,15 +406,14 @@ class _SettingsSheet extends StatelessWidget {
   Widget _sharingSection(BuildContext context, MedicineStore store) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        '🔗 مشاركة المخزون بين الأجهزة',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      Text(
+        context.l10n.sharingTitle,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 6),
-      const Text(
-        'اربط هاتف زميل أو مساعدك بنفس المخزون — أي تعديل من أي جهاز يظهر '
-        'للجميع.',
-        style: TextStyle(
+      Text(
+        context.l10n.sharingSub,
+        style: const TextStyle(
           fontSize: 12,
           color: AppColors.textSecondary,
           height: 1.6,
@@ -423,7 +427,7 @@ class _SettingsSheet extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => showSharePairingSheet(context),
                 icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-                label: const Text('مشاركة مع جهاز آخر'),
+                label: Text(context.l10n.shareWithDevice),
               ),
             ),
           ),
@@ -432,7 +436,7 @@ class _SettingsSheet extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => showJoinPairingSheet(context, store),
               icon: const Icon(Icons.link_rounded, size: 18),
-              label: const Text('الانضمام إلى مخزون'),
+              label: Text(context.l10n.joinInventory),
             ),
           ),
         ],
@@ -443,7 +447,7 @@ class _SettingsSheet extends StatelessWidget {
         child: OutlinedButton.icon(
           onPressed: () => showLinkedDevicesSheet(context),
           icon: const Icon(Icons.devices_rounded, size: 18),
-          label: const Text('الأجهزة المرتبطة'),
+          label: Text(context.l10n.linkedDevices),
         ),
       ),
       const SizedBox(height: 10),
@@ -456,7 +460,7 @@ class _SettingsSheet extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.manage_search_rounded, size: 18),
-          label: const Text('مراجعة التكرارات'),
+          label: Text(context.l10n.reviewDuplicates),
         ),
       ),
       const SizedBox(height: 10),
@@ -470,7 +474,7 @@ class _SettingsSheet extends StatelessWidget {
             ),
           ),
           icon: const Text('📚'),
-          label: Text('الفواتير (${InvoiceStore.instance.count})'),
+          label: Text(context.l10n.invoicesCount(InvoiceStore.instance.count)),
         ),
       ),
     ],

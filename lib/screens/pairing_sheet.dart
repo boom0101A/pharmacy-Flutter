@@ -80,7 +80,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'تعذّر التحضير — تحقق من الاتصال بالإنترنت.';
+        _error = context.l10n.pairPrepareFailed;
       });
       return;
     }
@@ -99,7 +99,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
     setState(() {
       _loading = false;
       _code = code;
-      _error = code == null ? 'تعذّر توليد رمز — حاول مرة أخرى.' : null;
+      _error = code == null ? context.l10n.pairCodeFailed : null;
     });
   }
 
@@ -114,7 +114,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
       if (mounted) setState(() => _error = null);
     } catch (e) {
       if (mounted) {
-        setState(() => _error = 'تعذّر إتمام الطلب — حاول مرة أخرى.');
+        setState(() => _error = context.l10n.pairRequestFailed);
       }
     } finally {
       if (mounted) setState(() => _responding = false);
@@ -130,14 +130,13 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '🔗 مشاركة المخزون مع جهاز آخر',
+            Text(
+              context.l10n.pairShareTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'أعطِ هذا الرمز للجهاز الآخر — صالح لمدة 10 دقائق. بعد إدخاله '
-              'هناك، وافِق على الطلب هنا ليصبح المخزون مشتركاً بين الجهازين.',
+            Text(
+              context.l10n.pairShareSub,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -161,11 +160,11 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        _error ?? 'خطأ غير معروف',
+        _error ?? context.l10n.unknownError,
         style: const TextStyle(color: AppColors.danger, fontSize: 13),
       ),
       const SizedBox(height: 12),
-      FilledButton(onPressed: _generate, child: const Text('حاول مرة أخرى')),
+      FilledButton(onPressed: _generate, child: Text(context.l10n.tryAgain)),
     ],
   );
 
@@ -233,7 +232,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
     );
   }
 
-  Widget _buildWaiting() => const Row(
+  Widget _buildWaiting() => Row(
     children: [
       SizedBox(
         width: 16,
@@ -242,7 +241,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
       ),
       SizedBox(width: 10),
       Text(
-        'بانتظار الجهاز الآخر…',
+        context.l10n.pairWaiting,
         style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
       ),
     ],
@@ -256,8 +255,8 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 4),
-      const Text(
-        'وافق فقط إن كان الجهاز أمامك الآن وأنت من أعطاه الرمز.',
+      Text(
+        context.l10n.pairApproveHint,
         style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
       const SizedBox(height: 10),
@@ -267,14 +266,14 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
             child: FilledButton(
               onPressed: _responding ? null : () => _respond(code, true),
               style: FilledButton.styleFrom(backgroundColor: AppColors.success),
-              child: const Text('موافقة'),
+              child: Text(context.l10n.approve),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: OutlinedButton(
               onPressed: _responding ? null : () => _respond(code, false),
-              child: const Text('رفض'),
+              child: Text(context.l10n.decline),
             ),
           ),
         ],
@@ -285,13 +284,13 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
   Widget _buildJoined() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Row(
+      Row(
         children: [
           Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'تم! المخزون مشترك الآن.',
+              context.l10n.pairDone,
               style: TextStyle(
                 color: AppColors.success,
                 fontWeight: FontWeight.w600,
@@ -305,7 +304,7 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
         width: double.infinity,
         child: FilledButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('تم'),
+          child: Text(context.l10n.done),
         ),
       ),
     ],
@@ -314,12 +313,12 @@ class _SharePairingSheetState extends State<_SharePairingSheet> {
   Widget _buildExpired() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text(
-        'انتهت صلاحية الرمز.',
+      Text(
+        context.l10n.pairCodeExpired,
         style: TextStyle(color: AppColors.warning, fontSize: 13),
       ),
       const SizedBox(height: 10),
-      FilledButton(onPressed: _generate, child: const Text('توليد رمز جديد')),
+      FilledButton(onPressed: _generate, child: Text(context.l10n.pairNewCode)),
     ],
   );
 }
@@ -354,7 +353,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
   Future<void> _submit() async {
     final code = _controller.text.trim();
     if (code.length != 6 || int.tryParse(code) == null) {
-      setState(() => _error = 'أدخل الرمز المكوّن من 6 أرقام.');
+      setState(() => _error = context.l10n.pairEnterCode);
       return;
     }
 
@@ -375,16 +374,16 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
       setState(() {
         _submitting = false;
         _error = switch (e.reason) {
-          PairingJoinError.notFound => 'الرمز غير صحيح.',
-          PairingJoinError.expired => 'انتهت صلاحية الرمز، اطلب رمزاً جديداً.',
-          PairingJoinError.notOpen => 'هذا الرمز استُخدم من قبل.',
+          PairingJoinError.notFound => context.l10n.pairCodeWrong,
+          PairingJoinError.expired => context.l10n.pairCodeExpiredAsk,
+          PairingJoinError.notOpen => context.l10n.pairCodeUsed,
         };
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'تعذّر الاتصال — تحقق من الإنترنت وحاول مرة أخرى.';
+        _error = context.l10n.pairConnectFailed;
       });
     }
   }
@@ -395,9 +394,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('تم الانضمام! جاري تنزيل المخزون…')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(context.l10n.pairJoined)));
   }
 
   @override
@@ -415,13 +412,13 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '🔗 الانضمام إلى مخزون موجود',
+            Text(
+              context.l10n.pairJoinTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'أدخل الرمز الظاهر على الجهاز الذي يملك المخزون حالياً.',
+            Text(
+              context.l10n.pairJoinSub,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -470,7 +467,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('انضمام'),
+              : Text(context.l10n.join),
         ),
       ),
     ],
@@ -493,7 +490,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
               (_) => _onJoined(pharmacyId),
             );
           }
-          return const Row(
+          return Row(
             children: [
               Icon(
                 Icons.check_circle_rounded,
@@ -503,7 +500,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'تمت الموافقة! جاري تنزيل المخزون…',
+                  context.l10n.pairApproved,
                   style: TextStyle(color: AppColors.success),
                 ),
               ),
@@ -511,18 +508,18 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
           );
         }
         if (status == PairingStatus.declined) {
-          return const Text(
-            'تم رفض الطلب من الجهاز الآخر.',
+          return Text(
+            context.l10n.pairDeclined,
             style: TextStyle(color: AppColors.danger),
           );
         }
         if (status == PairingStatus.expired) {
-          return const Text(
-            'انتهت صلاحية الرمز قبل أن يوافق الجهاز الآخر.',
+          return Text(
+            context.l10n.pairExpiredBeforeApproval,
             style: TextStyle(color: AppColors.warning),
           );
         }
-        return const Row(
+        return Row(
           children: [
             SizedBox(
               width: 16,
@@ -532,7 +529,7 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'تم الإرسال — بانتظار موافقة الجهاز الآخر…',
+                context.l10n.pairSentWaiting,
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ),
@@ -547,5 +544,5 @@ class _JoinPairingSheetState extends State<_JoinPairingSheet> {
 /// في «الأجهزة المرتبطة» لاحقاً.
 @visibleForTesting
 String approvalPrompt(String? joinerUid) => joinerUid == null
-    ? 'جهاز آخر يطلب الانضمام — هل توافق؟'
-    : 'الجهاز ${PharmacyService.shortId(joinerUid)} يطلب الانضمام — هل توافق؟';
+    ? L10n.current.pairPromptUnknown
+    : L10n.current.pairPromptDevice(PharmacyService.shortId(joinerUid));

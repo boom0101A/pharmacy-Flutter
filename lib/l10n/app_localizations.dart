@@ -1283,6 +1283,474 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'🏷️ وجبة: {batch}'**
   String chipBatch(String batch);
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚙️ الإعدادات'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الصلاحية والمخزون'**
+  String get settingsAlerts;
+
+  /// No description provided for @settingsAlertsSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعار يومي الساعة 9 صباحاً إذا كانت هناك مواد منتهية أو قاربت الانتهاء أو مخزون منخفض/نافد.'**
+  String get settingsAlertsSub;
+
+  /// No description provided for @settingsContribute.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهمة في القاموس المشترك'**
+  String get settingsContribute;
+
+  /// No description provided for @settingsContributeSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال اسم الدواء وصورته فقط عند حفظه، لمساعدة بقية الصيدليات على التعرف عليه.'**
+  String get settingsContributeSub;
+
+  /// No description provided for @settingsSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'✅ يُرسَل'**
+  String get settingsSent;
+
+  /// No description provided for @settingsSentWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود + اسم الدواء + صورة مصغّرة'**
+  String get settingsSentWhat;
+
+  /// No description provided for @settingsNotSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔒 لا يُرسَل'**
+  String get settingsNotSent;
+
+  /// No description provided for @settingsNotSentWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر • الكمية • اسم صيدليتك • موقعك'**
+  String get settingsNotSentWhat;
+
+  /// No description provided for @settingsContributing.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت تساهم حالياً — شكراً، هذا ما يجعل القاموس ينمو.'**
+  String get settingsContributing;
+
+  /// No description provided for @settingsNotContributing.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهمة موقوفة. ستبقى تستفيد من القاموس عند المسح، لكن أدويتك لن تُضاف إليه.'**
+  String get settingsNotContributing;
+
+  /// No description provided for @settingsShowWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض شاشة الترحيب'**
+  String get settingsShowWelcome;
+
+  /// No description provided for @backupTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'💾 النسخة الاحتياطية'**
+  String get backupTitle;
+
+  /// No description provided for @backupSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف يحفظ كل المواد. عند الحفظ أرسله إلى واتساب أو Drive أو التنزيلات — إلغاء التثبيت يمسح ما بداخل التطبيق ويغيّر هوية المزامنة.'**
+  String get backupSub;
+
+  /// No description provided for @backupSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ نسخة'**
+  String get backupSave;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجاع'**
+  String get backupRestore;
+
+  /// No description provided for @syncIdCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'نُسخ معرّف المزامنة'**
+  String get syncIdCopied;
+
+  /// No description provided for @syncDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزامنة غير مفعّلة'**
+  String get syncDisabled;
+
+  /// No description provided for @syncId.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرّف المزامنة: {id}… (اضغط للنسخ)'**
+  String syncId(String id);
+
+  /// No description provided for @backupWhereToSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر أين تحفظ النسخة: واتساب، Drive، أو التنزيلات'**
+  String get backupWhereToSave;
+
+  /// No description provided for @saveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الحفظ: {error}'**
+  String saveFailed(String error);
+
+  /// No description provided for @restoreFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاسترجاع: {error}'**
+  String restoreFailed(String error);
+
+  /// No description provided for @restoreFromWhere.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجاع من أين؟'**
+  String get restoreFromWhere;
+
+  /// No description provided for @restorePickFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار ملف…'**
+  String get restorePickFile;
+
+  /// No description provided for @restoreLastLocal.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر نسخة على هذا الجهاز'**
+  String get restoreLastLocal;
+
+  /// No description provided for @restoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجاع النسخة'**
+  String get restoreTitle;
+
+  /// No description provided for @restoreContainsItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف يحتوي {n} مادة'**
+  String restoreContainsItems(int n);
+
+  /// No description provided for @restoreAndInvoices.
+  ///
+  /// In ar, this message translates to:
+  /// **' و{n} فاتورة'**
+  String restoreAndInvoices(int n);
+
+  /// No description provided for @restoreNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُضاف الجديد ويُحدَّث الأقدم — لا يُحذف شيء موجود.'**
+  String get restoreNote;
+
+  /// No description provided for @restoreConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجع'**
+  String get restoreConfirm;
+
+  /// No description provided for @restoreResult.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف {added} · حُدّث {updated} · بلا تغيير {skipped}'**
+  String restoreResult(int added, int updated, int skipped);
+
+  /// No description provided for @sharingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔗 مشاركة المخزون بين الأجهزة'**
+  String get sharingTitle;
+
+  /// No description provided for @sharingSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط هاتف زميل أو مساعدك بنفس المخزون — أي تعديل من أي جهاز يظهر للجميع.'**
+  String get sharingSub;
+
+  /// No description provided for @shareWithDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة مع جهاز آخر'**
+  String get shareWithDevice;
+
+  /// No description provided for @joinInventory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانضمام إلى مخزون'**
+  String get joinInventory;
+
+  /// No description provided for @linkedDevices.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة المرتبطة'**
+  String get linkedDevices;
+
+  /// No description provided for @reviewDuplicates.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة التكرارات'**
+  String get reviewDuplicates;
+
+  /// No description provided for @invoicesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفواتير ({n})'**
+  String invoicesCount(int n);
+
+  /// No description provided for @pairPrepareFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحضير — تحقق من الاتصال بالإنترنت.'**
+  String get pairPrepareFailed;
+
+  /// No description provided for @pairCodeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر توليد رمز — حاول مرة أخرى.'**
+  String get pairCodeFailed;
+
+  /// No description provided for @pairRequestFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إتمام الطلب — حاول مرة أخرى.'**
+  String get pairRequestFailed;
+
+  /// No description provided for @pairShareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔗 مشاركة المخزون مع جهاز آخر'**
+  String get pairShareTitle;
+
+  /// No description provided for @pairShareSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعطِ هذا الرمز للجهاز الآخر — صالح لمدة 10 دقائق. بعد إدخاله هناك، وافِق على الطلب هنا ليصبح المخزون مشتركاً بين الجهازين.'**
+  String get pairShareSub;
+
+  /// No description provided for @unknownError.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطأ غير معروف'**
+  String get unknownError;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول مرة أخرى'**
+  String get tryAgain;
+
+  /// No description provided for @pairWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار الجهاز الآخر…'**
+  String get pairWaiting;
+
+  /// No description provided for @pairApproveHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'وافق فقط إن كان الجهاز أمامك الآن وأنت من أعطاه الرمز.'**
+  String get pairApproveHint;
+
+  /// No description provided for @approve.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافقة'**
+  String get approve;
+
+  /// No description provided for @decline.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get decline;
+
+  /// No description provided for @pairDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم! المخزون مشترك الآن.'**
+  String get pairDone;
+
+  /// No description provided for @done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get done;
+
+  /// No description provided for @pairCodeExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية الرمز.'**
+  String get pairCodeExpired;
+
+  /// No description provided for @pairNewCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد رمز جديد'**
+  String get pairNewCode;
+
+  /// No description provided for @pairEnterCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الرمز المكوّن من 6 أرقام.'**
+  String get pairEnterCode;
+
+  /// No description provided for @pairCodeWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز غير صحيح.'**
+  String get pairCodeWrong;
+
+  /// No description provided for @pairCodeExpiredAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية الرمز، اطلب رمزاً جديداً.'**
+  String get pairCodeExpiredAsk;
+
+  /// No description provided for @pairCodeUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الرمز استُخدم من قبل.'**
+  String get pairCodeUsed;
+
+  /// No description provided for @pairConnectFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الاتصال — تحقق من الإنترنت وحاول مرة أخرى.'**
+  String get pairConnectFailed;
+
+  /// No description provided for @pairJoined.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الانضمام! جاري تنزيل المخزون…'**
+  String get pairJoined;
+
+  /// No description provided for @pairJoinTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔗 الانضمام إلى مخزون موجود'**
+  String get pairJoinTitle;
+
+  /// No description provided for @pairJoinSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الرمز الظاهر على الجهاز الذي يملك المخزون حالياً.'**
+  String get pairJoinSub;
+
+  /// No description provided for @join.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضمام'**
+  String get join;
+
+  /// No description provided for @pairApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الموافقة! جاري تنزيل المخزون…'**
+  String get pairApproved;
+
+  /// No description provided for @pairDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض الطلب من الجهاز الآخر.'**
+  String get pairDeclined;
+
+  /// No description provided for @pairExpiredBeforeApproval.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية الرمز قبل أن يوافق الجهاز الآخر.'**
+  String get pairExpiredBeforeApproval;
+
+  /// No description provided for @pairSentWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الإرسال — بانتظار موافقة الجهاز الآخر…'**
+  String get pairSentWaiting;
+
+  /// No description provided for @pairPromptUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهاز آخر يطلب الانضمام — هل توافق؟'**
+  String get pairPromptUnknown;
+
+  /// No description provided for @pairPromptDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز {id} يطلب الانضمام — هل توافق؟'**
+  String pairPromptDevice(String id);
+
+  /// No description provided for @devicesLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التحميل — تحقق من الإنترنت.'**
+  String get devicesLoadFailed;
+
+  /// No description provided for @removeDeviceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخراج الجهاز؟'**
+  String get removeDeviceTitle;
+
+  /// No description provided for @removeDeviceBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز {id} لن يرى المخزون ولن يعدّله بعد الآن. ما على هاتفه من نسخة محلية يبقى عنده.'**
+  String removeDeviceBody(String id);
+
+  /// No description provided for @remove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخراج'**
+  String get remove;
+
+  /// No description provided for @removeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الإخراج: {error}'**
+  String removeFailed(String error);
+
+  /// No description provided for @devicesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'📱 الأجهزة المرتبطة'**
+  String get devicesTitle;
+
+  /// No description provided for @devicesSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل جهاز هنا يرى المخزون بأسعاره وكمياته ويعدّله. أخرج أي جهاز لا تعرفه.'**
+  String get devicesSub;
+
+  /// No description provided for @deviceName.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهاز {id}'**
+  String deviceName(String id);
+
+  /// No description provided for @deviceOwner.
+  ///
+  /// In ar, this message translates to:
+  /// **'صاحب المخزون'**
+  String get deviceOwner;
+
+  /// No description provided for @deviceThisPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الهاتف'**
+  String get deviceThisPhone;
 }
 
 class _AppLocalizationsDelegate

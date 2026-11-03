@@ -514,5 +514,166 @@
         "type": "String"
       }
     }
-  }
+  },
+  "settingsTitle": "⚙️ الإعدادات",
+  "settingsAlerts": "تنبيهات الصلاحية والمخزون",
+  "settingsAlertsSub": "إشعار يومي الساعة 9 صباحاً إذا كانت هناك مواد منتهية أو قاربت الانتهاء أو مخزون منخفض/نافد.",
+  "settingsContribute": "المساهمة في القاموس المشترك",
+  "settingsContributeSub": "إرسال اسم الدواء وصورته فقط عند حفظه، لمساعدة بقية الصيدليات على التعرف عليه.",
+  "settingsSent": "✅ يُرسَل",
+  "settingsSentWhat": "الباركود + اسم الدواء + صورة مصغّرة",
+  "settingsNotSent": "🔒 لا يُرسَل",
+  "settingsNotSentWhat": "السعر • الكمية • اسم صيدليتك • موقعك",
+  "settingsContributing": "أنت تساهم حالياً — شكراً، هذا ما يجعل القاموس ينمو.",
+  "settingsNotContributing": "المساهمة موقوفة. ستبقى تستفيد من القاموس عند المسح، لكن أدويتك لن تُضاف إليه.",
+  "settingsShowWelcome": "عرض شاشة الترحيب",
+  "backupTitle": "💾 النسخة الاحتياطية",
+  "backupSub": "ملف يحفظ كل المواد. عند الحفظ أرسله إلى واتساب أو Drive أو التنزيلات — إلغاء التثبيت يمسح ما بداخل التطبيق ويغيّر هوية المزامنة.",
+  "backupSave": "حفظ نسخة",
+  "backupRestore": "استرجاع",
+  "syncIdCopied": "نُسخ معرّف المزامنة",
+  "syncDisabled": "المزامنة غير مفعّلة",
+  "syncId": "معرّف المزامنة: {id}… (اضغط للنسخ)",
+  "@syncId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "backupWhereToSave": "اختر أين تحفظ النسخة: واتساب، Drive، أو التنزيلات",
+  "saveFailed": "تعذّر الحفظ: {error}",
+  "@saveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreFailed": "تعذّر الاسترجاع: {error}",
+  "@restoreFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreFromWhere": "استرجاع من أين؟",
+  "restorePickFile": "اختيار ملف…",
+  "restoreLastLocal": "آخر نسخة على هذا الجهاز",
+  "restoreTitle": "استرجاع النسخة",
+  "restoreContainsItems": "الملف يحتوي {n} مادة",
+  "@restoreContainsItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreAndInvoices": " و{n} فاتورة",
+  "@restoreAndInvoices": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreNote": "سيُضاف الجديد ويُحدَّث الأقدم — لا يُحذف شيء موجود.",
+  "restoreConfirm": "استرجع",
+  "restoreResult": "أُضيف {added} · حُدّث {updated} · بلا تغيير {skipped}",
+  "@restoreResult": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "sharingTitle": "🔗 مشاركة المخزون بين الأجهزة",
+  "sharingSub": "اربط هاتف زميل أو مساعدك بنفس المخزون — أي تعديل من أي جهاز يظهر للجميع.",
+  "shareWithDevice": "مشاركة مع جهاز آخر",
+  "joinInventory": "الانضمام إلى مخزون",
+  "linkedDevices": "الأجهزة المرتبطة",
+  "reviewDuplicates": "مراجعة التكرارات",
+  "invoicesCount": "الفواتير ({n})",
+  "@invoicesCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pairPrepareFailed": "تعذّر التحضير — تحقق من الاتصال بالإنترنت.",
+  "pairCodeFailed": "تعذّر توليد رمز — حاول مرة أخرى.",
+  "pairRequestFailed": "تعذّر إتمام الطلب — حاول مرة أخرى.",
+  "pairShareTitle": "🔗 مشاركة المخزون مع جهاز آخر",
+  "pairShareSub": "أعطِ هذا الرمز للجهاز الآخر — صالح لمدة 10 دقائق. بعد إدخاله هناك، وافِق على الطلب هنا ليصبح المخزون مشتركاً بين الجهازين.",
+  "unknownError": "خطأ غير معروف",
+  "tryAgain": "حاول مرة أخرى",
+  "pairWaiting": "بانتظار الجهاز الآخر…",
+  "pairApproveHint": "وافق فقط إن كان الجهاز أمامك الآن وأنت من أعطاه الرمز.",
+  "approve": "موافقة",
+  "decline": "رفض",
+  "pairDone": "تم! المخزون مشترك الآن.",
+  "done": "تم",
+  "pairCodeExpired": "انتهت صلاحية الرمز.",
+  "pairNewCode": "توليد رمز جديد",
+  "pairEnterCode": "أدخل الرمز المكوّن من 6 أرقام.",
+  "pairCodeWrong": "الرمز غير صحيح.",
+  "pairCodeExpiredAsk": "انتهت صلاحية الرمز، اطلب رمزاً جديداً.",
+  "pairCodeUsed": "هذا الرمز استُخدم من قبل.",
+  "pairConnectFailed": "تعذّر الاتصال — تحقق من الإنترنت وحاول مرة أخرى.",
+  "pairJoined": "تم الانضمام! جاري تنزيل المخزون…",
+  "pairJoinTitle": "🔗 الانضمام إلى مخزون موجود",
+  "pairJoinSub": "أدخل الرمز الظاهر على الجهاز الذي يملك المخزون حالياً.",
+  "join": "انضمام",
+  "pairApproved": "تمت الموافقة! جاري تنزيل المخزون…",
+  "pairDeclined": "تم رفض الطلب من الجهاز الآخر.",
+  "pairExpiredBeforeApproval": "انتهت صلاحية الرمز قبل أن يوافق الجهاز الآخر.",
+  "pairSentWaiting": "تم الإرسال — بانتظار موافقة الجهاز الآخر…",
+  "pairPromptUnknown": "جهاز آخر يطلب الانضمام — هل توافق؟",
+  "pairPromptDevice": "الجهاز {id} يطلب الانضمام — هل توافق؟",
+  "@pairPromptDevice": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "devicesLoadFailed": "تعذّر التحميل — تحقق من الإنترنت.",
+  "removeDeviceTitle": "إخراج الجهاز؟",
+  "removeDeviceBody": "الجهاز {id} لن يرى المخزون ولن يعدّله بعد الآن. ما على هاتفه من نسخة محلية يبقى عنده.",
+  "@removeDeviceBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "remove": "إخراج",
+  "removeFailed": "تعذّر الإخراج: {error}",
+  "@removeFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "devicesTitle": "📱 الأجهزة المرتبطة",
+  "devicesSub": "كل جهاز هنا يرى المخزون بأسعاره وكمياته ويعدّله. أخرج أي جهاز لا تعرفه.",
+  "deviceName": "جهاز {id}",
+  "@deviceName": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceOwner": "صاحب المخزون",
+  "deviceThisPhone": "هذا الهاتف"
 }

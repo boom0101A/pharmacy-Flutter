@@ -64,7 +64,7 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
     setState(() {
       _loading = false;
       _members = members;
-      _error = members == null ? 'تعذّر التحميل — تحقق من الإنترنت.' : null;
+      _error = members == null ? context.l10n.devicesLoadFailed : null;
     });
   }
 
@@ -73,21 +73,20 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('إخراج الجهاز؟'),
+        title: Text(context.l10n.removeDeviceTitle),
         content: Text(
-          'الجهاز ${PharmacyService.shortId(uid)} لن يرى المخزون ولن يعدّله '
-          'بعد الآن. ما على هاتفه من نسخة محلية يبقى عنده.',
+          context.l10n.removeDeviceBody(PharmacyService.shortId(uid)),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('إخراج'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),
@@ -109,7 +108,7 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
       if (!mounted) return;
       setState(() {
         _removing = null;
-        _error = 'تعذّر الإخراج: $e';
+        _error = context.l10n.removeFailed('$e');
       });
     }
   }
@@ -123,14 +122,13 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '📱 الأجهزة المرتبطة',
+            Text(
+              context.l10n.devicesTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'كل جهاز هنا يرى المخزون بأسعاره وكمياته ويعدّله. أخرج أي جهاز '
-              'لا تعرفه.',
+            Text(
+              context.l10n.devicesSub,
               style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -168,13 +166,13 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
             color: uid == m.ownerUid ? AppColors.success : AppColors.primary,
           ),
           title: Text(
-            'جهاز ${PharmacyService.shortId(uid)}',
-            textDirection: TextDirection.rtl,
+            context.l10n.deviceName(PharmacyService.shortId(uid)),
+            textDirection: L10n.direction,
           ),
           subtitle: Text(
             [
-              if (uid == m.ownerUid) 'صاحب المخزون',
-              if (uid == widget.myUid) 'هذا الهاتف',
+              if (uid == m.ownerUid) context.l10n.deviceOwner,
+              if (uid == widget.myUid) context.l10n.deviceThisPhone,
             ].join(' · '),
             style: const TextStyle(fontSize: 12),
           ),
@@ -189,8 +187,8 @@ class _LinkedDevicesSheetState extends State<LinkedDevicesSheet> {
                         onPressed: _removing == null
                             ? () => _remove(uid)
                             : null,
-                        child: const Text(
-                          'إخراج',
+                        child: Text(
+                          context.l10n.remove,
                           style: TextStyle(color: AppColors.danger),
                         ),
                       ))

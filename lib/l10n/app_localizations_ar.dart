@@ -702,4 +702,274 @@ class AppLocalizationsAr extends AppLocalizations {
   String chipBatch(String batch) {
     return '🏷️ وجبة: $batch';
   }
+
+  @override
+  String get settingsTitle => '⚙️ الإعدادات';
+
+  @override
+  String get settingsAlerts => 'تنبيهات الصلاحية والمخزون';
+
+  @override
+  String get settingsAlertsSub =>
+      'إشعار يومي الساعة 9 صباحاً إذا كانت هناك مواد منتهية أو قاربت الانتهاء أو مخزون منخفض/نافد.';
+
+  @override
+  String get settingsContribute => 'المساهمة في القاموس المشترك';
+
+  @override
+  String get settingsContributeSub =>
+      'إرسال اسم الدواء وصورته فقط عند حفظه، لمساعدة بقية الصيدليات على التعرف عليه.';
+
+  @override
+  String get settingsSent => '✅ يُرسَل';
+
+  @override
+  String get settingsSentWhat => 'الباركود + اسم الدواء + صورة مصغّرة';
+
+  @override
+  String get settingsNotSent => '🔒 لا يُرسَل';
+
+  @override
+  String get settingsNotSentWhat => 'السعر • الكمية • اسم صيدليتك • موقعك';
+
+  @override
+  String get settingsContributing =>
+      'أنت تساهم حالياً — شكراً، هذا ما يجعل القاموس ينمو.';
+
+  @override
+  String get settingsNotContributing =>
+      'المساهمة موقوفة. ستبقى تستفيد من القاموس عند المسح، لكن أدويتك لن تُضاف إليه.';
+
+  @override
+  String get settingsShowWelcome => 'عرض شاشة الترحيب';
+
+  @override
+  String get backupTitle => '💾 النسخة الاحتياطية';
+
+  @override
+  String get backupSub =>
+      'ملف يحفظ كل المواد. عند الحفظ أرسله إلى واتساب أو Drive أو التنزيلات — إلغاء التثبيت يمسح ما بداخل التطبيق ويغيّر هوية المزامنة.';
+
+  @override
+  String get backupSave => 'حفظ نسخة';
+
+  @override
+  String get backupRestore => 'استرجاع';
+
+  @override
+  String get syncIdCopied => 'نُسخ معرّف المزامنة';
+
+  @override
+  String get syncDisabled => 'المزامنة غير مفعّلة';
+
+  @override
+  String syncId(String id) {
+    return 'معرّف المزامنة: $id… (اضغط للنسخ)';
+  }
+
+  @override
+  String get backupWhereToSave =>
+      'اختر أين تحفظ النسخة: واتساب، Drive، أو التنزيلات';
+
+  @override
+  String saveFailed(String error) {
+    return 'تعذّر الحفظ: $error';
+  }
+
+  @override
+  String restoreFailed(String error) {
+    return 'تعذّر الاسترجاع: $error';
+  }
+
+  @override
+  String get restoreFromWhere => 'استرجاع من أين؟';
+
+  @override
+  String get restorePickFile => 'اختيار ملف…';
+
+  @override
+  String get restoreLastLocal => 'آخر نسخة على هذا الجهاز';
+
+  @override
+  String get restoreTitle => 'استرجاع النسخة';
+
+  @override
+  String restoreContainsItems(int n) {
+    return 'الملف يحتوي $n مادة';
+  }
+
+  @override
+  String restoreAndInvoices(int n) {
+    return ' و$n فاتورة';
+  }
+
+  @override
+  String get restoreNote =>
+      'سيُضاف الجديد ويُحدَّث الأقدم — لا يُحذف شيء موجود.';
+
+  @override
+  String get restoreConfirm => 'استرجع';
+
+  @override
+  String restoreResult(int added, int updated, int skipped) {
+    return 'أُضيف $added · حُدّث $updated · بلا تغيير $skipped';
+  }
+
+  @override
+  String get sharingTitle => '🔗 مشاركة المخزون بين الأجهزة';
+
+  @override
+  String get sharingSub =>
+      'اربط هاتف زميل أو مساعدك بنفس المخزون — أي تعديل من أي جهاز يظهر للجميع.';
+
+  @override
+  String get shareWithDevice => 'مشاركة مع جهاز آخر';
+
+  @override
+  String get joinInventory => 'الانضمام إلى مخزون';
+
+  @override
+  String get linkedDevices => 'الأجهزة المرتبطة';
+
+  @override
+  String get reviewDuplicates => 'مراجعة التكرارات';
+
+  @override
+  String invoicesCount(int n) {
+    return 'الفواتير ($n)';
+  }
+
+  @override
+  String get pairPrepareFailed => 'تعذّر التحضير — تحقق من الاتصال بالإنترنت.';
+
+  @override
+  String get pairCodeFailed => 'تعذّر توليد رمز — حاول مرة أخرى.';
+
+  @override
+  String get pairRequestFailed => 'تعذّر إتمام الطلب — حاول مرة أخرى.';
+
+  @override
+  String get pairShareTitle => '🔗 مشاركة المخزون مع جهاز آخر';
+
+  @override
+  String get pairShareSub =>
+      'أعطِ هذا الرمز للجهاز الآخر — صالح لمدة 10 دقائق. بعد إدخاله هناك، وافِق على الطلب هنا ليصبح المخزون مشتركاً بين الجهازين.';
+
+  @override
+  String get unknownError => 'خطأ غير معروف';
+
+  @override
+  String get tryAgain => 'حاول مرة أخرى';
+
+  @override
+  String get pairWaiting => 'بانتظار الجهاز الآخر…';
+
+  @override
+  String get pairApproveHint =>
+      'وافق فقط إن كان الجهاز أمامك الآن وأنت من أعطاه الرمز.';
+
+  @override
+  String get approve => 'موافقة';
+
+  @override
+  String get decline => 'رفض';
+
+  @override
+  String get pairDone => 'تم! المخزون مشترك الآن.';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get pairCodeExpired => 'انتهت صلاحية الرمز.';
+
+  @override
+  String get pairNewCode => 'توليد رمز جديد';
+
+  @override
+  String get pairEnterCode => 'أدخل الرمز المكوّن من 6 أرقام.';
+
+  @override
+  String get pairCodeWrong => 'الرمز غير صحيح.';
+
+  @override
+  String get pairCodeExpiredAsk => 'انتهت صلاحية الرمز، اطلب رمزاً جديداً.';
+
+  @override
+  String get pairCodeUsed => 'هذا الرمز استُخدم من قبل.';
+
+  @override
+  String get pairConnectFailed =>
+      'تعذّر الاتصال — تحقق من الإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get pairJoined => 'تم الانضمام! جاري تنزيل المخزون…';
+
+  @override
+  String get pairJoinTitle => '🔗 الانضمام إلى مخزون موجود';
+
+  @override
+  String get pairJoinSub =>
+      'أدخل الرمز الظاهر على الجهاز الذي يملك المخزون حالياً.';
+
+  @override
+  String get join => 'انضمام';
+
+  @override
+  String get pairApproved => 'تمت الموافقة! جاري تنزيل المخزون…';
+
+  @override
+  String get pairDeclined => 'تم رفض الطلب من الجهاز الآخر.';
+
+  @override
+  String get pairExpiredBeforeApproval =>
+      'انتهت صلاحية الرمز قبل أن يوافق الجهاز الآخر.';
+
+  @override
+  String get pairSentWaiting => 'تم الإرسال — بانتظار موافقة الجهاز الآخر…';
+
+  @override
+  String get pairPromptUnknown => 'جهاز آخر يطلب الانضمام — هل توافق؟';
+
+  @override
+  String pairPromptDevice(String id) {
+    return 'الجهاز $id يطلب الانضمام — هل توافق؟';
+  }
+
+  @override
+  String get devicesLoadFailed => 'تعذّر التحميل — تحقق من الإنترنت.';
+
+  @override
+  String get removeDeviceTitle => 'إخراج الجهاز؟';
+
+  @override
+  String removeDeviceBody(String id) {
+    return 'الجهاز $id لن يرى المخزون ولن يعدّله بعد الآن. ما على هاتفه من نسخة محلية يبقى عنده.';
+  }
+
+  @override
+  String get remove => 'إخراج';
+
+  @override
+  String removeFailed(String error) {
+    return 'تعذّر الإخراج: $error';
+  }
+
+  @override
+  String get devicesTitle => '📱 الأجهزة المرتبطة';
+
+  @override
+  String get devicesSub =>
+      'كل جهاز هنا يرى المخزون بأسعاره وكمياته ويعدّله. أخرج أي جهاز لا تعرفه.';
+
+  @override
+  String deviceName(String id) {
+    return 'جهاز $id';
+  }
+
+  @override
+  String get deviceOwner => 'صاحب المخزون';
+
+  @override
+  String get deviceThisPhone => 'هذا الهاتف';
 }

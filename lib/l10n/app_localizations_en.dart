@@ -733,4 +733,289 @@ class AppLocalizationsEn extends AppLocalizations {
   String chipBatch(String batch) {
     return '🏷️ Batch: $batch';
   }
+
+  @override
+  String get settingsTitle => '⚙️ Settings';
+
+  @override
+  String get settingsAlerts => 'Expiry and stock alerts';
+
+  @override
+  String get settingsAlertsSub =>
+      'A daily notification at 9 AM if items are expired, expiring soon, or low/out of stock.';
+
+  @override
+  String get settingsContribute => 'Contribute to the shared dictionary';
+
+  @override
+  String get settingsContributeSub =>
+      'Send only the medicine\'s name and photo when saving it, to help other pharmacies recognize it.';
+
+  @override
+  String get settingsSent => '✅ Sent';
+
+  @override
+  String get settingsSentWhat => 'Barcode + medicine name + thumbnail';
+
+  @override
+  String get settingsNotSent => '🔒 Not sent';
+
+  @override
+  String get settingsNotSentWhat =>
+      'Price • quantity • your pharmacy\'s name • your location';
+
+  @override
+  String get settingsContributing =>
+      'You\'re contributing — thank you, this is what makes the dictionary grow.';
+
+  @override
+  String get settingsNotContributing =>
+      'Contribution is off. You still benefit from the dictionary when scanning, but your medicines won\'t be added to it.';
+
+  @override
+  String get settingsShowWelcome => 'Show the welcome screen';
+
+  @override
+  String get backupTitle => '💾 Backup';
+
+  @override
+  String get backupSub =>
+      'A file holding all items. When saving, send it to WhatsApp, Drive or Downloads — uninstalling erases the app\'s data and changes its sync identity.';
+
+  @override
+  String get backupSave => 'Save backup';
+
+  @override
+  String get backupRestore => 'Restore';
+
+  @override
+  String get syncIdCopied => 'Sync ID copied';
+
+  @override
+  String get syncDisabled => 'Sync is not enabled';
+
+  @override
+  String syncId(String id) {
+    return 'Sync ID: $id… (tap to copy)';
+  }
+
+  @override
+  String get backupWhereToSave =>
+      'Choose where to save the backup: WhatsApp, Drive, or Downloads';
+
+  @override
+  String saveFailed(String error) {
+    return 'Couldn\'t save: $error';
+  }
+
+  @override
+  String restoreFailed(String error) {
+    return 'Couldn\'t restore: $error';
+  }
+
+  @override
+  String get restoreFromWhere => 'Restore from where?';
+
+  @override
+  String get restorePickFile => 'Choose a file…';
+
+  @override
+  String get restoreLastLocal => 'Latest backup on this device';
+
+  @override
+  String get restoreTitle => 'Restore backup';
+
+  @override
+  String restoreContainsItems(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items',
+      one: '1 item',
+    );
+    return 'The file contains $_temp0';
+  }
+
+  @override
+  String restoreAndInvoices(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n invoices',
+      one: '1 invoice',
+    );
+    return ' and $_temp0';
+  }
+
+  @override
+  String get restoreNote =>
+      'New items will be added and older ones updated — nothing existing is deleted.';
+
+  @override
+  String get restoreConfirm => 'Restore';
+
+  @override
+  String restoreResult(int added, int updated, int skipped) {
+    return 'Added $added · updated $updated · unchanged $skipped';
+  }
+
+  @override
+  String get sharingTitle => '🔗 Share inventory between devices';
+
+  @override
+  String get sharingSub =>
+      'Link a colleague\'s or assistant\'s phone to the same inventory — any change from any device shows up for everyone.';
+
+  @override
+  String get shareWithDevice => 'Share with another device';
+
+  @override
+  String get joinInventory => 'Join an inventory';
+
+  @override
+  String get linkedDevices => 'Linked devices';
+
+  @override
+  String get reviewDuplicates => 'Review duplicates';
+
+  @override
+  String invoicesCount(int n) {
+    return 'Invoices ($n)';
+  }
+
+  @override
+  String get pairPrepareFailed =>
+      'Couldn\'t prepare — check your internet connection.';
+
+  @override
+  String get pairCodeFailed => 'Couldn\'t generate a code — try again.';
+
+  @override
+  String get pairRequestFailed => 'Couldn\'t complete the request — try again.';
+
+  @override
+  String get pairShareTitle => '🔗 Share inventory with another device';
+
+  @override
+  String get pairShareSub =>
+      'Give this code to the other device — valid for 10 minutes. After it\'s entered there, approve the request here to share the inventory between both devices.';
+
+  @override
+  String get unknownError => 'Unknown error';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get pairWaiting => 'Waiting for the other device…';
+
+  @override
+  String get pairApproveHint =>
+      'Approve only if the device is in front of you and you gave it the code.';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get decline => 'Decline';
+
+  @override
+  String get pairDone => 'Done! The inventory is now shared.';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get pairCodeExpired => 'The code has expired.';
+
+  @override
+  String get pairNewCode => 'Generate a new code';
+
+  @override
+  String get pairEnterCode => 'Enter the 6-digit code.';
+
+  @override
+  String get pairCodeWrong => 'Incorrect code.';
+
+  @override
+  String get pairCodeExpiredAsk => 'The code has expired — ask for a new one.';
+
+  @override
+  String get pairCodeUsed => 'This code was already used.';
+
+  @override
+  String get pairConnectFailed =>
+      'Couldn\'t connect — check the internet and try again.';
+
+  @override
+  String get pairJoined => 'Joined! Downloading the inventory…';
+
+  @override
+  String get pairJoinTitle => '🔗 Join an existing inventory';
+
+  @override
+  String get pairJoinSub =>
+      'Enter the code shown on the device that currently owns the inventory.';
+
+  @override
+  String get join => 'Join';
+
+  @override
+  String get pairApproved => 'Approved! Downloading the inventory…';
+
+  @override
+  String get pairDeclined => 'The other device declined the request.';
+
+  @override
+  String get pairExpiredBeforeApproval =>
+      'The code expired before the other device approved.';
+
+  @override
+  String get pairSentWaiting =>
+      'Sent — waiting for the other device to approve…';
+
+  @override
+  String get pairPromptUnknown => 'Another device wants to join — approve?';
+
+  @override
+  String pairPromptDevice(String id) {
+    return 'Device $id wants to join — approve?';
+  }
+
+  @override
+  String get devicesLoadFailed => 'Couldn\'t load — check the internet.';
+
+  @override
+  String get removeDeviceTitle => 'Remove device?';
+
+  @override
+  String removeDeviceBody(String id) {
+    return 'Device $id will no longer see or edit the inventory. Any local copy on that phone stays there.';
+  }
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String removeFailed(String error) {
+    return 'Couldn\'t remove: $error';
+  }
+
+  @override
+  String get devicesTitle => '📱 Linked devices';
+
+  @override
+  String get devicesSub =>
+      'Every device here sees and edits the inventory with its prices and quantities. Remove any device you don\'t recognize.';
+
+  @override
+  String deviceName(String id) {
+    return 'Device $id';
+  }
+
+  @override
+  String get deviceOwner => 'Inventory owner';
+
+  @override
+  String get deviceThisPhone => 'This phone';
 }

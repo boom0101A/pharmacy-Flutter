@@ -10,7 +10,6 @@ import '../util/money.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
-import '../l10n/l10n.dart';
 
 String _date(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);

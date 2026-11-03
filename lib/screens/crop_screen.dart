@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../services/product_cropper.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
-import '../l10n/l10n.dart';
 
 /// شاشة تأكيد القص: الإطار يبدأ حول العلبة المكتشفة تلقائياً، ويستطيع
 /// المستخدم سحب زواياه قبل «تم». تعيد الملف النهائي (مقصوصاً أو الأصلي عند
