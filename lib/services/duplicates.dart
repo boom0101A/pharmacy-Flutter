@@ -259,6 +259,32 @@ List<DuplicateGroup> findSimilarGroups(
   return out;
 }
 
+/// أقرب مادة إلى [m] بين [candidates] بقواعد التشابه نفسها، كمجموعة من
+/// مادتين، أو null. مقارنة [m] وحدها بكل مرشّح — لا كل المرشّحين ببعضهم كما
+/// في [findSimilarGroups] — فتبقى سريعة على مخزون من مئات المواد.
+DuplicateGroup? bestSimilarTo(Medicine m, Iterable<Medicine> candidates) {
+  final key = similarityKey(m.name);
+  final code = Gs1Parser.canonicalKey(m.barcode);
+  Medicine? best;
+  var bestScore = 0.0;
+  for (final c in candidates) {
+    if (c.id == m.id || c.type != m.type) continue;
+    final score = nameSimilarity(key, similarityKey(c.name));
+    if (score > bestScore) {
+      best = c;
+      bestScore = score;
+    }
+  }
+  if (best == null) return null;
+  final other = Gs1Parser.canonicalKey(best.barcode);
+  return DuplicateGroup(
+    [m, best],
+    byBarcode: false,
+    similarity: bestScore,
+    differentBarcodes: code != null && other != null && code != other,
+  );
+}
+
 /// الاسم للمقارنة: صغير، بلا رموز ولا أقواس، والوحدات ملتصقة بأرقامها
 /// («15 ml» = «15ml») — وإلا اختلف اسمان لا يختلفان إلا بمسافة.
 @visibleForTesting

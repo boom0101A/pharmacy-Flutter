@@ -179,7 +179,12 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       for (final m in g.items)
         if (!selectedIds.contains(m.id)) m.id,
     };
-    for (final key in keysToDismissAfterMerge(items, survivors)) {
+    // المطابقة الواسعة على المخزون كله (~نصف ثانية على الحاسوب) — خارج
+    // واجهة المستخدم كالتحميل، وإلا تجمّدت الشاشة بعد كل دمج
+    final toDismiss = items.length < 300
+        ? keysToDismissAfterMerge(items, survivors)
+        : await compute(_dismissInIsolate, (items, survivors));
+    for (final key in toDismiss) {
       await DuplicateDismissals.instance.add(key);
     }
 
@@ -658,3 +663,6 @@ class _MergeDialogState extends State<MergeDialog> {
     );
   }
 }
+
+List<String> _dismissInIsolate((List<Medicine>, Set<String>) a) =>
+    keysToDismissAfterMerge(a.$1, a.$2);

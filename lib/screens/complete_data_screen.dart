@@ -114,20 +114,12 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       _similarCache.putIfAbsent(m.id, () => _computeSimilar(m));
 
   /// أقرب مادة **مسعّرة** في القسم نفسه — النسخة الحقيقية لهذه المادة غالباً.
-  DuplicateGroup? _computeSimilar(Medicine m) {
-    final candidates = [
-      m,
-      for (final o in widget.store.all)
-        // المسعّرة لا «المكتملة»: النسخة الحقيقية قد تنقصها الباركود وحده،
-        // وهي بالضبط ما يحمله التسجيل الفارغ
-        if (o.id != m.id && o.type == m.type && o.price > 0) o,
-    ];
-    final groups = findSimilarGroups(candidates);
-    for (final g in groups) {
-      if (g.items.any((x) => x.id == m.id)) return g;
-    }
-    return null;
-  }
+  DuplicateGroup? _computeSimilar(Medicine m) => bestSimilarTo(m, [
+    for (final o in widget.store.all)
+      // المسعّرة لا «المكتملة»: النسخة الحقيقية قد تنقصها الباركود وحده،
+      // وهي بالضبط ما يحمله التسجيل الفارغ
+      if (o.id != m.id && o.type == m.type && o.price > 0) o,
+  ]);
 
   Future<void> _scan() async {
     final code =

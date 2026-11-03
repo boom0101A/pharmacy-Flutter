@@ -28,6 +28,25 @@ Medicine m(
 );
 
 void main() {
+  group('bestSimilarTo', () {
+    test('أقرب مرشّح وحده، من النوع نفسه', () {
+      final target = m('blank', name: 'RIBOSAN', type: ItemType.medicine);
+      final g = bestSimilarTo(target, [
+        m('far', name: 'Panadol Extra', type: ItemType.medicine),
+        m('near', name: 'RIBOSAN ( 100 ml ) Syrup', type: ItemType.medicine),
+        m('supply', name: 'RIBOSAN', type: ItemType.supply),
+      ])!;
+      expect(g.items.map((x) => x.id), ['blank', 'near']);
+    });
+
+    test('لا مشابه ← null', () {
+      expect(
+        bestSimilarTo(m('a', name: 'شاش طبي'), [m('b', name: 'شامبو اطفال')]),
+        isNull,
+      );
+    });
+  });
+
   group('keysToDismissAfterMerge', () {
     test('غير المختارة تُخفى مع الباقية وفيما بينها', () {
       // بعد دمج j2 في j1: يبقى j1 + غير المختارتين t وr
