@@ -54,13 +54,17 @@ class MedicineCard extends StatelessWidget {
 
     // من أطفأ الحركة في إعدادات إمكانية الوصول لا تُفرض عليه
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (!animate || reduceMotion) return card;
+    final moving = animate && !reduceMotion;
 
     // ظهور متدرّج خفيف: شفافية + إزاحة بسيطة. بلا حزم ولا رسم إضافي.
+    //
+    // الغلاف موجود دائماً، وبلا حركة يبدأ من نهايته (1→1): لو أُزيل حين
+    // تصير animate=false في إعادة بناء الشبكة لتغيّر شكل الشجرة فأُعيد إنشاء
+    // البطاقة وصورتها — وميض أعلى البطاقة عند الرجوع من التفاصيل.
     final delayed = (index.clamp(0, 8)) * 45;
     return TweenAnimationBuilder<double>(
       key: ValueKey(medicine.id),
-      tween: Tween(begin: 0, end: 1),
+      tween: Tween(begin: moving ? 0 : 1, end: 1),
       duration: Duration(milliseconds: 300 + delayed),
       curve: Curves.easeOutCubic,
       builder: (context, t, child) => Opacity(
@@ -76,10 +80,16 @@ class MedicineCard extends StatelessWidget {
   }
 
   /// البطاقة كلها (والصورة) تفتح التفاصيل؛ أزرار التعديل والحذف تبقى لها.
-  Widget _buildCard(BuildContext context) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: onOpen,
-    child: _cardBody(context),
+  /// لون النص يُحدَّد هنا لا يُورَث: `Material` الذي يضعه `OpenContainer` فوق
+  /// البطاقة (ساكنة وأثناء الانتقال) يعطي نمط نص داكناً رغم سمة التطبيق
+  /// الداكنة — فظهرت الأسماء سوداء على الهاتف.
+  Widget _buildCard(BuildContext context) => DefaultTextStyle.merge(
+    style: const TextStyle(color: AppColors.textPrimary),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onOpen,
+      child: _cardBody(context),
+    ),
   );
 
   Widget _cardBody(BuildContext context) {
@@ -165,6 +175,7 @@ class MedicineCard extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),

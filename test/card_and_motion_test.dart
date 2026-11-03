@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
@@ -45,11 +46,13 @@ MedicineCard _card(Medicine m, {bool animate = true}) => MedicineCard(
 
 void main() {
   group('حركة دخول البطاقة', () {
-    testWidgets('animate=false لا يلفّ البطاقة بأي حركة', (tester) async {
+    testWidgets('animate=false: ظاهرة كاملة من أول إطار بلا حركة', (
+      tester,
+    ) async {
       await tester.pumpWidget(_host(_card(_item(), animate: false)));
       await tester.pump();
 
-      expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
+      expect(tester.widget<Opacity>(find.byType(Opacity).first).opacity, 1);
       expect(find.text('Panadol'), findsOneWidget);
     });
 
@@ -68,12 +71,26 @@ void main() {
       expect(done.opacity, 1);
     });
 
+    // الشبكة تبني البطاقة بـanimate=true أول مرة ثم false في أي إعادة بناء
+    // (حفظ −/+ من التفاصيل، أي notify). لو تغيّر شكل الشجرة أُعيد إنشاء
+    // البطاقة وصورتها فتظهر الصورة من جديد بتلاشٍ — وميض أعلى البطاقة عند
+    // الرجوع من التفاصيل (رُصد على الهاتف).
+    testWidgets('انتهاء حركة الظهور لا يعيد إنشاء البطاقة', (tester) async {
+      await tester.pumpWidget(_host(_card(_item())));
+      await tester.pumpAndSettle();
+      final before = tester.element(find.text('Panadol'));
+
+      await tester.pumpWidget(_host(_card(_item(), animate: false)));
+      await tester.pump();
+      expect(identical(tester.element(find.text('Panadol')), before), isTrue);
+    });
+
     testWidgets('إطفاء الحركة في النظام يُحترم', (tester) async {
       await tester.pumpWidget(_host(_card(_item()), disableAnimations: true));
       await tester.pump();
 
-      // لا حركة إطلاقاً رغم animate=true
-      expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
+      // لا حركة إطلاقاً رغم animate=true: ظاهرة كاملة من أول إطار
+      expect(tester.widget<Opacity>(find.byType(Opacity).first).opacity, 1);
       expect(find.text('Panadol'), findsOneWidget);
     });
   });
@@ -216,6 +233,76 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('📝 ناقصة'), findsOneWidget);
       expect(find.text('نفذ'), findsNothing);
+    });
+  });
+
+  group('لون اسم المادة', () {
+    // رُصد على الهاتف: الأسماء سوداء منذ لُفّت البطاقة بـOpenContainer.
+    // الاسم لا يرث لونه مما فوقه — يبقى أبيض ساكناً وأثناء الفتح والرجوع.
+    Color? nameColor(WidgetTester tester) => tester
+        .widgetList<RichText>(
+          find.descendant(
+            of: find.text('Panadol').first,
+            matching: find.byType(RichText),
+          ),
+        )
+        .first
+        .text
+        .style
+        ?.color;
+
+    testWidgets('أبيض داخل OpenContainer ساكناً وأثناء الانتقال', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildAppTheme(),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                height: 340,
+                child: OpenContainer<void>(
+                  closedColor: Colors.transparent,
+                  openColor: AppColors.bgDark,
+                  middleColor: AppColors.bgDark,
+                  closedElevation: 0,
+                  openElevation: 0,
+                  transitionDuration: const Duration(milliseconds: 400),
+                  closedBuilder: (_, open) => MedicineCard(
+                    medicine: _item(),
+                    animate: false,
+                    onEdit: () {},
+                    onDelete: () {},
+                    onOpen: open,
+                  ),
+                  openBuilder: (context, _) => Scaffold(
+                    body: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('رجوع'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(nameColor(tester), AppColors.textPrimary, reason: 'ساكنة');
+
+      await tester.tap(find.text('Panadol'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(nameColor(tester), AppColors.textPrimary, reason: 'أثناء الفتح');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('رجوع'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(nameColor(tester), AppColors.textPrimary, reason: 'أثناء الرجوع');
+      await tester.pumpAndSettle();
+      expect(nameColor(tester), AppColors.textPrimary, reason: 'بعد الرجوع');
     });
   });
 
