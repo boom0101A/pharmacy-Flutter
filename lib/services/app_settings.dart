@@ -10,6 +10,7 @@ class AppSettings extends ChangeNotifier {
 
   static const _kContribute = 'contribute_to_registry';
   static const _kGs1Repair = 'gs1_barcode_repair_done';
+  static const _kPriceRepair = 'invoice_price_repair_done';
   static const _kOwnerClaim = 'owner_claim_done';
   static const _kNotifications = 'stock_notifications_enabled';
   static const _kPharmacyId = 'pharmacy_id';
@@ -25,6 +26,9 @@ class AppSettings extends ChangeNotifier {
   /// هل نُفّذ ترحيل الباركودات القديمة إلى صيغة GTIN؟ (مرة واحدة فقط)
   bool _gs1RepairDone = false;
   bool get gs1RepairDone => _gs1RepairDone;
+
+  bool _priceRepairDone = false;
+  bool get priceRepairDone => _priceRepairDone;
 
   /// هل وُسمت السجلات السحابية القديمة بمالكها؟ (مرة واحدة فقط)
   bool _ownerClaimDone = false;
@@ -52,11 +56,17 @@ class AppSettings extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     _contributeToRegistry = _prefs?.getBool(_kContribute) ?? true;
     _gs1RepairDone = _prefs?.getBool(_kGs1Repair) ?? false;
+    _priceRepairDone = _prefs?.getBool(_kPriceRepair) ?? false;
     _ownerClaimDone = _prefs?.getBool(_kOwnerClaim) ?? false;
     _stockNotificationsEnabled = _prefs?.getBool(_kNotifications) ?? true;
     _pharmacyId = _prefs?.getString(_kPharmacyId);
     _pharmacyBackfillDone = _prefs?.getBool(_kPharmacyBackfill) ?? false;
     notifyListeners();
+  }
+
+  Future<void> markPriceRepairDone() async {
+    _priceRepairDone = true;
+    await _prefs?.setBool(_kPriceRepair, true);
   }
 
   Future<void> markGs1RepairDone() async {

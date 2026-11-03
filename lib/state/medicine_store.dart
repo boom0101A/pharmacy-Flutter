@@ -244,6 +244,7 @@ class MedicineStore extends ChangeNotifier {
     _all = await _db.getAll();
     _loading = false;
     notifyListeners();
+    await _repairInvoicePrices();
 
     // مزامنة في الخلفية — لا تعطّل عرض البيانات المحلية
     unawaited(refreshFromCloud());
@@ -569,6 +570,44 @@ class MedicineStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('تعذّر تفريغ طابور الحذف السحابي: $e');
+    }
+  }
+
+  /// عدد الأسعار التي صحّحها [_repairInvoicePrices] في هذا التشغيل — تعرض
+  /// الرئيسية رسالة بها مرة واحدة ثم تصفّره.
+  int priceRepairCount = 0;
+
+  /// السعر الصحيح لمادة قرأت الفاتورة الذكية سعرها أصغر بألف مرة، أو null.
+  ///
+  /// النموذج كان يُرجع الأسعار رقماً فيقرأ فاصلة الآلاف عشرية («1,100» ←
+  /// 1.1). سعر أقل من 100 دينار مستحيل بالدينار العراقي، والمادة أنشأتها
+  /// فاتورة ذكية (معرّفها `inv_`) — المُدخلة يدوياً لا تُمسّ.
+  @visibleForTesting
+  static double? repairedInvoicePrice(Medicine m) {
+    if (!m.id.startsWith('inv_') || m.price <= 0 || m.price >= 100) return null;
+    return (m.price * 1000).roundToDouble();
+  }
+
+  /// تصحيح لمرة واحدة، ويُرفع للسحابة فيصل للهاتف الآخر. إن شغّله الهاتفان
+  /// فالنتيجة واحدة: الثاني يجد السعر مصحّحاً، أو يصحّح الأصل نفسه.
+  Future<void> _repairInvoicePrices() async {
+    if (AppSettings.instance.priceRepairDone) return;
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      var fixed = 0;
+      for (final m in List.of(_all)) {
+        final price = repairedInvoicePrice(m);
+        if (price == null) continue;
+        await save(m.copyWith(price: price, updatedAt: now));
+        fixed++;
+      }
+      if (fixed > 0) {
+        debugPrint('صُحّح سعر $fixed مادة قرأتها الفاتورة الذكية خطأً');
+      }
+      priceRepairCount = fixed;
+      await AppSettings.instance.markPriceRepairDone();
+    } catch (e) {
+      debugPrint('تعذّر تصحيح أسعار الفواتير: $e');
     }
   }
 

@@ -50,7 +50,10 @@ class _HomeScreenState extends State<HomeScreen>
     _tabs = TabController(length: ItemType.values.length, vsync: this)
       ..addListener(_onTabChanged);
     store.addListener(_onStoreChanged);
-    store.load().then((_) => _ensureNotificationPermissions());
+    store.load().then((_) {
+      _announcePriceRepair();
+      return _ensureNotificationPermissions();
+    });
 
     // نستمع لحمولة الإشعار — إن نقر المستخدم على إشعار «قاربة الانتهاء»،
     // نبدّل التبويب ونطبّق الفلتر مباشرة فيرى ما يهمّه فوراً.
@@ -64,6 +67,19 @@ class _HomeScreenState extends State<HomeScreen>
   ///
   /// إذن الإنذارات الدقيقة يفتح شاشة إعدادات النظام؛ طلبه قبل `runApp()` كان
   /// يترك المستخدم أمام شاشة سوداء بلا أي واجهة حتى يعود منها.
+  /// رسالة لمرة واحدة بعد تصحيح أسعار قرأتها الفاتورة الذكية أصغر بألف مرة.
+  void _announcePriceRepair() {
+    final n = store.priceRepairCount;
+    if (n == 0 || !mounted) return;
+    store.priceRepairCount = 0;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('صُحّح سعر $n مادة قرأتها الفاتورة الذكية خطأً'),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
   Future<void> _ensureNotificationPermissions() async {
     if (!mounted) return;
     if (!AppSettings.instance.stockNotificationsEnabled) return;

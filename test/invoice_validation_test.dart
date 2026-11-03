@@ -153,4 +153,59 @@ void main() {
     expect(cfg['maxOutputTokens'], 65536);
     expect(GeminiVision.requestUri.path, contains('gemini-3.5-flash-lite'));
   });
+
+  // الفاتورة تطبع «1,100» (فاصلة آلاف) وكان النموذج يُرجعها رقماً 1.1 — سعر
+  // أصغر بألف مرة. الأسعار صارت نصاً كما طُبعت ويحوّلها التطبيق بنفسه.
+  group('الأسعار كما طُبعت (فاصلة الآلاف)', () {
+    InvoiceLine one(String price, {String? total}) =>
+        GeminiVision.parseInvoiceJson(
+          '{"lines":[{"name":"X","quantity":1,"price":"$price"'
+          '${total == null ? '' : ',"line_total":"$total"'}}]}',
+        ).lines.single;
+
+    test('«1,100» ← 1100 لا 1.1', () => expect(one('1,100').price, 1100));
+    test('«10,875» ← 10875', () => expect(one('10,875').price, 10875));
+    test('«1.100» (نقطة آلاف) ← 1100', () => expect(one('1.100').price, 1100));
+    test('«1٬250» ← 1250', () => expect(one('1٬250').price, 1250));
+    test('مجموع السطر بفواصل', () {
+      expect(one('2,531', total: '15,186').lineTotal, 15186);
+    });
+    test('رقم قديم (num) يُقبل كما هو', () {
+      final l = GeminiVision.parseInvoiceJson(
+        '{"lines":[{"name":"X","price":2500}]}',
+      ).lines.single;
+      expect(l.price, 2500);
+    });
+    test('نص غير رقمي ← null', () => expect(one('غير واضح').price, isNull));
+    test('مجموع الرأس «297,943» ← 297943', () {
+      final r = GeminiVision.parseInvoiceJson(
+        '{"lines":[],"header":{"total":"297,943"}}',
+      );
+      expect(r.header!.total, 297943);
+    });
+    test('المخطط يطلب الأسعار نصاً', () {
+      final props = GeminiVision.invoiceSchemaForTest['properties'] as Map;
+      final line =
+          ((props['lines'] as Map)['items'] as Map)['properties'] as Map;
+      expect((line['price'] as Map)['type'], 'STRING');
+      expect((line['line_total'] as Map)['type'], 'STRING');
+      final header = (props['header'] as Map)['properties'] as Map;
+      expect((header['total'] as Map)['type'], 'STRING');
+    });
+  });
+
+  group('سعر غير منطقي', () {
+    test('سعر أقل من 100 دينار ← تنبيه', () {
+      final v = GeminiVision.validateLine(
+        InvoiceLine(name: 'X', price: 1.1, quantity: 10),
+      );
+      expect(v.issues, contains(LineIssue.suspiciousPrice));
+    });
+    test('سعر طبيعي ← بلا تنبيه', () {
+      final v = GeminiVision.validateLine(
+        InvoiceLine(name: 'X', price: 1100, quantity: 10),
+      );
+      expect(v.issues, isNot(contains(LineIssue.suspiciousPrice)));
+    });
+  });
 }

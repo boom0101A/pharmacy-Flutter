@@ -71,7 +71,11 @@ enum LineIssue {
   totalMismatch('الكمية × السعر ≠ المجموع'),
   missingPrice('السعر ناقص'),
   missingQuantity('الكمية ناقصة'),
-  uncertain('غير واضح في الصورة');
+  uncertain('غير واضح في الصورة'),
+
+  /// أقل من 100 دينار — مستحيل بالدينار العراقي، والأرجح أن فاصلة الآلاف
+  /// قُرئت عشرية («1,100» ← 1.1).
+  suspiciousPrice('⚠️ السعر غير منطقي — راجعه');
 
   const LineIssue(this.label);
   final String label;
@@ -456,6 +460,8 @@ class GeminiVision {
 - price: **سعر شراء الوحدة** لا سعر البيع ولا مجموع السطر. إن ظهر المجموع فقط
   فاقسمه على الكمية.
 - line_total: مجموع السطر كما طُبع إن وُجد، وإلا null.
+- **الأسعار والمجاميع نصّاً كما طُبعت حرفياً بفواصلها** («1,100» لا 1.1):
+  الفاصلة في الدينار العراقي فاصلة آلاف، ولا كسور فيه.
 - barcode: فقط إن كان الباركود مطبوعاً **في نفس السطر**. لا تنسخه من سطر مجاور
   ولا تخمّنه. إن لم يوجد فـ null.
 - expiry: تاريخ الصلاحية كما ظهر في السطر بلا تحويل، وإلا null.
@@ -470,7 +476,9 @@ class GeminiVision {
 - supplier: اسم المجهّز أو المذخر أو الشركة البائعة كما طُبع.
 - invoice_number: رقم الفاتورة كما طُبع.
 - date: تاريخ الفاتورة كما طُبع بلا تحويل.
-- total: المجموع النهائي المطلوب دفعه (رقم).
+- total: مجموع **هذه الفاتورة وحدها** («المجموع بعد الخصم» أو «سعر القائمة»
+  أو «المجموع»)، نصّاً كما طُبع بفواصله. **ليس** «الديون القديمة» ولا «الدين
+  الكلي» ولا «الرصيد» — تلك ديون حساب المجهّز لا قيمة الفاتورة.
 أي حقل لا يظهر بوضوح اتركه null — لا تخمّن ولا تحسب المجموع بنفسك.
 
 لا تُضف مواد ليست في الصورة. القيمة غير المؤكدة اتركها null.
@@ -485,14 +493,15 @@ class GeminiVision {
           'type': 'OBJECT',
           'properties': {
             'name': {'type': 'STRING'},
-            'price': {'type': 'NUMBER', 'nullable': true},
+            // نصاً كما طُبع: رقماً كان النموذج يقرأ «1,100» ← 1.1
+            'price': {'type': 'STRING', 'nullable': true},
             'quantity': {'type': 'INTEGER', 'nullable': true},
             'barcode': {'type': 'STRING', 'nullable': true},
             'expiry': {'type': 'STRING', 'nullable': true},
             'category': {'type': 'STRING', 'nullable': true},
             'company': {'type': 'STRING', 'nullable': true},
             'bonus': {'type': 'INTEGER', 'nullable': true},
-            'line_total': {'type': 'NUMBER', 'nullable': true},
+            'line_total': {'type': 'STRING', 'nullable': true},
             'uncertain': {'type': 'BOOLEAN'},
           },
           'required': ['name'],
@@ -506,7 +515,7 @@ class GeminiVision {
           'supplier': {'type': 'STRING', 'nullable': true},
           'invoice_number': {'type': 'STRING', 'nullable': true},
           'date': {'type': 'STRING', 'nullable': true},
-          'total': {'type': 'NUMBER', 'nullable': true},
+          'total': {'type': 'STRING', 'nullable': true},
         },
       },
     },
@@ -560,14 +569,14 @@ class GeminiVision {
         lines.add(
           InvoiceLine(
             name: name,
-            price: _num(item['price'])?.toDouble(),
+            price: _money(item['price']),
             quantity: _num(item['quantity'])?.toInt(),
             barcode: _clean(item['barcode']),
             expiry: _clean(item['expiry']),
             category: _clean(item['category']),
             company: _clean(item['company']),
             bonus: _num(item['bonus'])?.toInt(),
-            lineTotal: _num(item['line_total'])?.toDouble(),
+            lineTotal: _money(item['line_total']),
             uncertain: item['uncertain'] == true,
           ),
         );
@@ -599,6 +608,9 @@ class GeminiVision {
     if (price == null || price <= 0) issues.add(LineIssue.missingPrice);
     if (qty == null || qty <= 0) issues.add(LineIssue.missingQuantity);
     if (l.uncertain) issues.add(LineIssue.uncertain);
+    if (price != null && price > 0 && price < 100) {
+      issues.add(LineIssue.suspiciousPrice);
+    }
     return ValidatedLine(line, issues);
   }
 
@@ -616,13 +628,19 @@ class GeminiVision {
     return header.isEmpty ? null : header;
   }
 
-  /// مبلغ قد يصل نصاً بفواصل آلاف («1,250,000» أو «1٬250٬000»).
+  /// مبلغ بالدينار كما طُبع: الفاصلة («1,100») ونقطة الآلاف («1.100»)
+  /// فواصل آلاف لا كسور — لا كسور في الدينار العراقي. رقم جاهز يُقبل كما هو.
   static double? _money(Object? v) {
     if (v is num) return v.toDouble();
-    final s = _clean(v);
+    var s = _clean(v);
     if (s == null) return null;
-    return double.tryParse(s.replaceAll(RegExp(r'[,٬\s]'), ''));
+    s = s.replaceAll(RegExp(r'[,٬\s]'), '');
+    if (RegExp(r'^\d{1,3}(\.\d{3})+$').hasMatch(s)) s = s.replaceAll('.', '');
+    return double.tryParse(s);
   }
+
+  @visibleForTesting
+  static Map<String, Object?> get invoiceSchemaForTest => _invoiceSchema;
 
   static String? _clean(Object? v) {
     if (v == null) return null;
