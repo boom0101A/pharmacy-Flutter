@@ -17,6 +17,7 @@ import '../util/number_parse.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
 import 'scanner_screen.dart';
+import '../l10n/l10n.dart';
 
 /// «إكمال البيانات»: المواد الناقصة (بلا سعر أو بلا باركود) مادةً تلو الأخرى.
 ///
@@ -166,10 +167,10 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
     try {
       await widget.store.save(updated);
     } on BarcodeConflictException {
-      _toast('هذا الباركود مسجّل لمادة أخرى — استعمل «دمج» إن كانت هي نفسها');
+      _toast(L10n.current.cdBarcodeTaken);
       return;
     } catch (e) {
-      _toast('تعذّر الحفظ: $e');
+      _toast(L10n.current.saveFailed('$e'));
       return;
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -181,16 +182,15 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   Future<void> _merge(Medicine m, Medicine into) async {
     final merged = mergeGroup([into, m], into.id, DateTime.now());
     final ok = await _confirm(
-      'دمج مع «${into.name}»',
-      'تبقى «${into.name}» بكمية ${merged.quantity}، وتُحذف «${m.name}» من كل '
-          'الأجهزة. ينتقل إليها الباركود والصورة إن لم يكونا لها.',
-      'ادمج',
+      context.l10n.cdMergeWith(into.name),
+      context.l10n.cdMergeBody(into.name, merged.quantity, m.name),
+      context.l10n.cdMergeConfirm,
     );
     if (ok != true) return;
     try {
       await widget.store.mergeDuplicates(merged, [m]);
     } catch (e) {
-      _toast('تعذّر الدمج — لم يتغيّر شيء: $e');
+      _toast(L10n.current.dupMergeFailed('$e'));
       return;
     }
     _similarCache.clear(); // تغيّرت الكميات والمواد
@@ -199,9 +199,9 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
 
   Future<void> _delete(Medicine m) async {
     final ok = await _confirm(
-      'حذف المادة',
-      'تُحذف «${m.name}» من هذا الهاتف ومن كل الأجهزة المشتركة.',
-      'احذف',
+      context.l10n.cdDeleteTitle,
+      context.l10n.cdDeleteBody(m.name),
+      context.l10n.cdDeleteConfirm,
     );
     if (ok != true) return;
     await widget.store.delete(m);
@@ -222,7 +222,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
@@ -245,7 +245,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   Widget build(BuildContext context) {
     final m = _current;
     return Scaffold(
-      appBar: const GlassAppBar(title: Text('📝 إكمال البيانات')),
+      appBar: GlassAppBar(title: Text(context.l10n.cdTitle)),
       body: Stack(
         children: [
           const Positioned.fill(child: AuroraBackground()),
@@ -266,15 +266,15 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
           const SizedBox(height: 12),
           Text(
             _queue.isEmpty
-                ? 'لا مواد ناقصة في هذا القسم'
-                : 'انتهت القائمة — اكتملت $_done مادة',
+                ? context.l10n.cdNoneInSection
+                : context.l10n.cdListDone(_done),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           GradientButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('رجوع'),
+            child: Text(context.l10n.back),
           ),
         ],
       ),
@@ -290,7 +290,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'مادة ${_index + 1} من ${_queue.length}',
+          context.l10n.cdProgress(_index + 1, _queue.length),
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 6),
@@ -317,9 +317,9 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  if (m.price <= 0) _badge('بلا سعر'),
+                  if (m.price <= 0) _badge(context.l10n.cdNoPrice),
                   if (m.barcode.trim().isEmpty && !m.noBarcode)
-                    _badge('بلا باركود'),
+                    _badge(context.l10n.cdNoBarcode),
                 ],
               ),
             ],
@@ -335,7 +335,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '🔍 تشبه مادة موجودة (${(similar!.similarity! * 100).round()}%)',
+                  context.l10n.cdSimilar((similar!.similarity! * 100).round()),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppColors.warning,
@@ -347,8 +347,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  'السعر ${formatMoney(match.price)} · الكمية '
-                  '${match.quantity}'
+                  '${context.l10n.cdMatchLine(formatMoney(match.price), match.quantity)}'
                   '${match.barcode.isEmpty ? '' : ' · ${match.barcode}'}',
                   style: const TextStyle(
                     fontSize: 12,
@@ -360,7 +359,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                   key: const Key('mergeWithSimilar'),
                   onPressed: () => _merge(m, match),
                   icon: const Icon(Icons.merge_type_rounded, size: 18),
-                  label: const Text('هي نفسها — دمج معها'),
+                  label: Text(context.l10n.cdSameMerge),
                 ),
               ],
             ),
@@ -378,7 +377,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                 ),
                 inputFormatters: [ThousandsSeparatorInputFormatter()],
                 decoration: InputDecoration(
-                  labelText: '💰 السعر (${currencyLabel()})',
+                  labelText: context.l10n.cdPrice(currencyLabel()),
                 ),
               ),
             ),
@@ -388,7 +387,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                 key: const Key('completeQuantity'),
                 controller: _quantity,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: '📦 الكمية'),
+                decoration: InputDecoration(labelText: context.l10n.cdQty),
               ),
             ),
           ],
@@ -400,10 +399,10 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
           keyboardType: TextInputType.number,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: '📊 الباركود',
+            labelText: context.l10n.cdBarcode,
             suffixIcon: IconButton(
               key: const Key('completeScan'),
-              tooltip: 'مسح الباركود',
+              tooltip: context.l10n.scanTheBarcode,
               icon: const Icon(
                 Icons.qr_code_scanner_rounded,
                 color: AppColors.primary,
@@ -417,10 +416,10 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
             key: const Key('completeNoBarcode'),
             value: _noBarcode,
             onChanged: (v) => setState(() => _noBarcode = v ?? false),
-            title: const Text('ليس لها باركود'),
-            subtitle: const Text(
-              'تحضير أو علبة بلا رمز — لن تُعدّ ناقصة بسبب الباركود',
-              style: TextStyle(fontSize: 11),
+            title: Text(context.l10n.formNoBarcode),
+            subtitle: Text(
+              context.l10n.cdNoBarcodeSub,
+              style: const TextStyle(fontSize: 11),
             ),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
@@ -445,7 +444,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickImage(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera_rounded, size: 18),
-                label: const Text('تصوير'),
+                label: Text(context.l10n.takePhoto),
               ),
             ),
             const SizedBox(width: 8),
@@ -453,7 +452,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _pickImage(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_rounded, size: 18),
-                label: const Text('المعرض'),
+                label: Text(context.l10n.theGallery),
               ),
             ),
           ],
@@ -462,7 +461,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
         GradientButton(
           key: const Key('completeSaveNext'),
           onPressed: _busy ? null : () => _save(m),
-          child: const Text('حفظ والتالي'),
+          child: Text(context.l10n.cdSaveNext),
         ),
         const SizedBox(height: 8),
         Row(
@@ -471,7 +470,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
               child: TextButton(
                 key: const Key('completeSkip'),
                 onPressed: _busy ? null : _next,
-                child: const Text('تخطّي'),
+                child: Text(context.l10n.welcomeSkip),
               ),
             ),
             Expanded(
@@ -479,7 +478,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                 key: const Key('completeDelete'),
                 onPressed: _busy ? null : () => _delete(m),
                 style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                child: const Text('حذف'),
+                child: Text(context.l10n.delete),
               ),
             ),
           ],

@@ -91,7 +91,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'تعذّر تحميل المواد: $e';
+        _error = context.l10n.dupLoadFailed('$e');
       });
     }
   }
@@ -164,7 +164,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     try {
       await widget.store.mergeDuplicates(merged, losers);
     } catch (e) {
-      if (mounted) _toast('تعذّر الدمج — لم يتغيّر شيء: $e');
+      if (mounted) _toast(L10n.current.dupMergeFailed('$e'));
       return;
     }
     if (!mounted) return;
@@ -213,7 +213,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         await widget.store.save(m);
       }
     } catch (e) {
-      if (mounted) _toast('تعذّر فصل الباركود: $e');
+      if (mounted) _toast(L10n.current.dupSplitFailed('$e'));
       return;
     }
     if (!mounted) return;
@@ -233,10 +233,10 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GlassAppBar(
-        title: const Text('🔍 مراجعة التكرارات'),
+        title: Text(context.l10n.dupTitle),
         actions: [
           IconButton(
-            tooltip: 'تحديث',
+            tooltip: context.l10n.refresh,
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _loading ? null : _load,
           ),
@@ -268,7 +268,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('لا توجد تكرارات ✅', style: TextStyle(fontSize: 16)),
+            Text(context.l10n.dupNone, style: const TextStyle(fontSize: 16)),
             if (hidden > 0) ...[
               const SizedBox(height: 14),
               _showHiddenButton(hidden),
@@ -285,8 +285,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '${groups.length} مجموعة — علّم ما هو نفس المنتج ثم «دمج '
-              'المختارة»، أو «ليست مكرّرة» إن كانت كلها منتجات مختلفة.',
+              context.l10n.dupGroupsIntro(groups.length),
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -301,10 +300,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
             key: const Key('similarSection'),
             padding: const EdgeInsets.only(top: 8, bottom: 8),
             child: Text(
-              '🔍 أسماء متشابهة — تحقّق قبل الدمج (${similar.length})\n'
-              'أسماء متقاربة لا متطابقة: خطأ إملائي، أو كلمة زائدة، أو حجم '
-              'وتركيز آخر. كثير منها منتجات مختلفة فعلاً — «ليست مكرّرة» '
-              'يخفيها من كل الأجهزة.',
+              context.l10n.dupSimilarIntro(similar.length),
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -337,7 +333,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     key: const Key('showHidden'),
     onPressed: () => _showHidden(hidden),
     icon: const Text('🙈'),
-    label: Text('إظهار المخفية ($hidden)'),
+    label: Text(context.l10n.dupShowHidden(hidden)),
   );
 
   /// يلغي كل قرارات الإخفاء على كل الأجهزة — المواد نفسها لا تتغيّر.
@@ -346,20 +342,20 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('إظهار المجموعات المخفية'),
+        title: Text(context.l10n.dupShowHiddenTitle),
         content: Text(
-          'ستعود $hidden مجموعة للمراجعة على كل الأجهزة. المواد لا تتغيّر.',
+          context.l10n.dupShowHiddenBody(hidden),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             key: const Key('confirmShowHidden'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('إظهار'),
+            child: Text(context.l10n.show),
           ),
         ],
       ),
@@ -378,9 +374,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
     ),
     child: Text(
-      'الدمج متوقف: $_pending عملية حذف لم تصل للسحابة بعد. الدمج يجمع '
-      'الكميات ويحذف الباقي، فإن لم يصل الحذف تبقى المواد على الهاتف الآخر '
-      'وتتضاعف الكمية. اتصل بالإنترنت ثم اضغط تحديث.',
+      context.l10n.dupMergePaused(_pending),
       style: const TextStyle(fontSize: 12, height: 1.6),
     ),
   );
@@ -402,10 +396,12 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           children: [
             Text(
               g.isSimilar
-                  ? '🔍 أسماء متشابهة بنسبة ${(g.similarity! * 100).round()}%'
+                  ? context.l10n.dupSimilarPercent(
+                      (g.similarity! * 100).round(),
+                    )
                   : g.byBarcode
-                  ? '🏷️ نفس الباركود — قد تكون منتجات مختلفة'
-                  : '📝 نفس الاسم في نفس القسم',
+                  ? context.l10n.dupSameBarcode
+                  : context.l10n.dupSameName,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -415,19 +411,18 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
               ),
             ),
             if (g.differentBarcodes)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 4),
                 child: Text(
-                  '🏷️ باركودان مختلفان — تأكّد أنها ليست حجماً أو نكهة أخرى',
+                  context.l10n.dupDifferentBarcodes,
                   key: Key('differentBarcodesNote'),
                   style: TextStyle(fontSize: 12, color: AppColors.warning),
                 ),
               ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 4),
               child: Text(
-                'علّم المواد التي هي نفس المنتج ثم «دمج المختارة» — غير '
-                'المعلّمة تبقى كما هي وتُزال من المراجعة.',
+                context.l10n.dupTickHint,
                 style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
             ),
@@ -477,19 +472,22 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                     icon: const Icon(Icons.merge_type_rounded, size: 18),
                     label: Text(
                       selected.length < 2
-                          ? 'اختر مادتين للدمج'
-                          : 'دمج المختارة (${selected.length}) · الكمية $total',
+                          ? context.l10n.dupPickTwo
+                          : context.l10n.dupMergeSelected(
+                              selected.length,
+                              total,
+                            ),
                     ),
                   ),
                 ),
                 OutlinedButton(
                   onPressed: () => _dismiss(g),
-                  child: const Text('ليست مكرّرة'),
+                  child: Text(context.l10n.dupNotDuplicates),
                 ),
                 if (g.byBarcode)
                   OutlinedButton(
                     onPressed: () => _splitBarcode(g),
-                    child: const Text('فصل الباركود'),
+                    child: Text(context.l10n.dupSplitBarcode),
                   ),
               ],
             ),
@@ -501,13 +499,13 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
 
   String _details(Medicine m) {
     final parts = <String>[
-      'الكمية ${m.quantity}',
-      'السعر ${formatMoney(m.price)}',
-      if (m.expiryDate != null) 'الصلاحية ${_date(m.expiryDate!)}',
+      context.l10n.detQty(m.quantity),
+      context.l10n.detPrice(formatMoney(m.price)),
+      if (m.expiryDate != null) context.l10n.detExpiry(_date(m.expiryDate!)),
       if (m.barcode.isNotEmpty) m.barcode,
       if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
       ?invoiceLabel(m, _invoiceOf[m.id]),
-      'عُدّلت ${_date(m.updatedAt)}',
+      context.l10n.detEdited(_date(m.updatedAt)),
       m.type.labelIn(context.l10n),
     ];
     return parts.join(' · ');
@@ -584,14 +582,14 @@ class _MergeDialogState extends State<MergeDialog> {
     final valid = price != null && price >= 0 && qty != null && qty >= 0;
     return AlertDialog(
       backgroundColor: AppColors.bgCard,
-      title: Text('دمج ${widget.items.length} مواد'),
+      title: Text(context.l10n.dupMergeTitle(widget.items.length)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'الاسم الذي يبقى',
+            Text(
+              context.l10n.dupKeptName,
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
             RadioGroup<String>(
@@ -622,7 +620,7 @@ class _MergeDialogState extends State<MergeDialog> {
               ),
               inputFormatters: [ThousandsSeparatorInputFormatter()],
               decoration: InputDecoration(
-                labelText: '💰 السعر النهائي (${currencyLabel()})',
+                labelText: context.l10n.dupFinalPrice(currencyLabel()),
               ),
             ),
             const SizedBox(height: 10),
@@ -631,14 +629,11 @@ class _MergeDialogState extends State<MergeDialog> {
               controller: _quantity,
               onChanged: (_) => setState(() {}),
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: '📦 الكمية النهائية',
-              ),
+              decoration: InputDecoration(labelText: context.l10n.dupFinalQty),
             ),
             const SizedBox(height: 10),
             Text(
-              'تُحذف ${widget.items.length - 1} مادة من هذا الهاتف ومن كل '
-              'الأجهزة المشتركة.',
+              context.l10n.dupWillDelete(widget.items.length - 1),
               style: const TextStyle(fontSize: 12, height: 1.5),
             ),
           ],
@@ -647,7 +642,7 @@ class _MergeDialogState extends State<MergeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           key: const Key('mergeSave'),
@@ -657,7 +652,7 @@ class _MergeDialogState extends State<MergeDialog> {
                   MergeChoice(keeperId: _keeper, price: price, quantity: qty),
                 )
               : null,
-          child: const Text('حفظ'),
+          child: Text(context.l10n.save),
         ),
       ],
     );

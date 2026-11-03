@@ -1018,4 +1018,250 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceThisPhone => 'This phone';
+
+  @override
+  String dupLoadFailed(String error) {
+    return 'Couldn\'t load items: $error';
+  }
+
+  @override
+  String dupMergeFailed(String error) {
+    return 'Couldn\'t merge — nothing changed: $error';
+  }
+
+  @override
+  String dupSplitFailed(String error) {
+    return 'Couldn\'t separate the barcode: $error';
+  }
+
+  @override
+  String get dupTitle => '🔍 Review duplicates';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get dupNone => 'No duplicates ✅';
+
+  @override
+  String dupGroupsIntro(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n groups',
+      one: '1 group',
+    );
+    return '$_temp0 — tick the ones that are the same product, then “Merge selected”, or “Not duplicates” if they\'re all different products.';
+  }
+
+  @override
+  String dupSimilarIntro(int n) {
+    return '🔍 Similar names — check before merging ($n)\nClose but not identical names: a typo, an extra word, or another size or strength. Many are genuinely different products — “Not duplicates” hides them on all devices.';
+  }
+
+  @override
+  String dupShowHidden(int n) {
+    return 'Show hidden ($n)';
+  }
+
+  @override
+  String get dupShowHiddenTitle => 'Show hidden groups';
+
+  @override
+  String dupShowHiddenBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n groups',
+      one: '1 group',
+    );
+    return '$_temp0 will return for review on all devices. Items don\'t change.';
+  }
+
+  @override
+  String get show => 'Show';
+
+  @override
+  String dupMergePaused(int n) {
+    return 'Merging is paused: $n deletions haven\'t reached the cloud yet. Merging sums quantities and deletes the rest — if a deletion doesn\'t arrive, the items stay on the other phone and quantities double. Connect to the internet, then tap Refresh.';
+  }
+
+  @override
+  String dupSimilarPercent(int p) {
+    return '🔍 Names $p% similar';
+  }
+
+  @override
+  String get dupSameBarcode => '🏷️ Same barcode — may be different products';
+
+  @override
+  String get dupSameName => '📝 Same name in the same section';
+
+  @override
+  String get dupDifferentBarcodes =>
+      '🏷️ Different barcodes — make sure it isn\'t another size or flavor';
+
+  @override
+  String get dupTickHint =>
+      'Tick the items that are the same product, then “Merge selected” — unticked ones stay as they are and leave the review.';
+
+  @override
+  String get dupPickTwo => 'Pick two items to merge';
+
+  @override
+  String dupMergeSelected(int n, int total) {
+    return 'Merge selected ($n) · quantity $total';
+  }
+
+  @override
+  String get dupNotDuplicates => 'Not duplicates';
+
+  @override
+  String get dupSplitBarcode => 'Separate barcode';
+
+  @override
+  String detQty(int n) {
+    return 'Qty $n';
+  }
+
+  @override
+  String detPrice(String v) {
+    return 'Price $v';
+  }
+
+  @override
+  String detExpiry(String d) {
+    return 'Expiry $d';
+  }
+
+  @override
+  String detEdited(String d) {
+    return 'Edited $d';
+  }
+
+  @override
+  String dupMergeTitle(int n) {
+    return 'Merge $n items';
+  }
+
+  @override
+  String get dupKeptName => 'Name to keep';
+
+  @override
+  String dupFinalPrice(String currency) {
+    return '💰 Final price ($currency)';
+  }
+
+  @override
+  String get dupFinalQty => '📦 Final quantity';
+
+  @override
+  String dupWillDelete(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items',
+      one: '1 item',
+    );
+    return '$_temp0 will be deleted from this phone and all shared devices.';
+  }
+
+  @override
+  String get cdBarcodeTaken =>
+      'This barcode belongs to another item — use “Merge” if it\'s the same one';
+
+  @override
+  String cdMergeWith(String name) {
+    return 'Merge with “$name”';
+  }
+
+  @override
+  String cdMergeBody(String keep, int qty, String drop) {
+    return '“$keep” stays with quantity $qty, and “$drop” is deleted from all devices. Its barcode and photo move over if the kept item lacks them.';
+  }
+
+  @override
+  String get cdMergeConfirm => 'Merge';
+
+  @override
+  String get cdDeleteTitle => 'Delete item';
+
+  @override
+  String cdDeleteBody(String name) {
+    return '“$name” will be deleted from this phone and all shared devices.';
+  }
+
+  @override
+  String get cdDeleteConfirm => 'Delete';
+
+  @override
+  String get cdTitle => '📝 Complete data';
+
+  @override
+  String get cdNoneInSection => 'No incomplete items in this section';
+
+  @override
+  String cdListDone(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items',
+      one: '1 item',
+    );
+    return 'List finished — $_temp0 completed';
+  }
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String cdProgress(int i, int n) {
+    return 'Item $i of $n';
+  }
+
+  @override
+  String get cdNoPrice => 'No price';
+
+  @override
+  String get cdNoBarcode => 'No barcode';
+
+  @override
+  String cdSimilar(int p) {
+    return '🔍 Resembles an existing item ($p%)';
+  }
+
+  @override
+  String cdMatchLine(String price, int qty) {
+    return 'Price $price · quantity $qty';
+  }
+
+  @override
+  String get cdSameMerge => 'It\'s the same — merge';
+
+  @override
+  String cdPrice(String currency) {
+    return '💰 Price ($currency)';
+  }
+
+  @override
+  String get cdQty => '📦 Quantity';
+
+  @override
+  String get cdBarcode => '📊 Barcode';
+
+  @override
+  String get scanTheBarcode => 'Scan the barcode';
+
+  @override
+  String get cdNoBarcodeSub =>
+      'A compound or box without a code — it won\'t count as incomplete for lacking a barcode';
+
+  @override
+  String get takePhoto => 'Photo';
+
+  @override
+  String get theGallery => 'Gallery';
+
+  @override
+  String get cdSaveNext => 'Save & next';
 }

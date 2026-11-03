@@ -675,5 +675,251 @@
     }
   },
   "deviceOwner": "صاحب المخزون",
-  "deviceThisPhone": "هذا الهاتف"
+  "deviceThisPhone": "هذا الهاتف",
+  "dupLoadFailed": "تعذّر تحميل المواد: {error}",
+  "@dupLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dupMergeFailed": "تعذّر الدمج — لم يتغيّر شيء: {error}",
+  "@dupMergeFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dupSplitFailed": "تعذّر فصل الباركود: {error}",
+  "@dupSplitFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dupTitle": "🔍 مراجعة التكرارات",
+  "refresh": "تحديث",
+  "dupNone": "لا توجد تكرارات ✅",
+  "dupGroupsIntro": "{n} مجموعة — علّم ما هو نفس المنتج ثم «دمج المختارة»، أو «ليست مكرّرة» إن كانت كلها منتجات مختلفة.",
+  "@dupGroupsIntro": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dupSimilarIntro": "🔍 أسماء متشابهة — تحقّق قبل الدمج ({n})\nأسماء متقاربة لا متطابقة: خطأ إملائي، أو كلمة زائدة، أو حجم وتركيز آخر. كثير منها منتجات مختلفة فعلاً — «ليست مكرّرة» يخفيها من كل الأجهزة.",
+  "@dupSimilarIntro": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dupShowHidden": "إظهار المخفية ({n})",
+  "@dupShowHidden": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dupShowHiddenTitle": "إظهار المجموعات المخفية",
+  "dupShowHiddenBody": "ستعود {n} مجموعة للمراجعة على كل الأجهزة. المواد لا تتغيّر.",
+  "@dupShowHiddenBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "show": "إظهار",
+  "dupMergePaused": "الدمج متوقف: {n} عملية حذف لم تصل للسحابة بعد. الدمج يجمع الكميات ويحذف الباقي، فإن لم يصل الحذف تبقى المواد على الهاتف الآخر وتتضاعف الكمية. اتصل بالإنترنت ثم اضغط تحديث.",
+  "@dupMergePaused": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dupSimilarPercent": "🔍 أسماء متشابهة بنسبة {p}%",
+  "@dupSimilarPercent": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "dupSameBarcode": "🏷️ نفس الباركود — قد تكون منتجات مختلفة",
+  "dupSameName": "📝 نفس الاسم في نفس القسم",
+  "dupDifferentBarcodes": "🏷️ باركودان مختلفان — تأكّد أنها ليست حجماً أو نكهة أخرى",
+  "dupTickHint": "علّم المواد التي هي نفس المنتج ثم «دمج المختارة» — غير المعلّمة تبقى كما هي وتُزال من المراجعة.",
+  "dupPickTwo": "اختر مادتين للدمج",
+  "dupMergeSelected": "دمج المختارة ({n}) · الكمية {total}",
+  "@dupMergeSelected": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dupNotDuplicates": "ليست مكرّرة",
+  "dupSplitBarcode": "فصل الباركود",
+  "detQty": "الكمية {n}",
+  "@detQty": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "detPrice": "السعر {v}",
+  "@detPrice": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "detExpiry": "الصلاحية {d}",
+  "@detExpiry": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
+  },
+  "detEdited": "عُدّلت {d}",
+  "@detEdited": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
+  },
+  "dupMergeTitle": "دمج {n} مواد",
+  "@dupMergeTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "dupKeptName": "الاسم الذي يبقى",
+  "dupFinalPrice": "💰 السعر النهائي ({currency})",
+  "@dupFinalPrice": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "dupFinalQty": "📦 الكمية النهائية",
+  "dupWillDelete": "تُحذف {n} مادة من هذا الهاتف ومن كل الأجهزة المشتركة.",
+  "@dupWillDelete": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cdBarcodeTaken": "هذا الباركود مسجّل لمادة أخرى — استعمل «دمج» إن كانت هي نفسها",
+  "cdMergeWith": "دمج مع «{name}»",
+  "@cdMergeWith": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cdMergeBody": "تبقى «{keep}» بكمية {qty}، وتُحذف «{drop}» من كل الأجهزة. ينتقل إليها الباركود والصورة إن لم يكونا لها.",
+  "@cdMergeBody": {
+    "placeholders": {
+      "keep": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      },
+      "drop": {
+        "type": "String"
+      }
+    }
+  },
+  "cdMergeConfirm": "ادمج",
+  "cdDeleteTitle": "حذف المادة",
+  "cdDeleteBody": "تُحذف «{name}» من هذا الهاتف ومن كل الأجهزة المشتركة.",
+  "@cdDeleteBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cdDeleteConfirm": "احذف",
+  "cdTitle": "📝 إكمال البيانات",
+  "cdNoneInSection": "لا مواد ناقصة في هذا القسم",
+  "cdListDone": "انتهت القائمة — اكتملت {n} مادة",
+  "@cdListDone": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "back": "رجوع",
+  "cdProgress": "مادة {i} من {n}",
+  "@cdProgress": {
+    "placeholders": {
+      "i": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cdNoPrice": "بلا سعر",
+  "cdNoBarcode": "بلا باركود",
+  "cdSimilar": "🔍 تشبه مادة موجودة ({p}%)",
+  "@cdSimilar": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "cdMatchLine": "السعر {price} · الكمية {qty}",
+  "@cdMatchLine": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      }
+    }
+  },
+  "cdSameMerge": "هي نفسها — دمج معها",
+  "cdPrice": "💰 السعر ({currency})",
+  "@cdPrice": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "cdQty": "📦 الكمية",
+  "cdBarcode": "📊 الباركود",
+  "scanTheBarcode": "مسح الباركود",
+  "cdNoBarcodeSub": "تحضير أو علبة بلا رمز — لن تُعدّ ناقصة بسبب الباركود",
+  "takePhoto": "تصوير",
+  "theGallery": "المعرض",
+  "cdSaveNext": "حفظ والتالي"
 }

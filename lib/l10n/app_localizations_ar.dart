@@ -972,4 +972,226 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deviceThisPhone => 'هذا الهاتف';
+
+  @override
+  String dupLoadFailed(String error) {
+    return 'تعذّر تحميل المواد: $error';
+  }
+
+  @override
+  String dupMergeFailed(String error) {
+    return 'تعذّر الدمج — لم يتغيّر شيء: $error';
+  }
+
+  @override
+  String dupSplitFailed(String error) {
+    return 'تعذّر فصل الباركود: $error';
+  }
+
+  @override
+  String get dupTitle => '🔍 مراجعة التكرارات';
+
+  @override
+  String get refresh => 'تحديث';
+
+  @override
+  String get dupNone => 'لا توجد تكرارات ✅';
+
+  @override
+  String dupGroupsIntro(int n) {
+    return '$n مجموعة — علّم ما هو نفس المنتج ثم «دمج المختارة»، أو «ليست مكرّرة» إن كانت كلها منتجات مختلفة.';
+  }
+
+  @override
+  String dupSimilarIntro(int n) {
+    return '🔍 أسماء متشابهة — تحقّق قبل الدمج ($n)\nأسماء متقاربة لا متطابقة: خطأ إملائي، أو كلمة زائدة، أو حجم وتركيز آخر. كثير منها منتجات مختلفة فعلاً — «ليست مكرّرة» يخفيها من كل الأجهزة.';
+  }
+
+  @override
+  String dupShowHidden(int n) {
+    return 'إظهار المخفية ($n)';
+  }
+
+  @override
+  String get dupShowHiddenTitle => 'إظهار المجموعات المخفية';
+
+  @override
+  String dupShowHiddenBody(int n) {
+    return 'ستعود $n مجموعة للمراجعة على كل الأجهزة. المواد لا تتغيّر.';
+  }
+
+  @override
+  String get show => 'إظهار';
+
+  @override
+  String dupMergePaused(int n) {
+    return 'الدمج متوقف: $n عملية حذف لم تصل للسحابة بعد. الدمج يجمع الكميات ويحذف الباقي، فإن لم يصل الحذف تبقى المواد على الهاتف الآخر وتتضاعف الكمية. اتصل بالإنترنت ثم اضغط تحديث.';
+  }
+
+  @override
+  String dupSimilarPercent(int p) {
+    return '🔍 أسماء متشابهة بنسبة $p%';
+  }
+
+  @override
+  String get dupSameBarcode => '🏷️ نفس الباركود — قد تكون منتجات مختلفة';
+
+  @override
+  String get dupSameName => '📝 نفس الاسم في نفس القسم';
+
+  @override
+  String get dupDifferentBarcodes =>
+      '🏷️ باركودان مختلفان — تأكّد أنها ليست حجماً أو نكهة أخرى';
+
+  @override
+  String get dupTickHint =>
+      'علّم المواد التي هي نفس المنتج ثم «دمج المختارة» — غير المعلّمة تبقى كما هي وتُزال من المراجعة.';
+
+  @override
+  String get dupPickTwo => 'اختر مادتين للدمج';
+
+  @override
+  String dupMergeSelected(int n, int total) {
+    return 'دمج المختارة ($n) · الكمية $total';
+  }
+
+  @override
+  String get dupNotDuplicates => 'ليست مكرّرة';
+
+  @override
+  String get dupSplitBarcode => 'فصل الباركود';
+
+  @override
+  String detQty(int n) {
+    return 'الكمية $n';
+  }
+
+  @override
+  String detPrice(String v) {
+    return 'السعر $v';
+  }
+
+  @override
+  String detExpiry(String d) {
+    return 'الصلاحية $d';
+  }
+
+  @override
+  String detEdited(String d) {
+    return 'عُدّلت $d';
+  }
+
+  @override
+  String dupMergeTitle(int n) {
+    return 'دمج $n مواد';
+  }
+
+  @override
+  String get dupKeptName => 'الاسم الذي يبقى';
+
+  @override
+  String dupFinalPrice(String currency) {
+    return '💰 السعر النهائي ($currency)';
+  }
+
+  @override
+  String get dupFinalQty => '📦 الكمية النهائية';
+
+  @override
+  String dupWillDelete(int n) {
+    return 'تُحذف $n مادة من هذا الهاتف ومن كل الأجهزة المشتركة.';
+  }
+
+  @override
+  String get cdBarcodeTaken =>
+      'هذا الباركود مسجّل لمادة أخرى — استعمل «دمج» إن كانت هي نفسها';
+
+  @override
+  String cdMergeWith(String name) {
+    return 'دمج مع «$name»';
+  }
+
+  @override
+  String cdMergeBody(String keep, int qty, String drop) {
+    return 'تبقى «$keep» بكمية $qty، وتُحذف «$drop» من كل الأجهزة. ينتقل إليها الباركود والصورة إن لم يكونا لها.';
+  }
+
+  @override
+  String get cdMergeConfirm => 'ادمج';
+
+  @override
+  String get cdDeleteTitle => 'حذف المادة';
+
+  @override
+  String cdDeleteBody(String name) {
+    return 'تُحذف «$name» من هذا الهاتف ومن كل الأجهزة المشتركة.';
+  }
+
+  @override
+  String get cdDeleteConfirm => 'احذف';
+
+  @override
+  String get cdTitle => '📝 إكمال البيانات';
+
+  @override
+  String get cdNoneInSection => 'لا مواد ناقصة في هذا القسم';
+
+  @override
+  String cdListDone(int n) {
+    return 'انتهت القائمة — اكتملت $n مادة';
+  }
+
+  @override
+  String get back => 'رجوع';
+
+  @override
+  String cdProgress(int i, int n) {
+    return 'مادة $i من $n';
+  }
+
+  @override
+  String get cdNoPrice => 'بلا سعر';
+
+  @override
+  String get cdNoBarcode => 'بلا باركود';
+
+  @override
+  String cdSimilar(int p) {
+    return '🔍 تشبه مادة موجودة ($p%)';
+  }
+
+  @override
+  String cdMatchLine(String price, int qty) {
+    return 'السعر $price · الكمية $qty';
+  }
+
+  @override
+  String get cdSameMerge => 'هي نفسها — دمج معها';
+
+  @override
+  String cdPrice(String currency) {
+    return '💰 السعر ($currency)';
+  }
+
+  @override
+  String get cdQty => '📦 الكمية';
+
+  @override
+  String get cdBarcode => '📊 الباركود';
+
+  @override
+  String get scanTheBarcode => 'مسح الباركود';
+
+  @override
+  String get cdNoBarcodeSub =>
+      'تحضير أو علبة بلا رمز — لن تُعدّ ناقصة بسبب الباركود';
+
+  @override
+  String get takePhoto => 'تصوير';
+
+  @override
+  String get theGallery => 'المعرض';
+
+  @override
+  String get cdSaveNext => 'حفظ والتالي';
 }

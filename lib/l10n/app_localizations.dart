@@ -1751,6 +1751,342 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'هذا الهاتف'**
   String get deviceThisPhone;
+
+  /// No description provided for @dupLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل المواد: {error}'**
+  String dupLoadFailed(String error);
+
+  /// No description provided for @dupMergeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الدمج — لم يتغيّر شيء: {error}'**
+  String dupMergeFailed(String error);
+
+  /// No description provided for @dupSplitFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فصل الباركود: {error}'**
+  String dupSplitFailed(String error);
+
+  /// No description provided for @dupTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔍 مراجعة التكرارات'**
+  String get dupTitle;
+
+  /// No description provided for @refresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث'**
+  String get refresh;
+
+  /// No description provided for @dupNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تكرارات ✅'**
+  String get dupNone;
+
+  /// No description provided for @dupGroupsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مجموعة — علّم ما هو نفس المنتج ثم «دمج المختارة»، أو «ليست مكرّرة» إن كانت كلها منتجات مختلفة.'**
+  String dupGroupsIntro(int n);
+
+  /// No description provided for @dupSimilarIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔍 أسماء متشابهة — تحقّق قبل الدمج ({n})\nأسماء متقاربة لا متطابقة: خطأ إملائي، أو كلمة زائدة، أو حجم وتركيز آخر. كثير منها منتجات مختلفة فعلاً — «ليست مكرّرة» يخفيها من كل الأجهزة.'**
+  String dupSimilarIntro(int n);
+
+  /// No description provided for @dupShowHidden.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المخفية ({n})'**
+  String dupShowHidden(int n);
+
+  /// No description provided for @dupShowHiddenTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المجموعات المخفية'**
+  String get dupShowHiddenTitle;
+
+  /// No description provided for @dupShowHiddenBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستعود {n} مجموعة للمراجعة على كل الأجهزة. المواد لا تتغيّر.'**
+  String dupShowHiddenBody(int n);
+
+  /// No description provided for @show.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار'**
+  String get show;
+
+  /// No description provided for @dupMergePaused.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدمج متوقف: {n} عملية حذف لم تصل للسحابة بعد. الدمج يجمع الكميات ويحذف الباقي، فإن لم يصل الحذف تبقى المواد على الهاتف الآخر وتتضاعف الكمية. اتصل بالإنترنت ثم اضغط تحديث.'**
+  String dupMergePaused(int n);
+
+  /// No description provided for @dupSimilarPercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔍 أسماء متشابهة بنسبة {p}%'**
+  String dupSimilarPercent(int p);
+
+  /// No description provided for @dupSameBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏷️ نفس الباركود — قد تكون منتجات مختلفة'**
+  String get dupSameBarcode;
+
+  /// No description provided for @dupSameName.
+  ///
+  /// In ar, this message translates to:
+  /// **'📝 نفس الاسم في نفس القسم'**
+  String get dupSameName;
+
+  /// No description provided for @dupDifferentBarcodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏷️ باركودان مختلفان — تأكّد أنها ليست حجماً أو نكهة أخرى'**
+  String get dupDifferentBarcodes;
+
+  /// No description provided for @dupTickHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'علّم المواد التي هي نفس المنتج ثم «دمج المختارة» — غير المعلّمة تبقى كما هي وتُزال من المراجعة.'**
+  String get dupTickHint;
+
+  /// No description provided for @dupPickTwo.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مادتين للدمج'**
+  String get dupPickTwo;
+
+  /// No description provided for @dupMergeSelected.
+  ///
+  /// In ar, this message translates to:
+  /// **'دمج المختارة ({n}) · الكمية {total}'**
+  String dupMergeSelected(int n, int total);
+
+  /// No description provided for @dupNotDuplicates.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليست مكرّرة'**
+  String get dupNotDuplicates;
+
+  /// No description provided for @dupSplitBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل الباركود'**
+  String get dupSplitBarcode;
+
+  /// No description provided for @detQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية {n}'**
+  String detQty(int n);
+
+  /// No description provided for @detPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر {v}'**
+  String detPrice(String v);
+
+  /// No description provided for @detExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية {d}'**
+  String detExpiry(String d);
+
+  /// No description provided for @detEdited.
+  ///
+  /// In ar, this message translates to:
+  /// **'عُدّلت {d}'**
+  String detEdited(String d);
+
+  /// No description provided for @dupMergeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دمج {n} مواد'**
+  String dupMergeTitle(int n);
+
+  /// No description provided for @dupKeptName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم الذي يبقى'**
+  String get dupKeptName;
+
+  /// No description provided for @dupFinalPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 السعر النهائي ({currency})'**
+  String dupFinalPrice(String currency);
+
+  /// No description provided for @dupFinalQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 الكمية النهائية'**
+  String get dupFinalQty;
+
+  /// No description provided for @dupWillDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُحذف {n} مادة من هذا الهاتف ومن كل الأجهزة المشتركة.'**
+  String dupWillDelete(int n);
+
+  /// No description provided for @cdBarcodeTaken.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الباركود مسجّل لمادة أخرى — استعمل «دمج» إن كانت هي نفسها'**
+  String get cdBarcodeTaken;
+
+  /// No description provided for @cdMergeWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'دمج مع «{name}»'**
+  String cdMergeWith(String name);
+
+  /// No description provided for @cdMergeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبقى «{keep}» بكمية {qty}، وتُحذف «{drop}» من كل الأجهزة. ينتقل إليها الباركود والصورة إن لم يكونا لها.'**
+  String cdMergeBody(String keep, int qty, String drop);
+
+  /// No description provided for @cdMergeConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادمج'**
+  String get cdMergeConfirm;
+
+  /// No description provided for @cdDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المادة'**
+  String get cdDeleteTitle;
+
+  /// No description provided for @cdDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُحذف «{name}» من هذا الهاتف ومن كل الأجهزة المشتركة.'**
+  String cdDeleteBody(String name);
+
+  /// No description provided for @cdDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'احذف'**
+  String get cdDeleteConfirm;
+
+  /// No description provided for @cdTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'📝 إكمال البيانات'**
+  String get cdTitle;
+
+  /// No description provided for @cdNoneInSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا مواد ناقصة في هذا القسم'**
+  String get cdNoneInSection;
+
+  /// No description provided for @cdListDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت القائمة — اكتملت {n} مادة'**
+  String cdListDone(int n);
+
+  /// No description provided for @back.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get back;
+
+  /// No description provided for @cdProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'مادة {i} من {n}'**
+  String cdProgress(int i, int n);
+
+  /// No description provided for @cdNoPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا سعر'**
+  String get cdNoPrice;
+
+  /// No description provided for @cdNoBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا باركود'**
+  String get cdNoBarcode;
+
+  /// No description provided for @cdSimilar.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔍 تشبه مادة موجودة ({p}%)'**
+  String cdSimilar(int p);
+
+  /// No description provided for @cdMatchLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر {price} · الكمية {qty}'**
+  String cdMatchLine(String price, int qty);
+
+  /// No description provided for @cdSameMerge.
+  ///
+  /// In ar, this message translates to:
+  /// **'هي نفسها — دمج معها'**
+  String get cdSameMerge;
+
+  /// No description provided for @cdPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 السعر ({currency})'**
+  String cdPrice(String currency);
+
+  /// No description provided for @cdQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 الكمية'**
+  String get cdQty;
+
+  /// No description provided for @cdBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 الباركود'**
+  String get cdBarcode;
+
+  /// No description provided for @scanTheBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الباركود'**
+  String get scanTheBarcode;
+
+  /// No description provided for @cdNoBarcodeSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحضير أو علبة بلا رمز — لن تُعدّ ناقصة بسبب الباركود'**
+  String get cdNoBarcodeSub;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصوير'**
+  String get takePhoto;
+
+  /// No description provided for @theGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعرض'**
+  String get theGallery;
+
+  /// No description provided for @cdSaveNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ والتالي'**
+  String get cdSaveNext;
 }
 
 class _AppLocalizationsDelegate
