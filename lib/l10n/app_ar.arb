@@ -6,7 +6,13 @@
   "currencyIqd": "دينار",
   "currencyUsd": "دولار",
   "usdRateLine": "1 $ = {rate} د.ع",
-  "@usdRateLine": {"placeholders": {"rate": {"type": "String"}}},
+  "@usdRateLine": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
   "usdRateEdit": "تعديل سعر الصرف",
   "usdRateTitle": "سعر صرف الدولار",
   "usdRateHint": "كم ديناراً للدولار الواحد؟ (سعر السوق الذي تتعامل به)",
@@ -14,5 +20,43 @@
   "usdRateInvalid": "اكتب سعراً أكبر من صفر",
   "currencyNote": "الأسعار تُحفظ وتُزامَن بالدينار دائماً؛ الدولار للعرض والإدخال فقط. الفاتورة الذكية وسجل الفواتير بالدينار.",
   "save": "حفظ",
-  "cancel": "إلغاء"
+  "cancel": "إلغاء",
+  "appName": "صيدليتي",
+  "splashTagline": "مخزونك الدوائي… أذكى وأبسط",
+  "splashVersion": "الإصدار {version} · مزامنة سحابية آمنة",
+  "@splashVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "splashLoading": "جارٍ التحميل",
+  "splashProgress": "تحميل",
+  "welcomeSkip": "تخطّي",
+  "welcomeNext": "التالي",
+  "welcomeStart": "ابدأ الآن",
+  "welcomeSlideLabel": "الشريحة {n}",
+  "@welcomeSlideLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "welcome1ChipA": "Panadol · 24 علبة",
+  "welcome1ChipB": "تم التعرّف تلقائياً",
+  "welcome1Title": "امسح الباركود ",
+  "welcome1Accent": "وأضف بثانية",
+  "welcome1Body": "وجّه الكاميرا نحو العلبة، ويتعرّف التطبيق على الدواء من القاموس المشترك بين الصيدليات.",
+  "welcome2ChipA": "قراءة ذكية للفاتورة",
+  "welcome2ChipB": "12 سطراً أُضيفت",
+  "welcome2Title": "صوّر الفاتورة ",
+  "welcome2Accent": "والباقي علينا",
+  "welcome2Body": "الفاتورة الذكية تقرأ الأسماء والأسعار والكميات، وتنبّهك على أي سطر مشكوك فيه قبل الحفظ.",
+  "welcome3ChipA": "3 أدوية قاربت الانتهاء",
+  "welcome3ChipB": "جهازان متزامنان",
+  "welcome3Title": "مخزون واحد ",
+  "welcome3Accent": "على كل أجهزتك",
+  "welcome3Body": "مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ."
 }

@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme.dart';
 import '../widgets/launch_art.dart';
 import '../widgets/smooth_route.dart';
@@ -44,7 +45,8 @@ class _Chip {
   final String icon, label;
 }
 
-final _slides = [
+/// الشرائح الثلاث بلغة الواجهة.
+List<_SlideData> _slidesFor(AppLocalizations l) => [
   _SlideData(
     orb: const [Color(0x8C2DD4BF), Color(0x2E38BDF8)],
     icon: LaunchIcons.scan,
@@ -52,54 +54,51 @@ final _slides = [
       _Chip(
         const Color(0x3334D399),
         LaunchIcons.check('#34D399'),
-        'Panadol · 24 علبة',
+        l.welcome1ChipA,
       ),
-      const _Chip(Color(0x3338BDF8), LaunchIcons.search, 'تم التعرّف تلقائياً'),
+      _Chip(const Color(0x3338BDF8), LaunchIcons.search, l.welcome1ChipB),
     ],
-    title: 'امسح الباركود ',
-    accent: 'وأضف بثانية',
-    body:
-        'وجّه الكاميرا نحو العلبة، ويتعرّف التطبيق على الدواء من القاموس '
-        'المشترك بين الصيدليات.',
+    title: l.welcome1Title,
+    accent: l.welcome1Accent,
+    body: l.welcome1Body,
   ),
   _SlideData(
     orb: const [Color(0x73FBBF24), Color(0x2638BDF8)],
     icon: LaunchIcons.receipt,
     chips: [
-      const _Chip(Color(0x33FBBF24), LaunchIcons.spark, 'قراءة ذكية للفاتورة'),
+      _Chip(const Color(0x33FBBF24), LaunchIcons.spark, l.welcome2ChipA),
       _Chip(
         const Color(0x3334D399),
         LaunchIcons.check('#34D399'),
-        '12 سطراً أُضيفت',
+        l.welcome2ChipB,
       ),
     ],
-    title: 'صوّر الفاتورة ',
-    accent: 'والباقي علينا',
-    body:
-        'الفاتورة الذكية تقرأ الأسماء والأسعار والكميات، وتنبّهك على أي سطر '
-        'مشكوك فيه قبل الحفظ.',
+    title: l.welcome2Title,
+    accent: l.welcome2Accent,
+    body: l.welcome2Body,
   ),
-  const _SlideData(
-    orb: [Color(0x73A78BFA), Color(0x2E2DD4BF)],
+  _SlideData(
+    orb: const [Color(0x73A78BFA), Color(0x2E2DD4BF)],
     icon: LaunchIcons.cloud,
     chips: [
-      _Chip(Color(0x33FB7185), LaunchIcons.clock, '3 أدوية قاربت الانتهاء'),
-      _Chip(Color(0x33A78BFA), LaunchIcons.phone, 'جهازان متزامنان'),
+      _Chip(const Color(0x33FB7185), LaunchIcons.clock, l.welcome3ChipA),
+      _Chip(const Color(0x33A78BFA), LaunchIcons.phone, l.welcome3ChipB),
     ],
-    title: 'مخزون واحد ',
-    accent: 'على كل أجهزتك',
-    body:
-        'مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض '
-        'قبل أن تتفاجأ.',
+    title: l.welcome3Title,
+    accent: l.welcome3Accent,
+    body: l.welcome3Body,
   ),
 ];
+
+/// عدد الشرائح (ثابت مهما كانت اللغة).
+const _slideCount = 3;
 
 class _WelcomeViewState extends State<WelcomeView> {
   int _index = 0;
   Timer? _auto;
   double _dragDx = 0;
 
-  int get _last => _slides.length - 1;
+  int get _last => _slideCount - 1;
 
   @override
   void initState() {
@@ -162,6 +161,7 @@ class _WelcomeViewState extends State<WelcomeView> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     final short = MediaQuery.sizeOf(context).height < 700;
+    final slides = _slidesFor(context.l10n);
     return Padding(
       padding: EdgeInsets.fromLTRB(18, 18 + pad.top, 18, 20 + pad.bottom),
       child: Column(
@@ -172,17 +172,18 @@ class _WelcomeViewState extends State<WelcomeView> {
               behavior: HitTestBehavior.opaque,
               onHorizontalDragStart: (_) => _dragDx = 0,
               onHorizontalDragUpdate: (d) => _dragDx += d.delta.dx,
-              // RTL: السحب لليسار = التالي
+              // السحب لليسار = التالي في الاتجاهين (كما في التصميم وكعادة
+              // الإنجليزية)؛ الحركة نفسها تنعكس في [_Slide]
               onHorizontalDragEnd: (_) {
                 if (_dragDx.abs() > 40) _dragDx < 0 ? _next() : _prev();
               },
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  for (var k = 0; k < _slides.length; k++)
+                  for (var k = 0; k < slides.length; k++)
                     _Slide(
                       key: ValueKey(k),
-                      data: _slides[k],
+                      data: slides[k],
                       offset: k.compareTo(_index),
                       short: short,
                     ),
@@ -227,7 +228,10 @@ class _WelcomeViewState extends State<WelcomeView> {
             child: svgIcon(LaunchIcons.miniCross, 22),
           ),
           const SizedBox(width: 10),
-          Text('صيدليتي', style: cairo(17, 800, color: AppColors.textPrimary)),
+          Text(
+            context.l10n.appName,
+            style: cairo(17, 800, color: AppColors.textPrimary),
+          ),
         ],
       ),
       _Pressable(
@@ -245,7 +249,7 @@ class _WelcomeViewState extends State<WelcomeView> {
                 child: Center(
                   widthFactor: 1,
                   child: Text(
-                    'تخطّي',
+                    context.l10n.welcomeSkip,
                     style: cairo(13, 700, color: AppColors.textSecondary),
                   ),
                 ),
@@ -262,12 +266,12 @@ class _WelcomeViewState extends State<WelcomeView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (var k = 0; k < _slides.length; k++) ...[
+        for (var k = 0; k < _slideCount; k++) ...[
           if (k > 0) const SizedBox(width: 8),
           Semantics(
             button: true,
             selected: k == _index,
-            label: 'الشريحة ${k + 1}',
+            label: context.l10n.welcomeSlideLabel(k + 1),
             child: GestureDetector(
               key: Key('welcomeDot$k'),
               behavior: HitTestBehavior.opaque,
@@ -379,13 +383,19 @@ class _PrimaryButton extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      last ? 'ابدأ الآن' : 'التالي',
+                      last
+                          ? context.l10n.welcomeStart
+                          : context.l10n.welcomeNext,
                       style: cairo(16, 800, color: AppColors.onGradient),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                svgIcon(LaunchIcons.chevron, 20),
+                // السهم يشير للتالي: يساراً في العربية ويميناً في الإنجليزية
+                Transform.flip(
+                  flipX: Directionality.of(context) == TextDirection.ltr,
+                  child: svgIcon(LaunchIcons.chevron, 20),
+                ),
               ],
             ),
           ],
@@ -454,7 +464,10 @@ class _Slide extends StatelessWidget {
   Widget build(BuildContext context) {
     final reduced = MediaQuery.disableAnimationsOf(context);
     final active = offset == 0;
-    final dx = active ? 0.0 : (offset < 0 ? 30.0 : -30.0);
+    // التالية تدخل من جهة القراءة التالية: يساراً في العربية (التصميم)،
+    // ويميناً في الإنجليزية
+    final side = Directionality.of(context) == TextDirection.ltr ? -1.0 : 1.0;
+    final dx = active ? 0.0 : (offset < 0 ? 30.0 : -30.0) * side;
     return IgnorePointer(
       ignoring: !active,
       child: AnimatedOpacity(

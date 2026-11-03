@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../config/app_info.dart';
+import '../l10n/l10n.dart';
 import '../services/app_settings.dart';
 import '../theme.dart';
 import '../widgets/launch_art.dart';
@@ -248,7 +249,7 @@ class _SplashView extends StatelessWidget {
       children: [
         Center(
           child: Semantics(
-            label: 'جارٍ التحميل',
+            label: context.l10n.splashLoading,
             container: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -261,7 +262,7 @@ class _SplashView extends StatelessWidget {
                   Column(
                     children: [
                       GradientText(
-                        'صيدليتي',
+                        context.l10n.appName,
                         style: title,
                         gradient: const LinearGradient(
                           begin: Alignment.topCenter,
@@ -272,7 +273,7 @@ class _SplashView extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'مخزونك الدوائي… أذكى وأبسط',
+                        context.l10n.splashTagline,
                         style: cairo(14, 400, color: AppColors.textSecondary),
                       ),
                     ],
@@ -293,7 +294,7 @@ class _SplashView extends StatelessWidget {
           right: 0,
           bottom: 26 + bottom,
           child: Text(
-            'الإصدار $appVersion · مزامنة سحابية آمنة',
+            context.l10n.splashVersion(appVersion),
             textAlign: TextAlign.center,
             style: cairo(11, 400, color: AppColors.textMuted),
           ),
@@ -341,7 +342,7 @@ class _LoaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'تحميل',
+      label: context.l10n.splashProgress,
       child: Container(
         width: 160,
         height: 6,

@@ -181,6 +181,150 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إلغاء'**
   String get cancel;
+
+  /// No description provided for @appName.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيدليتي'**
+  String get appName;
+
+  /// No description provided for @splashTagline.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزونك الدوائي… أذكى وأبسط'**
+  String get splashTagline;
+
+  /// No description provided for @splashVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version} · مزامنة سحابية آمنة'**
+  String splashVersion(String version);
+
+  /// No description provided for @splashLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحميل'**
+  String get splashLoading;
+
+  /// No description provided for @splashProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحميل'**
+  String get splashProgress;
+
+  /// No description provided for @welcomeSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطّي'**
+  String get welcomeSkip;
+
+  /// No description provided for @welcomeNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get welcomeNext;
+
+  /// No description provided for @welcomeStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ الآن'**
+  String get welcomeStart;
+
+  /// No description provided for @welcomeSlideLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشريحة {n}'**
+  String welcomeSlideLabel(int n);
+
+  /// No description provided for @welcome1ChipA.
+  ///
+  /// In ar, this message translates to:
+  /// **'Panadol · 24 علبة'**
+  String get welcome1ChipA;
+
+  /// No description provided for @welcome1ChipB.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التعرّف تلقائياً'**
+  String get welcome1ChipB;
+
+  /// No description provided for @welcome1Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الباركود '**
+  String get welcome1Title;
+
+  /// No description provided for @welcome1Accent.
+  ///
+  /// In ar, this message translates to:
+  /// **'وأضف بثانية'**
+  String get welcome1Accent;
+
+  /// No description provided for @welcome1Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجّه الكاميرا نحو العلبة، ويتعرّف التطبيق على الدواء من القاموس المشترك بين الصيدليات.'**
+  String get welcome1Body;
+
+  /// No description provided for @welcome2ChipA.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة ذكية للفاتورة'**
+  String get welcome2ChipA;
+
+  /// No description provided for @welcome2ChipB.
+  ///
+  /// In ar, this message translates to:
+  /// **'12 سطراً أُضيفت'**
+  String get welcome2ChipB;
+
+  /// No description provided for @welcome2Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة '**
+  String get welcome2Title;
+
+  /// No description provided for @welcome2Accent.
+  ///
+  /// In ar, this message translates to:
+  /// **'والباقي علينا'**
+  String get welcome2Accent;
+
+  /// No description provided for @welcome2Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفاتورة الذكية تقرأ الأسماء والأسعار والكميات، وتنبّهك على أي سطر مشكوك فيه قبل الحفظ.'**
+  String get welcome2Body;
+
+  /// No description provided for @welcome3ChipA.
+  ///
+  /// In ar, this message translates to:
+  /// **'3 أدوية قاربت الانتهاء'**
+  String get welcome3ChipA;
+
+  /// No description provided for @welcome3ChipB.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهازان متزامنان'**
+  String get welcome3ChipB;
+
+  /// No description provided for @welcome3Title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون واحد '**
+  String get welcome3Title;
+
+  /// No description provided for @welcome3Accent.
+  ///
+  /// In ar, this message translates to:
+  /// **'على كل أجهزتك'**
+  String get welcome3Accent;
+
+  /// No description provided for @welcome3Body.
+  ///
+  /// In ar, this message translates to:
+  /// **'مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ.'**
+  String get welcome3Body;
 }
 
 class _AppLocalizationsDelegate
