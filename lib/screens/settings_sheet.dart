@@ -17,6 +17,7 @@ import 'language_currency_section.dart';
 import 'launch_flow.dart';
 import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
+import '../l10n/l10n.dart';
 
 /// لوحة الإعدادات — تُفتح من أيقونة الترس في الترويسة.
 Future<void> showSettingsSheet(BuildContext context, MedicineStore store) {

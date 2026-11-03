@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../theme.dart';
+import '../l10n/l10n.dart';
 
 /// شاشة مسح الباركود — كاميرا ملء الشاشة.
 /// ترجع نص الباركود عبر Navigator.pop، أو null إذا ألغى المستخدم.

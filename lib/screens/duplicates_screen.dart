@@ -11,6 +11,7 @@ import '../util/number_parse.dart';
 import '../util/money.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// مراجعة المواد المكرّرة ودمجها.
 ///
@@ -507,7 +508,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
       ?invoiceLabel(m, _invoiceOf[m.id]),
       'عُدّلت ${_date(m.updatedAt)}',
-      m.type.label,
+      m.type.labelIn(context.l10n),
     ];
     return parts.join(' · ');
   }

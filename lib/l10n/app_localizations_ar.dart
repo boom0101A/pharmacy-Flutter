@@ -132,4 +132,288 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get welcome3Body =>
       'مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ.';
+
+  @override
+  String get typeMedicine => '💊 دواء';
+
+  @override
+  String get typeSupply => '🩹 مستلزم طبي';
+
+  @override
+  String get homeTitle => '💊 صيدليتي';
+
+  @override
+  String priceRepaired(int n) {
+    return 'صُحّح سعر $n مادة قرأتها الفاتورة الذكية خطأً';
+  }
+
+  @override
+  String invoiceAddedNew(int n) {
+    return 'أُضيفت $n مادة جديدة';
+  }
+
+  @override
+  String invoiceMerged(int n) {
+    return 'دُمجت $n مع مواد موجودة مسبقاً';
+  }
+
+  @override
+  String invoiceMergedWithin(int n) {
+    return '($n منها مكرَّر داخل الفاتورة نفسها)';
+  }
+
+  @override
+  String deletedItem(String name) {
+    return '🗑️ حُذف \"$name\"';
+  }
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String incompleteBanner(int n) {
+    return '$n مادة بياناتها ناقصة';
+  }
+
+  @override
+  String get completeData => 'إكمال البيانات';
+
+  @override
+  String get scanBarcode => 'مسح باركود';
+
+  @override
+  String get smartInvoice => 'فاتورة ذكية';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get statMedicines => 'عدد الأدوية';
+
+  @override
+  String get statSupplies => 'عدد المستلزمات';
+
+  @override
+  String statTotalValue(String currency) {
+    return 'القيمة الإجمالية ($currency)';
+  }
+
+  @override
+  String statValueMissing(int n) {
+    return 'القيمة ($n بلا سعر)';
+  }
+
+  @override
+  String get searchSupplies => 'ابحث في المستلزمات بالاسم...';
+
+  @override
+  String get searchMedicines => 'ابحث بالاسم أو الباركود...';
+
+  @override
+  String get scanInSearch => 'مسح باركود في البحث';
+
+  @override
+  String get filters => 'الفلاتر';
+
+  @override
+  String get quickFilter => '📌 فلترة سريعة';
+
+  @override
+  String get filterExpiring => '⏳ قريبة الانتهاء';
+
+  @override
+  String get filterLowStock => '⚠️ منخفض أو نافد (≤5)';
+
+  @override
+  String filterIncomplete(int n) {
+    return '📝 بيانات ناقصة ($n)';
+  }
+
+  @override
+  String get filterNoBarcode => '📊 بدون باركود';
+
+  @override
+  String get filterHasImage => '📷 لديه صورة';
+
+  @override
+  String get filterNoImage => '🖼️ بدون صورة';
+
+  @override
+  String priceRange(String currency) {
+    return '💰 نطاق السعر ($currency)';
+  }
+
+  @override
+  String get quantityRange => '📦 نطاق الكمية';
+
+  @override
+  String get sortBy => '🔃 ترتيب حسب';
+
+  @override
+  String get sortNewest => '🕐 الأحدث';
+
+  @override
+  String get sortName => '🔤 الاسم';
+
+  @override
+  String get sortPrice => '💲 السعر';
+
+  @override
+  String get sortQuantity => '📦 الكمية';
+
+  @override
+  String get resetFilters => 'إعادة تعيين الفلاتر';
+
+  @override
+  String duplicatesBanner(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n تكرارات تحتاج مراجعة',
+      one: '$n مجموعة تكرار تحتاج مراجعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get review => 'مراجعة';
+
+  @override
+  String showingCountMedicines(int shown, int total) {
+    return 'عرض $shown من أصل $total دواء';
+  }
+
+  @override
+  String showingCountSupplies(int shown, int total) {
+    return 'عرض $shown من أصل $total مستلزم';
+  }
+
+  @override
+  String get clearFilters => '✕ مسح الفلاتر';
+
+  @override
+  String get emptyNoResults => 'لا توجد نتائج مطابقة';
+
+  @override
+  String get emptyNoSupplies => 'لا توجد مستلزمات بعد';
+
+  @override
+  String get emptyNoMedicines => 'لا توجد أدوية بعد';
+
+  @override
+  String get emptyTryFilters => 'جرّب تغيير البحث أو الفلاتر';
+
+  @override
+  String get emptyHintInvoice => 'اضغط «فاتورة ذكية» لإضافة موادها دفعة واحدة';
+
+  @override
+  String get emptyHintAddSupply => 'اضغط «+» لإضافة أول مستلزم';
+
+  @override
+  String get emptyHintScan => 'اضغط «مسح باركود» للبدء';
+
+  @override
+  String get syncAllGood => 'كل شيء يعمل بشكل سليم ✅';
+
+  @override
+  String get ok => 'حسناً';
+
+  @override
+  String get rangeFrom => 'من';
+
+  @override
+  String get rangeTo => 'إلى';
+
+  @override
+  String get cardNoBarcode => 'بدون باركود';
+
+  @override
+  String get cardBarcode => 'باركود';
+
+  @override
+  String get price => 'السعر';
+
+  @override
+  String get quantity => 'الكمية';
+
+  @override
+  String get cardIncomplete => '📝 ناقصة';
+
+  @override
+  String get cardOut => 'نفذ';
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get expired => 'منتهي الصلاحية';
+
+  @override
+  String expiresOn(String date) {
+    return 'ينتهي $date';
+  }
+
+  @override
+  String get syncLocal => 'حفظ محلي';
+
+  @override
+  String get syncOffline => 'غير متصل — حفظ محلي';
+
+  @override
+  String get syncSyncing => 'جاري المزامنة…';
+
+  @override
+  String get syncSynced => 'مزامنة سحابية ✓';
+
+  @override
+  String get syncFailed => 'تعذّرت المزامنة';
+
+  @override
+  String get syncErrPermission =>
+      'قواعد أمان Firestore ترفض الوصول.\nالحل: Firebase Console ← Firestore Database ← Rules ← اسمح بالقراءة والكتابة لمجموعة medicines ثم Publish.';
+
+  @override
+  String get syncErrNotFound =>
+      'قاعدة بيانات Firestore غير منشأة في هذا المشروع.\nالحل: Firebase Console ← Build ← Firestore Database ← Create database.';
+
+  @override
+  String get syncErrUnavailable =>
+      'لا يوجد اتصال بالإنترنت — البيانات محفوظة محلياً.';
+
+  @override
+  String get syncErrPrecondition =>
+      'خدمة Firestore غير مفعّلة أو تحتاج إعداداً في Console.';
+
+  @override
+  String get syncErrUnauthenticated =>
+      'هوية الجهاز غير جاهزة.\nالحل: Firebase Console ← Authentication ← Sign-in method ← تفعيل Anonymous.';
+
+  @override
+  String get syncErrUnknown => 'خطأ غير معروف';
+
+  @override
+  String syncDenied(int n) {
+    return 'السحابة ترفض رفع $n مادة من هذا الهاتف — بقية المزامنة تمّت. راجع قواعد Firestore.';
+  }
+
+  @override
+  String syncSkipped(int n) {
+    return 'تم تخطّي $n سجل غير صالح في السحابة.';
+  }
+
+  @override
+  String syncRelinked(int n, String names) {
+    return 'أُعيد ربط $n مادة كانت مسجّلة باسم صيدلية أخرى: $names.';
+  }
+
+  @override
+  String syncDoneWithNotes(String notes) {
+    return 'تمت المزامنة. $notes';
+  }
+
+  @override
+  String get listSeparator => '، ';
 }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/l10n/l10n.dart';
+import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/screens/home_screen.dart';
+import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/screens/welcome_view.dart';
 import 'package:saydaliyati/services/app_settings.dart';
 import 'package:saydaliyati/theme.dart';
@@ -40,6 +43,24 @@ Widget englishHost(Widget home) => MaterialApp(
   home: home,
 );
 
+class _Store extends MedicineStore {
+  @override
+  Future<void> load() async {}
+
+  @override
+  Future<void> refreshFromCloud({bool manual = false}) async {}
+}
+
+Medicine _med(String id, String name, double price) => Medicine(
+  id: id,
+  barcode: '',
+  name: name,
+  price: price,
+  quantity: 3,
+  createdAt: 1,
+  updatedAt: 1,
+);
+
 Future<void> frames(WidgetTester tester, [int n = 8]) async {
   for (var i = 0; i < n; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -63,6 +84,28 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
   }
+
+  group('الرئيسية بالإنجليزية', () {
+    testWidgets('بلا عربي إلا البيانات، والقيمة بالدولار', (tester) async {
+      await AppSettings.instance.setUsdRate(1310);
+      await AppSettings.instance.setCurrency('USD');
+      tester.view.physicalSize = const Size(420, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final store = _Store()
+        ..seed([
+          _med('m1', 'Panadol', 7877),
+          _med('m2', 'شراب أطفال', 1310), // بيانات عربية تبقى كما هي
+        ]);
+      await tester.pumpWidget(englishHost(HomeScreen(store: store)));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Medicine'), findsWidgets);
+      expect(find.text(r'$6.01'), findsOneWidget);
+      expect(find.text(r'$1.00'), findsOneWidget);
+      expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
+    });
+  });
 
   group('الترحيب بالإنجليزية', () {
     testWidgets('بلا عربي', (tester) async {

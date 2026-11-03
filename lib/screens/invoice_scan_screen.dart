@@ -17,6 +17,7 @@ import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
 import 'invoices_screen.dart';
 import 'scanner_screen.dart';
+import '../l10n/l10n.dart';
 
 /// يختار صورة صفحة (كاميرا أو معرض) — قابل للحقن في الاختبار.
 typedef InvoicePagePicker = Future<File?> Function({required bool camera});
@@ -939,7 +940,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
           child: SegmentedButton<ItemType>(
             segments: [
               for (final t in ItemType.values)
-                ButtonSegment(value: t, label: Text(t.label)),
+                ButtonSegment(value: t, label: Text(t.labelIn(context.l10n))),
             ],
             selected: {_bulkType},
             showSelectedIcon: false,
@@ -1158,7 +1159,10 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     children: [
       for (final t in ItemType.values)
         ChoiceChip(
-          label: Text(t.label, style: const TextStyle(fontSize: 11)),
+          label: Text(
+            t.labelIn(context.l10n),
+            style: const TextStyle(fontSize: 11),
+          ),
           selected: line.type == t,
           onSelected: (_) => setState(() => line.type = t),
           selectedColor: AppColors.primary.withValues(alpha: 0.25),

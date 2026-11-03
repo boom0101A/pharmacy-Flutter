@@ -17,6 +17,7 @@ import '../widgets/product_image.dart';
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
 import 'scanner_screen.dart';
+import '../l10n/l10n.dart';
 
 /// شاشة إضافة/تعديل دواء.
 class MedicineFormScreen extends StatefulWidget {
@@ -552,7 +553,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               SegmentedButton<ItemType>(
                 segments: [
                   for (final t in ItemType.values)
-                    ButtonSegment(value: t, label: Text(t.label)),
+                    ButtonSegment(
+                      value: t,
+                      label: Text(t.labelIn(context.l10n)),
+                    ),
                 ],
                 selected: {_type},
                 showSelectedIcon: false,

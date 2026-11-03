@@ -8,6 +8,7 @@ import '../services/pharmacy_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// الجهاز الذي يملك المخزون فعلاً يفتح هذه الشاشة لتوليد رمز اقتران
 /// والموافقة على طلب انضمام جهاز آخر.

@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/pharmacy_service.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// الأجهزة المرتبطة بالمخزون المشترك — وصاحبه وحده يُخرج منها ما لا يعرفه.
 ///

@@ -15,6 +15,7 @@ import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/product_image.dart';
 import '../widgets/smooth_route.dart';
 import 'invoices_screen.dart';
+import '../l10n/l10n.dart';
 
 String _date(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -173,7 +174,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           // يضيف ارتفاع الشريط إلى الحشوة العليا، وSafeArea يحترمها.
           extendBodyBehindAppBar: true,
           appBar: GlassAppBar(
-            title: Text(m.type.label),
+            title: Text(m.type.labelIn(context.l10n)),
             actions: [
               IconButton(
                 key: const Key('detailShare'),
@@ -273,7 +274,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
               if (m.type == ItemType.medicine &&
                   (m.category ?? '').trim().isNotEmpty)
                 _row('🧪 نوع المادة', m.category!.trim()),
-              _row('🗂️ القسم', m.type.label),
+              _row('🗂️ القسم', m.type.labelIn(context.l10n)),
               _row('➕ الإضافة', 'أُضيفت ${_date(m.createdAt)}'),
               _row('🕓 آخر تعديل', _date(m.updatedAt)),
             ],

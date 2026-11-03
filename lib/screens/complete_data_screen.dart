@@ -17,6 +17,7 @@ import '../util/number_parse.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
 import 'scanner_screen.dart';
+import '../l10n/l10n.dart';
 
 /// «إكمال البيانات»: المواد الناقصة (بلا سعر أو بلا باركود) مادةً تلو الأخرى.
 ///

@@ -21,6 +21,7 @@ import 'invoice_scan_screen.dart';
 import 'medicine_detail_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_sheet.dart';
+import '../l10n/l10n.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.store});
@@ -74,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen>
     store.priceRepairCount = 0;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('صُحّح سعر $n مادة قرأتها الفاتورة الذكية خطأً'),
+        content: Text(context.l10n.priceRepaired(n)),
         duration: const Duration(seconds: 6),
       ),
     );
@@ -211,14 +212,12 @@ class _HomeScreenState extends State<HomeScreen>
     // عدّاد عام لا يفرّق بينهما — هذا ما كان المستخدم يفتقده ليعرف أن
     // الفاتورة لم تُضِف مكرراً بل دمجته مع ما لديه فعلاً.
     final parts = <String>[
-      if (result.addedNew > 0) 'أُضيفت ${result.addedNew} مادة جديدة',
+      if (result.addedNew > 0) context.l10n.invoiceAddedNew(result.addedNew),
       if (result.mergedExisting > 0)
-        'دُمجت ${result.mergedExisting} مع مواد موجودة مسبقاً',
+        context.l10n.invoiceMerged(result.mergedExisting),
     ];
     if (result.mergedWithinInvoice > 0) {
-      parts.add(
-        '(${result.mergedWithinInvoice} منها مكرَّر داخل الفاتورة نفسها)',
-      );
+      parts.add(context.l10n.invoiceMergedWithin(result.mergedWithinInvoice));
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -243,13 +242,13 @@ class _HomeScreenState extends State<HomeScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('🗑️ حُذف "${medicine.name}"'),
+          content: Text(context.l10n.deletedItem(medicine.name)),
           duration: _undoWindow,
           // زر الإجراء يجعل الشريط ثابتاً افتراضياً (Flutter الحديث) فيتجاهل
           // المهلة ولا يُغلق — والحذف الحقيقي يحدث عند الإغلاق فقط أدناه.
           persist: false,
           action: SnackBarAction(
-            label: 'تراجع',
+            label: context.l10n.undo,
             textColor: AppColors.warning,
             onPressed: () => store.cancelPendingDelete(medicine.id),
           ),
@@ -300,9 +299,10 @@ class _HomeScreenState extends State<HomeScreen>
                   ? _noticeBar(
                       key: const Key('completeDataBar'),
                       icon: '📝',
-                      text:
-                          '${store.incompleteCountOf(type)} مادة بياناتها ناقصة',
-                      action: 'إكمال البيانات',
+                      text: context.l10n.incompleteBanner(
+                        store.incompleteCountOf(type),
+                      ),
+                      action: context.l10n.completeData,
                       onTap: _openCompleteData,
                     )
                   : const SizedBox(width: double.infinity),
@@ -387,8 +387,8 @@ class _HomeScreenState extends State<HomeScreen>
       gradient: AppGradients.brand,
       foreground: AppColors.onGradient,
       icon: Icons.qr_code_scanner_rounded,
-      label: compactScan ? null : 'مسح باركود',
-      tooltip: 'مسح باركود',
+      label: compactScan ? null : context.l10n.scanBarcode,
+      tooltip: context.l10n.scanBarcode,
       onPressed: () => _openForm(scanFirst: true),
     );
     return Row(
@@ -401,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen>
               gradient: AppGradients.warning,
               foreground: const Color(0xFF3A2400),
               icon: Icons.receipt_long_rounded,
-              label: 'فاتورة ذكية',
+              label: context.l10n.smartInvoice,
               onPressed: _openInvoiceScan,
             ),
           ),
@@ -414,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen>
           gradient: AppGradients.success,
           foreground: const Color(0xFF032B1E),
           icon: Icons.add_rounded,
-          tooltip: 'إضافة',
+          tooltip: context.l10n.add,
           onPressed: () => _openForm(),
         ),
       ],
@@ -532,7 +532,9 @@ class _HomeScreenState extends State<HomeScreen>
               // التصغير عند الحاجة أفضل من قصّ النص أو من شريط فيضان
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('${t.label}  (${store.countOf(t)})'),
+                child: Text(
+                  '${t.labelIn(context.l10n)}  (${store.countOf(t)})',
+                ),
               ),
             ),
         ],
@@ -554,12 +556,12 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             children: [
               // الاسم يتقلّص أولاً: مؤشر المزامنة وزر الإعدادات أهم وظيفياً
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '💊 صيدليتي',
+                  context.l10n.homeTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -.2,
@@ -579,7 +581,9 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               Expanded(
                 child: _StatBox(
-                  label: isSupplies ? 'عدد المستلزمات' : 'عدد الأدوية',
+                  label: isSupplies
+                      ? context.l10n.statSupplies
+                      : context.l10n.statMedicines,
                   value: store.totalCount.toDouble(),
                   color: AppColors.primary,
                 ),
@@ -588,8 +592,8 @@ class _HomeScreenState extends State<HomeScreen>
               Expanded(
                 child: _StatBox(
                   label: store.missingPriceCount == 0
-                      ? 'القيمة الإجمالية (${currencyLabel()})'
-                      : 'القيمة (${store.missingPriceCount} بلا سعر)',
+                      ? context.l10n.statTotalValue(currencyLabel())
+                      : context.l10n.statValueMissing(store.missingPriceCount),
                   value: store.totalValue,
                   money: true,
                   color: AppColors.success,
@@ -613,8 +617,8 @@ class _HomeScreenState extends State<HomeScreen>
               onChanged: store.setKeyword,
               decoration: InputDecoration(
                 hintText: isSupplies
-                    ? 'ابحث في المستلزمات بالاسم...'
-                    : 'ابحث بالاسم أو الباركود...',
+                    ? context.l10n.searchSupplies
+                    : context.l10n.searchMedicines,
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: store.keyword.isEmpty
                     ? null
@@ -633,7 +637,7 @@ class _HomeScreenState extends State<HomeScreen>
           const SizedBox(width: 8),
           GlassSquareButton(
             filled: true,
-            tooltip: 'مسح باركود في البحث',
+            tooltip: context.l10n.scanInSearch,
             onPressed: _scanIntoSearch,
             icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
           ),
@@ -644,7 +648,7 @@ class _HomeScreenState extends State<HomeScreen>
             label: Text(store.activeFilterCount.toString()),
             child: GlassSquareButton(
               active: _filtersOpen,
-              tooltip: 'الفلاتر',
+              tooltip: context.l10n.filters,
               onPressed: () {
                 HapticFeedback.selectionClick();
                 setState(() => _filtersOpen = !_filtersOpen);
@@ -684,24 +688,26 @@ class _HomeScreenState extends State<HomeScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionLabel('📌 فلترة سريعة'),
+              _SectionLabel(context.l10n.quickFilter),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  _chip('⏳ قريبة الانتهاء', QuickFilter.expiringSoon),
-                  _chip('⚠️ منخفض أو نافد (≤5)', QuickFilter.lowStock),
+                  _chip(context.l10n.filterExpiring, QuickFilter.expiringSoon),
+                  _chip(context.l10n.filterLowStock, QuickFilter.lowStock),
                   _chip(
-                    '📝 بيانات ناقصة (${store.incompleteCountOf(type)})',
+                    context.l10n.filterIncomplete(
+                      store.incompleteCountOf(type),
+                    ),
                     QuickFilter.incomplete,
                   ),
-                  _chip('📊 بدون باركود', QuickFilter.noBarcode),
-                  _chip('📷 لديه صورة', QuickFilter.hasImage),
-                  _chip('🖼️ بدون صورة', QuickFilter.noImage),
+                  _chip(context.l10n.filterNoBarcode, QuickFilter.noBarcode),
+                  _chip(context.l10n.filterHasImage, QuickFilter.hasImage),
+                  _chip(context.l10n.filterNoImage, QuickFilter.noImage),
                 ],
               ),
               const SizedBox(height: 14),
-              _SectionLabel('💰 نطاق السعر (${currencyLabel()})'),
+              _SectionLabel(context.l10n.priceRange(currencyLabel())),
               _RangeRow(
                 // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
                 // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
@@ -719,7 +725,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              const _SectionLabel('📦 نطاق الكمية'),
+              _SectionLabel(context.l10n.quantityRange),
               _RangeRow(
                 key: ValueKey('qty-${type.code}-${store.filterResetCount}'),
                 initialMin: _fmt(store.qtyMin),
@@ -730,15 +736,15 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(height: 14),
-              const _SectionLabel('🔃 ترتيب حسب'),
+              _SectionLabel(context.l10n.sortBy),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  _sortChip('🕐 الأحدث', SortField.date),
-                  _sortChip('🔤 الاسم', SortField.name),
-                  _sortChip('💲 السعر', SortField.price),
-                  _sortChip('📦 الكمية', SortField.quantity),
+                  _sortChip(context.l10n.sortNewest, SortField.date),
+                  _sortChip(context.l10n.sortName, SortField.name),
+                  _sortChip(context.l10n.sortPrice, SortField.price),
+                  _sortChip(context.l10n.sortQuantity, SortField.quantity),
                 ],
               ),
               const SizedBox(height: 12),
@@ -747,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: OutlinedButton.icon(
                   onPressed: store.resetFilters,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('إعادة تعيين الفلاتر'),
+                  label: Text(context.l10n.resetFilters),
                 ),
               ),
             ],
@@ -802,9 +808,8 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _duplicatesBar(int count) => _noticeBar(
     key: const Key('duplicatesBar'),
     icon: '🔍',
-    text:
-        '$count ${count == 1 ? 'مجموعة تكرار تحتاج' : 'تكرارات تحتاج'} مراجعة',
-    action: 'مراجعة',
+    text: context.l10n.duplicatesBanner(count),
+    action: context.l10n.review,
     onTap: _openDuplicates,
   );
 
@@ -892,8 +897,9 @@ class _HomeScreenState extends State<HomeScreen>
           // ازدياد عدد الخانات (مثلاً «عرض 1234 من أصل 5678 مستلزم»).
           Flexible(
             child: Text(
-              'عرض $count من أصل ${store.totalCount} '
-              '${isSupplies ? 'مستلزم' : 'دواء'}',
+              isSupplies
+                  ? context.l10n.showingCountSupplies(count, store.totalCount)
+                  : context.l10n.showingCountMedicines(count, store.totalCount),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -908,7 +914,10 @@ class _HomeScreenState extends State<HomeScreen>
               _searchController.clear();
               store.clearAll();
             },
-            child: const Text('✕ مسح الفلاتر', style: TextStyle(fontSize: 12)),
+            child: Text(
+              context.l10n.clearFilters,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -960,22 +969,22 @@ class _HomeScreenState extends State<HomeScreen>
           const SizedBox(height: 14),
           Text(
             filtered
-                ? 'لا توجد نتائج مطابقة'
+                ? context.l10n.emptyNoResults
                 : supplies
-                ? 'لا توجد مستلزمات بعد'
-                : 'لا توجد أدوية بعد',
+                ? context.l10n.emptyNoSupplies
+                : context.l10n.emptyNoMedicines,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
             filtered
-                ? 'جرّب تغيير البحث أو الفلاتر'
+                ? context.l10n.emptyTryFilters
                 : supplies && AppSettings.instance.hasGeminiKey
-                ? 'اضغط «فاتورة ذكية» لإضافة موادها دفعة واحدة'
+                ? context.l10n.emptyHintInvoice
                 : supplies
-                ? 'اضغط «+» لإضافة أول مستلزم'
-                : 'اضغط «مسح باركود» للبدء',
+                ? context.l10n.emptyHintAddSupply
+                : context.l10n.emptyHintScan,
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary),
           ),
@@ -1081,14 +1090,14 @@ class _SyncIndicator extends StatelessWidget {
         title: Text(sync.statusLabel),
         content: SingleChildScrollView(
           child: Text(
-            sync.lastError ?? 'كل شيء يعمل بشكل سليم ✅',
+            sync.lastError ?? context.l10n.syncAllGood,
             style: const TextStyle(fontSize: 13, height: 1.6),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('حسناً'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -1218,12 +1227,12 @@ class _RangeRowState extends State<_RangeRow> {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _field(_min, 'من')),
+      Expanded(child: _field(_min, context.l10n.rangeFrom)),
       const Padding(
         padding: EdgeInsets.symmetric(horizontal: 8),
         child: Text('—', style: TextStyle(color: AppColors.textMuted)),
       ),
-      Expanded(child: _field(_max, 'إلى')),
+      Expanded(child: _field(_max, context.l10n.rangeTo)),
     ],
   );
 

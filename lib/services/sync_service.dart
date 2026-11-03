@@ -17,6 +17,7 @@ import 'barcode_registry.dart';
 import 'duplicate_dismissals.dart';
 import 'image_store.dart';
 import 'pharmacy_service.dart';
+import '../l10n/l10n.dart';
 
 enum SyncStatus { disabled, offline, syncing, synced, error }
 
@@ -60,32 +61,29 @@ class SyncService extends ChangeNotifier {
 
   String? get _uid => AuthService.instance.uid;
 
-  String get statusLabel => switch (_status) {
-    SyncStatus.disabled => 'حفظ محلي',
-    SyncStatus.offline => 'غير متصل — حفظ محلي',
-    SyncStatus.syncing => 'جاري المزامنة…',
-    SyncStatus.synced => 'مزامنة سحابية ✓',
-    SyncStatus.error => 'تعذّرت المزامنة',
-  };
+  String get statusLabel {
+    final l = L10n.current;
+    return switch (_status) {
+      SyncStatus.disabled => l.syncLocal,
+      SyncStatus.offline => l.syncOffline,
+      SyncStatus.syncing => l.syncSyncing,
+      SyncStatus.synced => l.syncSynced,
+      SyncStatus.error => l.syncFailed,
+    };
+  }
 
   /// ترجمة أخطاء Firestore الشائعة إلى سبب واضح وخطوة إصلاح.
-  static String _explain(FirebaseException e) => switch (e.code) {
-    'permission-denied' =>
-      'قواعد أمان Firestore ترفض الوصول.\n'
-          'الحل: Firebase Console ← Firestore Database ← Rules ← اسمح '
-          'بالقراءة والكتابة لمجموعة medicines ثم Publish.',
-    'not-found' =>
-      'قاعدة بيانات Firestore غير منشأة في هذا المشروع.\n'
-          'الحل: Firebase Console ← Build ← Firestore Database ← Create database.',
-    'unavailable' => 'لا يوجد اتصال بالإنترنت — البيانات محفوظة محلياً.',
-    'failed-precondition' =>
-      'خدمة Firestore غير مفعّلة أو تحتاج إعداداً في Console.',
-    'unauthenticated' =>
-      'هوية الجهاز غير جاهزة.\n'
-          'الحل: Firebase Console ← Authentication ← Sign-in method ← '
-          'تفعيل Anonymous.',
-    _ => '${e.code}: ${e.message ?? 'خطأ غير معروف'}',
-  };
+  static String _explain(FirebaseException e) {
+    final l = L10n.current;
+    return switch (e.code) {
+      'permission-denied' => l.syncErrPermission,
+      'not-found' => l.syncErrNotFound,
+      'unavailable' => l.syncErrUnavailable,
+      'failed-precondition' => l.syncErrPrecondition,
+      'unauthenticated' => l.syncErrUnauthenticated,
+      _ => '${e.code}: ${e.message ?? l.syncErrUnknown}',
+    };
+  }
 
   void _setStatus(SyncStatus value, {String? error}) {
     _status = value;
@@ -493,9 +491,7 @@ class SyncService extends ChangeNotifier {
       if (outcome.denied.length > _maxRelink) {
         _setStatus(
           SyncStatus.error,
-          error:
-              'السحابة ترفض رفع ${outcome.denied.length} مادة من هذا الهاتف — '
-              'بقية المزامنة تمّت. راجع قواعد Firestore.',
+          error: L10n.current.syncDenied(outcome.denied.length),
         );
         return localChanged;
       }
@@ -518,14 +514,18 @@ class SyncService extends ChangeNotifier {
       if (full) await prefs.setInt(_kLastFull, cycleStart);
 
       final notes = [
-        if (skipped > 0) 'تم تخطّي $skipped سجل غير صالح في السحابة.',
+        if (skipped > 0) L10n.current.syncSkipped(skipped),
         if (relinked.isNotEmpty)
-          'أُعيد ربط ${relinked.length} مادة كانت مسجّلة باسم صيدلية أخرى: '
-              '${relinked.take(3).join('، ')}.',
+          L10n.current.syncRelinked(
+            relinked.length,
+            relinked.take(3).join(L10n.current.listSeparator),
+          ),
       ];
       _setStatus(
         SyncStatus.synced,
-        error: notes.isEmpty ? null : 'تمت المزامنة. ${notes.join(' ')}',
+        error: notes.isEmpty
+            ? null
+            : L10n.current.syncDoneWithNotes(notes.join(' ')),
       );
       return localChanged;
     } on FirebaseException catch (e) {

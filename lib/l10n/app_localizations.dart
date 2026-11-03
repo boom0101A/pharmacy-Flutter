@@ -325,6 +325,480 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ.'**
   String get welcome3Body;
+
+  /// No description provided for @typeMedicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'💊 دواء'**
+  String get typeMedicine;
+
+  /// No description provided for @typeSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'🩹 مستلزم طبي'**
+  String get typeSupply;
+
+  /// No description provided for @homeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'💊 صيدليتي'**
+  String get homeTitle;
+
+  /// No description provided for @priceRepaired.
+  ///
+  /// In ar, this message translates to:
+  /// **'صُحّح سعر {n} مادة قرأتها الفاتورة الذكية خطأً'**
+  String priceRepaired(int n);
+
+  /// No description provided for @invoiceAddedNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيفت {n} مادة جديدة'**
+  String invoiceAddedNew(int n);
+
+  /// No description provided for @invoiceMerged.
+  ///
+  /// In ar, this message translates to:
+  /// **'دُمجت {n} مع مواد موجودة مسبقاً'**
+  String invoiceMerged(int n);
+
+  /// No description provided for @invoiceMergedWithin.
+  ///
+  /// In ar, this message translates to:
+  /// **'({n} منها مكرَّر داخل الفاتورة نفسها)'**
+  String invoiceMergedWithin(int n);
+
+  /// No description provided for @deletedItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗑️ حُذف \"{name}\"'**
+  String deletedItem(String name);
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @incompleteBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مادة بياناتها ناقصة'**
+  String incompleteBanner(int n);
+
+  /// No description provided for @completeData.
+  ///
+  /// In ar, this message translates to:
+  /// **'إكمال البيانات'**
+  String get completeData;
+
+  /// No description provided for @scanBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح باركود'**
+  String get scanBarcode;
+
+  /// No description provided for @smartInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة ذكية'**
+  String get smartInvoice;
+
+  /// No description provided for @add.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get add;
+
+  /// No description provided for @statMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأدوية'**
+  String get statMedicines;
+
+  /// No description provided for @statSupplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد المستلزمات'**
+  String get statSupplies;
+
+  /// No description provided for @statTotalValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيمة الإجمالية ({currency})'**
+  String statTotalValue(String currency);
+
+  /// No description provided for @statValueMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيمة ({n} بلا سعر)'**
+  String statValueMissing(int n);
+
+  /// No description provided for @searchSupplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في المستلزمات بالاسم...'**
+  String get searchSupplies;
+
+  /// No description provided for @searchMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالاسم أو الباركود...'**
+  String get searchMedicines;
+
+  /// No description provided for @scanInSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح باركود في البحث'**
+  String get scanInSearch;
+
+  /// No description provided for @filters.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلاتر'**
+  String get filters;
+
+  /// No description provided for @quickFilter.
+  ///
+  /// In ar, this message translates to:
+  /// **'📌 فلترة سريعة'**
+  String get quickFilter;
+
+  /// No description provided for @filterExpiring.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ قريبة الانتهاء'**
+  String get filterExpiring;
+
+  /// No description provided for @filterLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ منخفض أو نافد (≤5)'**
+  String get filterLowStock;
+
+  /// No description provided for @filterIncomplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'📝 بيانات ناقصة ({n})'**
+  String filterIncomplete(int n);
+
+  /// No description provided for @filterNoBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 بدون باركود'**
+  String get filterNoBarcode;
+
+  /// No description provided for @filterHasImage.
+  ///
+  /// In ar, this message translates to:
+  /// **'📷 لديه صورة'**
+  String get filterHasImage;
+
+  /// No description provided for @filterNoImage.
+  ///
+  /// In ar, this message translates to:
+  /// **'🖼️ بدون صورة'**
+  String get filterNoImage;
+
+  /// No description provided for @priceRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 نطاق السعر ({currency})'**
+  String priceRange(String currency);
+
+  /// No description provided for @quantityRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 نطاق الكمية'**
+  String get quantityRange;
+
+  /// No description provided for @sortBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔃 ترتيب حسب'**
+  String get sortBy;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In ar, this message translates to:
+  /// **'🕐 الأحدث'**
+  String get sortNewest;
+
+  /// No description provided for @sortName.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔤 الاسم'**
+  String get sortName;
+
+  /// No description provided for @sortPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'💲 السعر'**
+  String get sortPrice;
+
+  /// No description provided for @sortQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 الكمية'**
+  String get sortQuantity;
+
+  /// No description provided for @resetFilters.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة تعيين الفلاتر'**
+  String get resetFilters;
+
+  /// No description provided for @duplicatesBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n, plural, =1{{n} مجموعة تكرار تحتاج مراجعة} other{{n} تكرارات تحتاج مراجعة}}'**
+  String duplicatesBanner(int n);
+
+  /// No description provided for @review.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة'**
+  String get review;
+
+  /// No description provided for @showingCountMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض {shown} من أصل {total} دواء'**
+  String showingCountMedicines(int shown, int total);
+
+  /// No description provided for @showingCountSupplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض {shown} من أصل {total} مستلزم'**
+  String showingCountSupplies(int shown, int total);
+
+  /// No description provided for @clearFilters.
+  ///
+  /// In ar, this message translates to:
+  /// **'✕ مسح الفلاتر'**
+  String get clearFilters;
+
+  /// No description provided for @emptyNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج مطابقة'**
+  String get emptyNoResults;
+
+  /// No description provided for @emptyNoSupplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مستلزمات بعد'**
+  String get emptyNoSupplies;
+
+  /// No description provided for @emptyNoMedicines.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أدوية بعد'**
+  String get emptyNoMedicines;
+
+  /// No description provided for @emptyTryFilters.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تغيير البحث أو الفلاتر'**
+  String get emptyTryFilters;
+
+  /// No description provided for @emptyHintInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط «فاتورة ذكية» لإضافة موادها دفعة واحدة'**
+  String get emptyHintInvoice;
+
+  /// No description provided for @emptyHintAddSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط «+» لإضافة أول مستلزم'**
+  String get emptyHintAddSupply;
+
+  /// No description provided for @emptyHintScan.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط «مسح باركود» للبدء'**
+  String get emptyHintScan;
+
+  /// No description provided for @syncAllGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شيء يعمل بشكل سليم ✅'**
+  String get syncAllGood;
+
+  /// No description provided for @ok.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسناً'**
+  String get ok;
+
+  /// No description provided for @rangeFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get rangeFrom;
+
+  /// No description provided for @rangeTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get rangeTo;
+
+  /// No description provided for @cardNoBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون باركود'**
+  String get cardNoBarcode;
+
+  /// No description provided for @cardBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'باركود'**
+  String get cardBarcode;
+
+  /// No description provided for @price.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get price;
+
+  /// No description provided for @quantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get quantity;
+
+  /// No description provided for @cardIncomplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'📝 ناقصة'**
+  String get cardIncomplete;
+
+  /// No description provided for @cardOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفذ'**
+  String get cardOut;
+
+  /// No description provided for @edit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @expired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي الصلاحية'**
+  String get expired;
+
+  /// No description provided for @expiresOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'ينتهي {date}'**
+  String expiresOn(String date);
+
+  /// No description provided for @syncLocal.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ محلي'**
+  String get syncLocal;
+
+  /// No description provided for @syncOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متصل — حفظ محلي'**
+  String get syncOffline;
+
+  /// No description provided for @syncSyncing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري المزامنة…'**
+  String get syncSyncing;
+
+  /// No description provided for @syncSynced.
+  ///
+  /// In ar, this message translates to:
+  /// **'مزامنة سحابية ✓'**
+  String get syncSynced;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت المزامنة'**
+  String get syncFailed;
+
+  /// No description provided for @syncErrPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'قواعد أمان Firestore ترفض الوصول.\nالحل: Firebase Console ← Firestore Database ← Rules ← اسمح بالقراءة والكتابة لمجموعة medicines ثم Publish.'**
+  String get syncErrPermission;
+
+  /// No description provided for @syncErrNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'قاعدة بيانات Firestore غير منشأة في هذا المشروع.\nالحل: Firebase Console ← Build ← Firestore Database ← Create database.'**
+  String get syncErrNotFound;
+
+  /// No description provided for @syncErrUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال بالإنترنت — البيانات محفوظة محلياً.'**
+  String get syncErrUnavailable;
+
+  /// No description provided for @syncErrPrecondition.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة Firestore غير مفعّلة أو تحتاج إعداداً في Console.'**
+  String get syncErrPrecondition;
+
+  /// No description provided for @syncErrUnauthenticated.
+  ///
+  /// In ar, this message translates to:
+  /// **'هوية الجهاز غير جاهزة.\nالحل: Firebase Console ← Authentication ← Sign-in method ← تفعيل Anonymous.'**
+  String get syncErrUnauthenticated;
+
+  /// No description provided for @syncErrUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطأ غير معروف'**
+  String get syncErrUnknown;
+
+  /// No description provided for @syncDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'السحابة ترفض رفع {n} مادة من هذا الهاتف — بقية المزامنة تمّت. راجع قواعد Firestore.'**
+  String syncDenied(int n);
+
+  /// No description provided for @syncSkipped.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تخطّي {n} سجل غير صالح في السحابة.'**
+  String syncSkipped(int n);
+
+  /// No description provided for @syncRelinked.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُعيد ربط {n} مادة كانت مسجّلة باسم صيدلية أخرى: {names}.'**
+  String syncRelinked(int n, String names);
+
+  /// No description provided for @syncDoneWithNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت المزامنة. {notes}'**
+  String syncDoneWithNotes(String notes);
+
+  /// No description provided for @listSeparator.
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get listSeparator;
 }
 
 class _AppLocalizationsDelegate

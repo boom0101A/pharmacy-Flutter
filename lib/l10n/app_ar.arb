@@ -58,5 +58,219 @@
   "welcome3ChipB": "جهازان متزامنان",
   "welcome3Title": "مخزون واحد ",
   "welcome3Accent": "على كل أجهزتك",
-  "welcome3Body": "مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ."
+  "welcome3Body": "مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ.",
+  "typeMedicine": "💊 دواء",
+  "typeSupply": "🩹 مستلزم طبي",
+  "homeTitle": "💊 صيدليتي",
+  "priceRepaired": "صُحّح سعر {n} مادة قرأتها الفاتورة الذكية خطأً",
+  "@priceRepaired": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceAddedNew": "أُضيفت {n} مادة جديدة",
+  "@invoiceAddedNew": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceMerged": "دُمجت {n} مع مواد موجودة مسبقاً",
+  "@invoiceMerged": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceMergedWithin": "({n} منها مكرَّر داخل الفاتورة نفسها)",
+  "@invoiceMergedWithin": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedItem": "🗑️ حُذف \"{name}\"",
+  "@deletedItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "undo": "تراجع",
+  "incompleteBanner": "{n} مادة بياناتها ناقصة",
+  "@incompleteBanner": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "completeData": "إكمال البيانات",
+  "scanBarcode": "مسح باركود",
+  "smartInvoice": "فاتورة ذكية",
+  "add": "إضافة",
+  "statMedicines": "عدد الأدوية",
+  "statSupplies": "عدد المستلزمات",
+  "statTotalValue": "القيمة الإجمالية ({currency})",
+  "@statTotalValue": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "statValueMissing": "القيمة ({n} بلا سعر)",
+  "@statValueMissing": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "searchSupplies": "ابحث في المستلزمات بالاسم...",
+  "searchMedicines": "ابحث بالاسم أو الباركود...",
+  "scanInSearch": "مسح باركود في البحث",
+  "filters": "الفلاتر",
+  "quickFilter": "📌 فلترة سريعة",
+  "filterExpiring": "⏳ قريبة الانتهاء",
+  "filterLowStock": "⚠️ منخفض أو نافد (≤5)",
+  "filterIncomplete": "📝 بيانات ناقصة ({n})",
+  "@filterIncomplete": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "filterNoBarcode": "📊 بدون باركود",
+  "filterHasImage": "📷 لديه صورة",
+  "filterNoImage": "🖼️ بدون صورة",
+  "priceRange": "💰 نطاق السعر ({currency})",
+  "@priceRange": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "quantityRange": "📦 نطاق الكمية",
+  "sortBy": "🔃 ترتيب حسب",
+  "sortNewest": "🕐 الأحدث",
+  "sortName": "🔤 الاسم",
+  "sortPrice": "💲 السعر",
+  "sortQuantity": "📦 الكمية",
+  "resetFilters": "إعادة تعيين الفلاتر",
+  "duplicatesBanner": "{n, plural, =1{{n} مجموعة تكرار تحتاج مراجعة} other{{n} تكرارات تحتاج مراجعة}}",
+  "@duplicatesBanner": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "review": "مراجعة",
+  "showingCountMedicines": "عرض {shown} من أصل {total} دواء",
+  "@showingCountMedicines": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "showingCountSupplies": "عرض {shown} من أصل {total} مستلزم",
+  "@showingCountSupplies": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "clearFilters": "✕ مسح الفلاتر",
+  "emptyNoResults": "لا توجد نتائج مطابقة",
+  "emptyNoSupplies": "لا توجد مستلزمات بعد",
+  "emptyNoMedicines": "لا توجد أدوية بعد",
+  "emptyTryFilters": "جرّب تغيير البحث أو الفلاتر",
+  "emptyHintInvoice": "اضغط «فاتورة ذكية» لإضافة موادها دفعة واحدة",
+  "emptyHintAddSupply": "اضغط «+» لإضافة أول مستلزم",
+  "emptyHintScan": "اضغط «مسح باركود» للبدء",
+  "syncAllGood": "كل شيء يعمل بشكل سليم ✅",
+  "ok": "حسناً",
+  "rangeFrom": "من",
+  "rangeTo": "إلى",
+  "cardNoBarcode": "بدون باركود",
+  "cardBarcode": "باركود",
+  "price": "السعر",
+  "quantity": "الكمية",
+  "cardIncomplete": "📝 ناقصة",
+  "cardOut": "نفذ",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "expired": "منتهي الصلاحية",
+  "expiresOn": "ينتهي {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLocal": "حفظ محلي",
+  "syncOffline": "غير متصل — حفظ محلي",
+  "syncSyncing": "جاري المزامنة…",
+  "syncSynced": "مزامنة سحابية ✓",
+  "syncFailed": "تعذّرت المزامنة",
+  "syncErrPermission": "قواعد أمان Firestore ترفض الوصول.\nالحل: Firebase Console ← Firestore Database ← Rules ← اسمح بالقراءة والكتابة لمجموعة medicines ثم Publish.",
+  "syncErrNotFound": "قاعدة بيانات Firestore غير منشأة في هذا المشروع.\nالحل: Firebase Console ← Build ← Firestore Database ← Create database.",
+  "syncErrUnavailable": "لا يوجد اتصال بالإنترنت — البيانات محفوظة محلياً.",
+  "syncErrPrecondition": "خدمة Firestore غير مفعّلة أو تحتاج إعداداً في Console.",
+  "syncErrUnauthenticated": "هوية الجهاز غير جاهزة.\nالحل: Firebase Console ← Authentication ← Sign-in method ← تفعيل Anonymous.",
+  "syncErrUnknown": "خطأ غير معروف",
+  "syncDenied": "السحابة ترفض رفع {n} مادة من هذا الهاتف — بقية المزامنة تمّت. راجع قواعد Firestore.",
+  "@syncDenied": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "syncSkipped": "تم تخطّي {n} سجل غير صالح في السحابة.",
+  "@syncSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "syncRelinked": "أُعيد ربط {n} مادة كانت مسجّلة باسم صيدلية أخرى: {names}.",
+  "@syncRelinked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "syncDoneWithNotes": "تمت المزامنة. {notes}",
+  "@syncDoneWithNotes": {
+    "placeholders": {
+      "notes": {
+        "type": "String"
+      }
+    }
+  },
+  "listSeparator": "، "
 }

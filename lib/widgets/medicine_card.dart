@@ -9,6 +9,7 @@ import '../models/medicine.dart';
 import '../services/image_store.dart';
 import '../theme.dart';
 import '../util/money.dart';
+import '../l10n/l10n.dart';
 
 final _priceFormat = NumberFormat.decimalPattern('ar');
 
@@ -183,8 +184,8 @@ class MedicineCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   // الأرقام تُعرض من اليسار لليمين حتى لا ينكسر ترتيب الباركود
                   if (medicine.barcode.isEmpty)
-                    const Text(
-                      'بدون باركود',
+                    Text(
+                      context.l10n.cardNoBarcode,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 11, color: AppColors.warning),
@@ -192,8 +193,8 @@ class MedicineCard extends StatelessWidget {
                   else
                     Row(
                       children: [
-                        const Text(
-                          'باركود',
+                        Text(
+                          context.l10n.cardBarcode,
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,
@@ -238,7 +239,7 @@ class MedicineCard extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: _Stat(
-                          label: 'السعر',
+                          label: context.l10n.price,
                           value: formatMoney(medicine.price),
                           color: AppColors.textPrimary,
                         ),
@@ -247,11 +248,11 @@ class MedicineCard extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: _Stat(
-                          label: 'الكمية',
+                          label: context.l10n.quantity,
                           value: unfinished
-                              ? '📝 ناقصة'
+                              ? context.l10n.cardIncomplete
                               : medicine.isOutOfStock
-                              ? 'نفذ'
+                              ? context.l10n.cardOut
                               : medicine.quantity.toString(),
                           color: qtyColor,
                           alignEnd: true,
@@ -273,7 +274,7 @@ class MedicineCard extends StatelessWidget {
                       child: _ActionButton(
                         icon: Icons.edit_rounded,
                         color: AppColors.primary,
-                        tooltip: 'تعديل',
+                        tooltip: context.l10n.edit,
                         onPressed: onEdit,
                       ),
                     ),
@@ -282,7 +283,7 @@ class MedicineCard extends StatelessWidget {
                       child: _ActionButton(
                         icon: Icons.delete_outline_rounded,
                         color: AppColors.danger,
-                        tooltip: 'حذف',
+                        tooltip: context.l10n.delete,
                         onPressed: onDelete,
                       ),
                     ),
@@ -309,8 +310,10 @@ class _ExpiryBadge extends StatelessWidget {
     final color = expired ? AppColors.danger : AppColors.warning;
     final e = medicine.expiry!;
     final label = expired
-        ? 'منتهي الصلاحية'
-        : 'ينتهي ${e.year}/${e.month.toString().padLeft(2, '0')}';
+        ? context.l10n.expired
+        : context.l10n.expiresOn(
+            '${e.year}/${e.month.toString().padLeft(2, '0')}',
+          );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
