@@ -24,7 +24,11 @@ class PharmacyPrefs extends ChangeNotifier {
   static const defaultLowStock = 1;
 
   static const _collection = 'pharmacyPrefs';
-  static const _kLowStock = 'pharmacy_low_stock_default';
+
+  /// الحد العام **المختار** فقط (من هذا الهاتف أو من السحابة). المفتاح
+  /// القديم (pharmacy_low_stock_default) كان يُكتب مع أي قرار «تمّ» فيحفظ
+  /// الافتراضي القديم 5 كأنه اختيار — يُتجاهل.
+  static const _kLowStock = 'pharmacy_low_stock_chosen';
   static const _kLowStockPending = 'pharmacy_low_stock_pending';
   static const _kDismissed = 'alert_dismissals';
   static const _kAddPending = 'alert_dismissals_add_pending';
@@ -37,6 +41,9 @@ class PharmacyPrefs extends ChangeNotifier {
 
   /// تغيير الحد العام من هذا الهاتف لم يُؤكَّد بعد — يتقدّم على قيمة السحابة.
   bool _lowStockPending = false;
+
+  /// اختاره أحد (هذا الهاتف أو آخر عبر السحابة) — لا الافتراضي.
+  bool _lowStockChosen = false;
 
   Set<String> _dismissed = {};
   Set<String> get alertDismissals => _dismissed;
@@ -66,6 +73,7 @@ class PharmacyPrefs extends ChangeNotifier {
     _db = null;
     _lowStockDefault = defaultLowStock;
     _lowStockPending = false;
+    _lowStockChosen = false;
     _dismissed = {};
     _addPending = {};
     _removePending = {};
@@ -161,7 +169,11 @@ class PharmacyPrefs extends ChangeNotifier {
   }
 
   Future<void> _saveLocal(SharedPreferences prefs) async {
-    await prefs.setInt(_kLowStock, _lowStockDefault);
+    if (_lowStockChosen) {
+      await prefs.setInt(_kLowStock, _lowStockDefault);
+    } else {
+      await prefs.remove(_kLowStock);
+    }
     await prefs.setStringList(_kDismissed, _dismissed.toList());
     await _savePending(prefs);
   }
@@ -170,7 +182,9 @@ class PharmacyPrefs extends ChangeNotifier {
   Future<void> loadLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _lowStockDefault = prefs.getInt(_kLowStock) ?? defaultLowStock;
+      final chosen = prefs.getInt(_kLowStock);
+      _lowStockChosen = chosen != null;
+      _lowStockDefault = chosen ?? defaultLowStock;
       _lowStockPending = prefs.getBool(_kLowStockPending) ?? false;
       _dismissed = (prefs.getStringList(_kDismissed) ?? const []).toSet();
       _addPending = (prefs.getStringList(_kAddPending) ?? const []).toSet();
@@ -209,6 +223,7 @@ class PharmacyPrefs extends ChangeNotifier {
       if (nextLow != _lowStockDefault ||
           !setEquals(nextDismissed, _dismissed)) {
         _lowStockDefault = nextLow;
+        if (cloud.lowStockDefault != null) _lowStockChosen = true;
         _dismissed = nextDismissed;
         await _saveLocal(prefs);
         notifyListeners();
@@ -239,6 +254,7 @@ class PharmacyPrefs extends ChangeNotifier {
     await _change(() {
       _lowStockDefault = value;
       _lowStockPending = true;
+      _lowStockChosen = true;
     }, lowStock: value);
   }
 

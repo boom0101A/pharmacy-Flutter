@@ -71,6 +71,27 @@ void main() {
     expect(prefs.lowStockDefault, 10);
   });
 
+  // رُصد على الهاتف: النسخة السابقة كانت تحفظ الافتراضي القديم (5) مع أي
+  // قرار «تمّ» كأنه اختيار المستخدم، فبقي 5 بعد أن صار الافتراضي 1
+  test('افتراضي قديم حُفظ ضمنياً لا يُعدّ اختياراً', () async {
+    SharedPreferences.setMockInitialValues({'pharmacy_low_stock_default': 5});
+    prefs.resetForTest();
+    await prefs.loadLocal();
+    expect(prefs.lowStockDefault, 1);
+  });
+
+  test('«تمّ» لا يحفظ الحد العام، والاختيار الصريح يبقى', () async {
+    await prefs.dismiss('m1:out');
+    prefs.resetForTest();
+    await prefs.loadLocal();
+    expect(prefs.lowStockDefault, 1);
+
+    await prefs.setLowStockDefault(4);
+    prefs.resetForTest();
+    await prefs.loadLocal();
+    expect(prefs.lowStockDefault, 4);
+  });
+
   test('قيمة أقل من 1 تُرفض', () async {
     await prefs.setLowStockDefault(0);
     expect(prefs.lowStockDefault, 1);
