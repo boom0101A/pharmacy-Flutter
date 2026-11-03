@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/home_screen.dart';
+import 'screens/launch_flow.dart';
+import 'screens/pairing_sheet.dart';
 import 'services/app_settings.dart';
 import 'services/image_store.dart';
 import 'services/notification_service.dart';
@@ -11,8 +13,13 @@ import 'state/medicine_store.dart';
 import 'theme.dart';
 import 'widgets/glass.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // الواجهة فوراً: شاشة الشعار تظهر والخدمات تُهيّأ خلفها
+  runApp(const PharmacyApp(initialize: _initServices));
+}
+
+Future<void> _initServices() async {
   // غياب .env يعطّل قراءة الفواتير بالذكاء الاصطناعي فقط — لا يجوز أن يمنع
   // إقلاع التطبيق. بقية الميزات (المخزون، الباركود، المزامنة) تعمل بلاه.
   try {
@@ -22,15 +29,16 @@ void main() async {
   }
   await ImageStore.init();
   await AppSettings.instance.init();
-  // تهيئة الإشعارات قبل runApp — يلتقط أيضاً حمولة الإشعار الذي فتح التطبيق
-  // (إن وُجد) فتصبح جاهزة قبل بناء أول شاشة.
+  // تهيئة الإشعارات قبل بناء الرئيسية — يلتقط أيضاً حمولة الإشعار الذي فتح
+  // التطبيق (إن وُجد) فتصبح جاهزة قبل أول إطار لها.
   await NotificationService.instance.init();
   await SyncService.instance.init();
-  runApp(const PharmacyApp());
 }
 
 class PharmacyApp extends StatefulWidget {
-  const PharmacyApp({super.key});
+  const PharmacyApp({super.key, required this.initialize});
+
+  final Future<void> Function() initialize;
 
   @override
   State<PharmacyApp> createState() => _PharmacyAppState();
@@ -68,7 +76,11 @@ class _PharmacyAppState extends State<PharmacyApp> {
           ),
         ),
       ),
-      home: HomeScreen(store: _store),
+      home: LaunchFlow(
+        initialize: widget.initialize,
+        home: (_) => HomeScreen(store: _store),
+        onJoin: (context) => showJoinPairingSheet(context, _store),
+      ),
     );
   }
 }

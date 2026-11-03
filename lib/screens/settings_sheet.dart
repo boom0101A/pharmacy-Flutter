@@ -13,6 +13,7 @@ import '../widgets/smooth_route.dart';
 import '../state/invoice_store.dart';
 import 'duplicates_screen.dart';
 import 'invoices_screen.dart';
+import 'launch_flow.dart';
 import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
 
@@ -165,6 +166,32 @@ class _SettingsSheet extends StatelessWidget {
                 const GlassDivider(),
                 const SizedBox(height: 10),
                 _sharingSection(context, store),
+
+                const SizedBox(height: 22),
+                const GlassDivider(),
+                const SizedBox(height: 10),
+                ListTile(
+                  key: const Key('showWelcome'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tileColor: const Color(0x0AFFFFFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
+                  leading: const Text('👋', style: TextStyle(fontSize: 20)),
+                  title: const Text(
+                    'عرض شاشة الترحيب',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    final home = Navigator.of(context);
+                    home.pop();
+                    showWelcomeAgain(
+                      home.context,
+                      onJoin: (ctx) => showJoinPairingSheet(ctx, store),
+                    );
+                  },
+                ),
 
                 const SizedBox(height: 20),
               ],

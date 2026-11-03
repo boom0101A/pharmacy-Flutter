@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- لون خلفية شاشة البداية (--bg في welcome.html) — لا وميض أبيض قبل Flutter -->
+    <color name="launch_bg">#06101E</color>
+</resources>
