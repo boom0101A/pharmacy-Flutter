@@ -207,7 +207,11 @@ class MedicineCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textDirection: TextDirection.ltr,
-                            textAlign: TextAlign.right,
+                            // الأرقام LTR دائماً، ومحاذاتها لبداية سطر الواجهة
+                            textAlign:
+                                Directionality.of(context) == TextDirection.rtl
+                                ? TextAlign.right
+                                : TextAlign.left,
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textMuted,
@@ -442,7 +446,9 @@ class _Stat extends StatelessWidget {
       // ومصغّرة قليلاً لا تزال مقروءة تماماً.
       FittedBox(
         fit: BoxFit.scaleDown,
-        alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+        alignment: alignEnd
+            ? AlignmentDirectional.centerEnd
+            : AlignmentDirectional.centerStart,
         child: Text(
           value,
           maxLines: 1,

@@ -60,7 +60,8 @@ class _PharmacyAppState extends State<PharmacyApp> {
 
   Widget _app(String language) {
     return MaterialApp(
-      title: 'صيدليتي',
+      // اسم التطبيق في قائمة التطبيقات المفتوحة بلغة الواجهة
+      onGenerateTitle: (context) => context.l10n.appName,
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       // لغة الواجهة ومكوّنات Material نفسها (منتقي التاريخ، رسائل النظام)

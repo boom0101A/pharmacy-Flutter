@@ -939,7 +939,7 @@ class _Gs1Chips extends StatelessWidget {
     ),
     child: Text(
       text,
-      textDirection: TextDirection.rtl,
+      textDirection: L10n.direction,
       style: TextStyle(fontSize: 11, color: color),
     ),
   );

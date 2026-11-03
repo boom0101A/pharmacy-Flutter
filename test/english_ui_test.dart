@@ -6,6 +6,7 @@ import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/form_screen.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
 import 'package:saydaliyati/screens/medicine_detail_screen.dart';
+import 'package:saydaliyati/screens/settings_sheet.dart';
 import 'package:saydaliyati/state/invoice_store.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/screens/welcome_view.dart';
@@ -108,6 +109,44 @@ void main() {
       expect(find.text(r'$1.00'), findsOneWidget);
       expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
     });
+  });
+
+  // النصوص الإنجليزية أطول أحياناً: شاشة ضيقة (360) بلا فيضان
+  testWidgets('الرئيسية بالإنجليزية على شاشة ضيقة بلا فيضان', (tester) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = _Store()
+      ..seed([for (var i = 0; i < 6; i++) _med('m$i', 'Medicine $i', 125000)]);
+    await tester.pumpWidget(englishHost(HomeScreen(store: store)));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('الإعدادات بالإنجليزية', (tester) async {
+    tester.view.physicalSize = const Size(420, 3200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final store = _Store();
+    await tester.pumpWidget(
+      englishHost(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => showSettingsSheet(context, store),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('⚙️ Settings'), findsOneWidget);
+    // اسم اللغة العربية يُكتب بالعربية دائماً — هو خيار لا نص واجهة
+    expect(arabicTexts(tester, allowed: {'العربية'}), isEmpty);
   });
 
   testWidgets('التفاصيل بالإنجليزية', (tester) async {
