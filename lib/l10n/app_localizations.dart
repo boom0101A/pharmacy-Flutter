@@ -2087,6 +2087,420 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'حفظ والتالي'**
   String get cdSaveNext;
+
+  /// No description provided for @invTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'📚 الفواتير'**
+  String get invTitle;
+
+  /// No description provided for @invSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث باسم المجهّز أو رقم الفاتورة…'**
+  String get invSearchHint;
+
+  /// No description provided for @invSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} فاتورة · المجموع {total}'**
+  String invSummary(int n, String total);
+
+  /// No description provided for @invEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا فواتير محفوظة بعد — تُحفظ تلقائياً من «فاتورة ذكية»'**
+  String get invEmpty;
+
+  /// No description provided for @invItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مادة'**
+  String invItems(int n);
+
+  /// No description provided for @invNumberShort.
+  ///
+  /// In ar, this message translates to:
+  /// **' · رقم {n}'**
+  String invNumberShort(String n);
+
+  /// No description provided for @invDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الفاتورة'**
+  String get invDeleteTitle;
+
+  /// No description provided for @invDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُحذف سجل الفاتورة وصورها من كل الأجهزة. المخزون لا يتغيّر — الكميات التي أضافتها تبقى.'**
+  String get invDeleteBody;
+
+  /// No description provided for @invoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get invoice;
+
+  /// No description provided for @invDeleteRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف السجل'**
+  String get invDeleteRecord;
+
+  /// No description provided for @invPhotoElsewhere.
+  ///
+  /// In ar, this message translates to:
+  /// **'📷 صورة الفاتورة على الهاتف الذي صوّرها'**
+  String get invPhotoElsewhere;
+
+  /// No description provided for @invPhotoFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر عرض الصورة'**
+  String get invPhotoFailed;
+
+  /// No description provided for @invRowSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏪 المجهّز'**
+  String get invRowSupplier;
+
+  /// No description provided for @invRowDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 التاريخ'**
+  String get invRowDate;
+
+  /// No description provided for @invRowNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔢 الرقم'**
+  String get invRowNumber;
+
+  /// No description provided for @invRowTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 مجموع الفاتورة'**
+  String get invRowTotal;
+
+  /// No description provided for @invRowLinesTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧮 مجموع الأسطر'**
+  String get invRowLinesTotal;
+
+  /// No description provided for @invLineMerged.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔁 أُضيفت لموجودة'**
+  String get invLineMerged;
+
+  /// No description provided for @invLineNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'🆕 جديدة'**
+  String get invLineNew;
+
+  /// No description provided for @scanAim.
+  ///
+  /// In ar, this message translates to:
+  /// **'🎯 وجّه الكاميرا نحو باركود الدواء'**
+  String get scanAim;
+
+  /// No description provided for @camDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم منح إذن الكاميرا.\nافتح إعدادات التطبيق وفعّل الكاميرا.'**
+  String get camDenied;
+
+  /// No description provided for @camUnsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاميرا غير مدعومة على هذا الجهاز.'**
+  String get camUnsupported;
+
+  /// No description provided for @camFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيل الكاميرا.\n{details}'**
+  String camFailed(String details);
+
+  /// No description provided for @cropTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قصّ الصورة'**
+  String get cropTitle;
+
+  /// No description provided for @cropReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الضبط'**
+  String get cropReset;
+
+  /// No description provided for @cropNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا قص'**
+  String get cropNone;
+
+  /// No description provided for @scReplaceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استبدال الصفحة؟'**
+  String get scReplaceTitle;
+
+  /// No description provided for @scReplaceBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستُحذف {n} سطراً مقروءاً من الصفحة الحالية وتُقرأ الصورة الجديدة مكانها.'**
+  String scReplaceBody(int n);
+
+  /// No description provided for @scReplace.
+  ///
+  /// In ar, this message translates to:
+  /// **'استبدال'**
+  String get scReplace;
+
+  /// No description provided for @scNoValidLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أسطر صالحة للحفظ.'**
+  String get scNoValidLines;
+
+  /// No description provided for @scRecordFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُفظت المواد، وتعذّر حفظ سجل الفاتورة'**
+  String get scRecordFailed;
+
+  /// No description provided for @scLeaveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخروج بلا حفظ؟'**
+  String get scLeaveTitle;
+
+  /// No description provided for @scLeaveBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستضيع {n} سطراً مقروءاً من هذه الفاتورة.'**
+  String scLeaveBody(int n);
+
+  /// No description provided for @scStay.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقاء'**
+  String get scStay;
+
+  /// No description provided for @scLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'خروج بلا حفظ'**
+  String get scLeave;
+
+  /// No description provided for @scTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧾 فاتورة ذكية'**
+  String get scTitle;
+
+  /// No description provided for @scSavedInvoices.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفواتير المحفوظة'**
+  String get scSavedInvoices;
+
+  /// No description provided for @scSaveN.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ ({n})'**
+  String scSaveN(int n);
+
+  /// No description provided for @scEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة أو اخترها من المعرض'**
+  String get scEmptyTitle;
+
+  /// No description provided for @scEmptySub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُقرأ أسطر الصفحة وتُملأ الحقول تلقائياً (الاسم، الكمية، السعر، الصلاحية) لتراجعها قبل الحفظ.'**
+  String get scEmptySub;
+
+  /// No description provided for @scReadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الصفحة: {error}\nاضغط «إعادة المحاولة» على الصفحة.'**
+  String scReadFailed(String error);
+
+  /// No description provided for @scFallbackModel.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع الأسطر بانتباه'**
+  String get scFallbackModel;
+
+  /// No description provided for @scReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري قراءة الفاتورة… قد تستغرق حتى دقيقة للصفحات الكثيفة'**
+  String get scReading;
+
+  /// No description provided for @scNoLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تُقرأ أي أسطر بعد'**
+  String get scNoLines;
+
+  /// No description provided for @scHeader.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧾 بيانات الفاتورة'**
+  String get scHeader;
+
+  /// No description provided for @scSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏪 المجهّز'**
+  String get scSupplier;
+
+  /// No description provided for @scNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة'**
+  String get scNumber;
+
+  /// No description provided for @scDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 التاريخ'**
+  String get scDate;
+
+  /// No description provided for @scTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 مجموع الفاتورة ({currency})'**
+  String scTotal(String currency);
+
+  /// No description provided for @scLinesTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموع الأسطر: {total}'**
+  String scLinesTotal(String total);
+
+  /// No description provided for @scPrinted.
+  ///
+  /// In ar, this message translates to:
+  /// **' · المطبوع: {total}'**
+  String scPrinted(String total);
+
+  /// No description provided for @scTotalsDiffer.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ المجموعان مختلفان — راجع الكميات والأسعار'**
+  String get scTotalsDiffer;
+
+  /// No description provided for @scRetake.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصوير من جديد'**
+  String get scRetake;
+
+  /// No description provided for @scFromGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'من المعرض'**
+  String get scFromGallery;
+
+  /// No description provided for @scDeletePage.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الصفحة'**
+  String get scDeletePage;
+
+  /// No description provided for @scRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get scRetry;
+
+  /// No description provided for @close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get close;
+
+  /// No description provided for @scLinesSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'{total} سطراً · {fresh} جديدة · {existing} ستُضاف لمخزون موجود'**
+  String scLinesSummary(int total, int fresh, int existing);
+
+  /// No description provided for @scNeedReview.
+  ///
+  /// In ar, this message translates to:
+  /// **' · {n} تحتاج مراجعة'**
+  String scNeedReview(int n);
+
+  /// No description provided for @scFlaggedOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشكوك فيها فقط'**
+  String get scFlaggedOnly;
+
+  /// No description provided for @scAllLinesType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع كل الأسطر:'**
+  String get scAllLinesType;
+
+  /// No description provided for @scName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get scName;
+
+  /// No description provided for @scCostPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر (كلفة)'**
+  String get scCostPrice;
+
+  /// No description provided for @scQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get scQty;
+
+  /// No description provided for @scBonus.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{n} مجاناً'**
+  String scBonus(int n);
+
+  /// No description provided for @scExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية (مثل 2027-11)'**
+  String get scExpiry;
+
+  /// No description provided for @scBarcodeOpt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود (اختياري)'**
+  String get scBarcodeOpt;
+
+  /// No description provided for @scExisting.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔁 موجودة مسبقاً («{name}») — الرصيد {qty}، سيُضاف الوارد إليه'**
+  String scExisting(String name, int qty);
+
+  /// No description provided for @scDuplicateLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً'**
+  String get scDuplicateLine;
 }
 
 class _AppLocalizationsDelegate

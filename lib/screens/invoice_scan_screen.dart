@@ -152,20 +152,19 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.bgCard,
-          title: const Text('استبدال الصفحة؟'),
+          title: Text(context.l10n.scReplaceTitle),
           content: Text(
-            'ستُحذف ${_lines.length} سطراً مقروءاً من الصفحة الحالية وتُقرأ '
-            'الصورة الجديدة مكانها.',
+            context.l10n.scReplaceBody(_lines.length),
             style: const TextStyle(fontSize: 13, height: 1.6),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('استبدال'),
+              child: Text(context.l10n.scReplace),
             ),
           ],
         ),
@@ -303,7 +302,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     );
 
     if (result.items.isEmpty) {
-      setState(() => _error = 'لا توجد أسطر صالحة للحفظ.');
+      setState(() => _error = context.l10n.scNoValidLines);
       return;
     }
 
@@ -314,7 +313,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'تعذّر الحفظ: $e';
+        _error = L10n.current.saveFailed('$e');
       });
       return;
     }
@@ -330,8 +329,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
           .catchError((Object e) {
             debugPrint('تعذّر حفظ سجل الفاتورة: $e');
             messenger?.showSnackBar(
-              const SnackBar(
-                content: Text('حُفظت المواد، وتعذّر حفظ سجل الفاتورة'),
+              SnackBar(
+                content: Text(L10n.current.scRecordFailed),
                 backgroundColor: AppColors.warning,
               ),
             );
@@ -367,20 +366,20 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('الخروج بلا حفظ؟'),
+        title: Text(context.l10n.scLeaveTitle),
         content: Text(
-          'ستضيع ${_lines.length} سطراً مقروءاً من هذه الفاتورة.',
+          context.l10n.scLeaveBody(_lines.length),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('البقاء'),
+            child: Text(context.l10n.scStay),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('خروج بلا حفظ'),
+            child: Text(context.l10n.scLeave),
           ),
         ],
       ),
@@ -438,11 +437,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   Widget _scaffold(int named) {
     return Scaffold(
       appBar: GlassAppBar(
-        title: const Text('🧾 فاتورة ذكية'),
+        title: Text(context.l10n.scTitle),
         actions: [
           IconButton(
             key: const Key('openInvoices'),
-            tooltip: 'الفواتير المحفوظة',
+            tooltip: context.l10n.scSavedInvoices,
             icon: const Text('📚', style: TextStyle(fontSize: 20)),
             onPressed: () => Navigator.of(context).push(
               SmoothPageRoute<void>(
@@ -457,7 +456,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
               onPressed: _save,
               icon: const Icon(Icons.check_rounded, color: AppColors.success),
               label: Text(
-                'حفظ ($named)',
+                context.l10n.scSaveN(named),
                 style: const TextStyle(color: AppColors.success),
               ),
             ),
@@ -481,7 +480,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                           child: FilledButton.icon(
                             onPressed: () => _addPage(camera: true),
                             icon: const Icon(Icons.photo_camera_rounded),
-                            label: const Text('كاميرا'),
+                            label: Text(context.l10n.camera),
                           ),
                         ),
                       ),
@@ -493,7 +492,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () => _addPage(camera: false),
                           icon: const Icon(Icons.photo_library_rounded),
-                          label: const Text('معرض'),
+                          label: Text(context.l10n.gallery),
                         ),
                       ),
                     ),
@@ -512,16 +511,15 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       children: [
         const Text('🧾', style: TextStyle(fontSize: 60)),
         const SizedBox(height: 12),
-        const Text(
-          'صوّر الفاتورة أو اخترها من المعرض',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Text(
+          context.l10n.scEmptyTitle,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'تُقرأ أسطر الصفحة وتُملأ الحقول تلقائياً (الاسم، الكمية، السعر، '
-          'الصلاحية) لتراجعها قبل الحفظ.',
+        Text(
+          context.l10n.scEmptySub,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             color: AppColors.textSecondary,
             height: 1.5,
@@ -557,8 +555,9 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     final failed = _pages.where((p) => p.state == _PageState.failed);
     final failureText = failed.isEmpty
         ? null
-        : 'تعذّرت قراءة الصفحة: ${failed.first.error ?? 'خطأ غير معروف'}\n'
-              'اضغط «إعادة المحاولة» على الصفحة.';
+        : context.l10n.scReadFailed(
+            failed.first.error ?? context.l10n.unknownError,
+          );
     return Column(
       children: [
         _pageStrip(),
@@ -573,11 +572,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             color: AppColors.glass,
             margin: const EdgeInsets.symmetric(horizontal: 10),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: _badge(
-              '⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع '
-              'الأسطر بانتباه',
-              AppColors.warning,
-            ),
+            child: _badge(context.l10n.scFallbackModel, AppColors.warning),
           ),
         if (_lines.isNotEmpty) _summary(flagged),
         if (_lines.isNotEmpty) _bulkHeader(),
@@ -592,16 +587,15 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: _anyReading
-                        ? const Text(
-                            'جاري قراءة الفاتورة… قد تستغرق حتى دقيقة '
-                            'للصفحات الكثيفة',
+                        ? Text(
+                            context.l10n.scReading,
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.textSecondary),
                           )
                         : failureText != null
                         ? _errorBox(failureText)
-                        : const Text(
-                            'لم تُقرأ أي أسطر بعد',
+                        : Text(
+                            context.l10n.scNoLines,
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                   ),
@@ -632,15 +626,15 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '🧾 بيانات الفاتورة',
+          Text(
+            context.l10n.scHeader,
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           TextField(
             key: const Key('headerSupplier'),
             controller: _supplier,
-            decoration: const InputDecoration(labelText: '🏪 المجهّز'),
+            decoration: InputDecoration(labelText: context.l10n.scSupplier),
           ),
           const SizedBox(height: 8),
           Row(
@@ -649,7 +643,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 child: TextField(
                   key: const Key('headerNumber'),
                   controller: _number,
-                  decoration: const InputDecoration(labelText: 'رقم الفاتورة'),
+                  decoration: InputDecoration(labelText: context.l10n.scNumber),
                 ),
               ),
               const SizedBox(width: 8),
@@ -657,7 +651,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 child: TextField(
                   key: const Key('headerDate'),
                   controller: _date,
-                  decoration: const InputDecoration(labelText: '📅 التاريخ'),
+                  decoration: InputDecoration(labelText: context.l10n.scDate),
                 ),
               ),
             ],
@@ -670,13 +664,13 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             inputFormatters: [ThousandsSeparatorInputFormatter()],
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: '💰 مجموع الفاتورة (${currencyLabel(iqdOnly: true)})',
+              labelText: context.l10n.scTotal(currencyLabel(iqdOnly: true)),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'مجموع الأسطر: ${formatMoney(lines, iqdOnly: true)}'
-            '${printed == null ? '' : ' · المطبوع: ${formatMoney(printed, iqdOnly: true)}'}',
+            '${context.l10n.scLinesTotal(formatMoney(lines, iqdOnly: true))}'
+            '${printed == null ? '' : context.l10n.scPrinted(formatMoney(printed, iqdOnly: true))}',
             key: const Key('headerCompare'),
             style: TextStyle(
               fontSize: 12,
@@ -685,8 +679,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             ),
           ),
           if (off)
-            const Text(
-              '⚠️ المجموعان مختلفان — راجع الكميات والأسعار',
+            Text(
+              context.l10n.scTotalsDiffer,
               style: TextStyle(fontSize: 12, color: AppColors.warning),
             ),
         ],
@@ -716,12 +710,12 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         for (final page in _pages) _pageTile(page),
         _addPageButton(
           icon: Icons.photo_camera_rounded,
-          label: 'تصوير من جديد',
+          label: context.l10n.scRetake,
           camera: true,
         ),
         _addPageButton(
           icon: Icons.photo_library_rounded,
-          label: 'من المعرض',
+          label: context.l10n.scFromGallery,
           camera: false,
         ),
       ],
@@ -810,7 +804,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                       width: 28,
                       height: 28,
                       child: IconButton(
-                        tooltip: 'حذف الصفحة',
+                        tooltip: context.l10n.scDeletePage,
                         padding: EdgeInsets.zero,
                         iconSize: 18,
                         icon: const Icon(
@@ -832,8 +826,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
-                  child: const Text(
-                    'إعادة المحاولة',
+                  child: Text(
+                    context.l10n.scRetry,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, color: AppColors.danger),
                   ),
@@ -877,7 +871,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
+              child: Text(context.l10n.close),
             ),
           ],
         ),
@@ -898,16 +892,15 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         children: [
           Expanded(
             child: Text(
-              '$total سطراً · ${total - existing} جديدة · '
-              '$existing ستُضاف لمخزون موجود'
-              '${flagged > 0 ? ' · $flagged تحتاج مراجعة' : ''}',
+              '${context.l10n.scLinesSummary(total, total - existing, existing)}'
+              '${flagged > 0 ? context.l10n.scNeedReview(flagged) : ''}',
               style: const TextStyle(fontSize: 12, height: 1.5),
             ),
           ),
           if (flagged > 0)
             FilterChip(
-              label: const Text(
-                'المشكوك فيها فقط',
+              label: Text(
+                context.l10n.scFlaggedOnly,
                 style: TextStyle(fontSize: 11),
               ),
               selected: _flaggedOnly,
@@ -934,7 +927,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
     child: Row(
       children: [
-        const Text('نوع كل الأسطر:', style: TextStyle(fontSize: 13)),
+        Text(context.l10n.scAllLinesType, style: const TextStyle(fontSize: 13)),
         const SizedBox(width: 10),
         Expanded(
           child: SegmentedButton<ItemType>(
@@ -1020,7 +1013,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: line.name,
-              decoration: const InputDecoration(labelText: 'الاسم'),
+              decoration: InputDecoration(labelText: context.l10n.scName),
             ),
             // الشارات تتحدّث حيّاً مع تعديل أي اسم أو باركود — «مكرر مع سطر
             // آخر» تعتمد على تغيّر السطر الآخر أيضاً.
@@ -1040,8 +1033,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                       decimal: true,
                     ),
                     inputFormatters: [ThousandsSeparatorInputFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: 'السعر (كلفة)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.scCostPrice,
                     ),
                   ),
                 ),
@@ -1051,9 +1044,9 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     controller: line.quantity,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'الكمية',
+                      labelText: context.l10n.scQty,
                       helperText: line.bonus > 0
-                          ? '+${line.bonus} مجاناً'
+                          ? context.l10n.scBonus(line.bonus)
                           : null,
                     ),
                   ),
@@ -1066,8 +1059,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 Expanded(
                   child: TextField(
                     controller: line.expiry,
-                    decoration: const InputDecoration(
-                      labelText: 'الصلاحية (مثل 2027-11)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.scExpiry,
                     ),
                   ),
                 ),
@@ -1078,9 +1071,9 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                     controller: line.barcode,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'الباركود (اختياري)',
+                      labelText: context.l10n.scBarcodeOpt,
                       suffixIcon: IconButton(
-                        tooltip: 'مسح الباركود',
+                        tooltip: context.l10n.scanTheBarcode,
                         icon: const Icon(
                           Icons.qr_code_scanner_rounded,
                           color: AppColors.primary,
@@ -1096,17 +1089,15 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             TextField(
               key: const Key('lineCompany'),
               controller: line.company,
-              decoration: const InputDecoration(
-                labelText: '🏭 اسم الشركة (اختياري)',
-              ),
+              decoration: InputDecoration(labelText: context.l10n.formCompany),
             ),
             if (line.type == ItemType.medicine) ...[
               const SizedBox(height: 6),
               TextField(
                 key: const Key('lineCategory'),
                 controller: line.category,
-                decoration: const InputDecoration(
-                  labelText: '🧪 نوع المادة (اختياري)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.formCategory,
                 ),
               ),
             ],
@@ -1130,15 +1121,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
         children: [
           if (existing != null)
             _badge(
-              '🔁 موجودة مسبقاً («${existing.name}») — الرصيد '
-              '${existing.quantity}، سيُضاف الوارد إليه',
+              context.l10n.scExisting(existing.name, existing.quantity),
               AppColors.warning,
             ),
           if (duplicatesOther)
-            _badge(
-              '🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً',
-              AppColors.primary,
-            ),
+            _badge(context.l10n.scDuplicateLine, AppColors.primary),
         ],
       ),
     );

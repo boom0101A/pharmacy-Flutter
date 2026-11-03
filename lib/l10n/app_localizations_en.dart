@@ -1264,4 +1264,275 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cdSaveNext => 'Save & next';
+
+  @override
+  String get invTitle => '📚 Invoices';
+
+  @override
+  String get invSearchHint => 'Search by supplier or invoice number…';
+
+  @override
+  String invSummary(int n, String total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n invoices',
+      one: '1 invoice',
+    );
+    return '$_temp0 · total $total';
+  }
+
+  @override
+  String get invEmpty =>
+      'No saved invoices yet — they\'re saved automatically from “Smart invoice”';
+
+  @override
+  String invItems(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String invNumberShort(String n) {
+    return ' · No. $n';
+  }
+
+  @override
+  String get invDeleteTitle => 'Delete invoice';
+
+  @override
+  String get invDeleteBody =>
+      'The invoice record and its photos are deleted from all devices. Stock doesn\'t change — the quantities it added stay.';
+
+  @override
+  String get invoice => 'Invoice';
+
+  @override
+  String get invDeleteRecord => 'Delete record';
+
+  @override
+  String get invPhotoElsewhere =>
+      '📷 The invoice photo is on the phone that took it';
+
+  @override
+  String get invPhotoFailed => 'Couldn\'t show the image';
+
+  @override
+  String get invRowSupplier => '🏪 Supplier';
+
+  @override
+  String get invRowDate => '📅 Date';
+
+  @override
+  String get invRowNumber => '🔢 Number';
+
+  @override
+  String get invRowTotal => '💰 Invoice total';
+
+  @override
+  String get invRowLinesTotal => '🧮 Lines total';
+
+  @override
+  String get invLineMerged => '🔁 Added to existing';
+
+  @override
+  String get invLineNew => '🆕 New';
+
+  @override
+  String get scanAim => '🎯 Point the camera at the medicine barcode';
+
+  @override
+  String get camDenied =>
+      'Camera permission wasn\'t granted.\nOpen the app settings and enable the camera.';
+
+  @override
+  String get camUnsupported => 'The camera isn\'t supported on this device.';
+
+  @override
+  String camFailed(String details) {
+    return 'Couldn\'t start the camera.\n$details';
+  }
+
+  @override
+  String get cropTitle => 'Crop image';
+
+  @override
+  String get cropReset => 'Reset';
+
+  @override
+  String get cropNone => 'No crop';
+
+  @override
+  String get scReplaceTitle => 'Replace page?';
+
+  @override
+  String scReplaceBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n read lines',
+      one: '1 read line',
+    );
+    return '$_temp0 on the current page will be removed and the new image read in its place.';
+  }
+
+  @override
+  String get scReplace => 'Replace';
+
+  @override
+  String get scNoValidLines => 'There are no valid lines to save.';
+
+  @override
+  String get scRecordFailed =>
+      'Items saved, but the invoice record couldn\'t be saved';
+
+  @override
+  String get scLeaveTitle => 'Leave without saving?';
+
+  @override
+  String scLeaveBody(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n read lines',
+      one: '1 read line',
+    );
+    return '$_temp0 from this invoice will be lost.';
+  }
+
+  @override
+  String get scStay => 'Stay';
+
+  @override
+  String get scLeave => 'Leave without saving';
+
+  @override
+  String get scTitle => '🧾 Smart invoice';
+
+  @override
+  String get scSavedInvoices => 'Saved invoices';
+
+  @override
+  String scSaveN(int n) {
+    return 'Save ($n)';
+  }
+
+  @override
+  String get scEmptyTitle => 'Snap the invoice or pick it from the gallery';
+
+  @override
+  String get scEmptySub =>
+      'The page\'s lines are read and the fields filled in automatically (name, quantity, price, expiry) for you to review before saving.';
+
+  @override
+  String scReadFailed(String error) {
+    return 'Couldn\'t read the page: $error\nTap “Retry” on the page.';
+  }
+
+  @override
+  String get scFallbackModel =>
+      '⚡ Read with the fallback model (the main model is unavailable now) — review the lines carefully';
+
+  @override
+  String get scReading =>
+      'Reading the invoice… dense pages can take up to a minute';
+
+  @override
+  String get scNoLines => 'No lines read yet';
+
+  @override
+  String get scHeader => '🧾 Invoice details';
+
+  @override
+  String get scSupplier => '🏪 Supplier';
+
+  @override
+  String get scNumber => 'Invoice number';
+
+  @override
+  String get scDate => '📅 Date';
+
+  @override
+  String scTotal(String currency) {
+    return '💰 Invoice total ($currency)';
+  }
+
+  @override
+  String scLinesTotal(String total) {
+    return 'Lines total: $total';
+  }
+
+  @override
+  String scPrinted(String total) {
+    return ' · printed: $total';
+  }
+
+  @override
+  String get scTotalsDiffer =>
+      '⚠️ The totals differ — review quantities and prices';
+
+  @override
+  String get scRetake => 'Retake';
+
+  @override
+  String get scFromGallery => 'From gallery';
+
+  @override
+  String get scDeletePage => 'Delete page';
+
+  @override
+  String get scRetry => 'Retry';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String scLinesSummary(int total, int fresh, int existing) {
+    return '$total lines · $fresh new · $existing added to existing stock';
+  }
+
+  @override
+  String scNeedReview(int n) {
+    return ' · $n need review';
+  }
+
+  @override
+  String get scFlaggedOnly => 'Doubtful only';
+
+  @override
+  String get scAllLinesType => 'All lines\' type:';
+
+  @override
+  String get scName => 'Name';
+
+  @override
+  String get scCostPrice => 'Price (cost)';
+
+  @override
+  String get scQty => 'Quantity';
+
+  @override
+  String scBonus(int n) {
+    return '+$n free';
+  }
+
+  @override
+  String get scExpiry => 'Expiry (e.g. 2027-11)';
+
+  @override
+  String get scBarcodeOpt => 'Barcode (optional)';
+
+  @override
+  String scExisting(String name, int qty) {
+    return '🔁 Already exists (“$name”) — balance $qty, incoming will be added to it';
+  }
+
+  @override
+  String get scDuplicateLine =>
+      '🔗 Repeats another line in this invoice — they\'ll be merged automatically';
 }

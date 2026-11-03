@@ -10,6 +10,7 @@ import '../util/money.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
+import '../l10n/l10n.dart';
 
 String _date(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -69,7 +70,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     final shown = _shown;
     final sum = shown.fold<double>(0, (s, i) => s + (i.total ?? i.linesTotal));
     return Scaffold(
-      appBar: const GlassAppBar(title: Text('📚 الفواتير')),
+      appBar: GlassAppBar(title: Text(context.l10n.invTitle)),
       body: Stack(
         children: [
           const Positioned.fill(child: AuroraBackground()),
@@ -82,8 +83,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                     key: const Key('invoiceSearch'),
                     controller: _search,
                     onChanged: (_) => setState(() {}),
-                    decoration: const InputDecoration(
-                      hintText: 'ابحث باسم المجهّز أو رقم الفاتورة…',
+                    decoration: InputDecoration(
+                      hintText: context.l10n.invSearchHint,
                       prefixIcon: Icon(Icons.search_rounded),
                     ),
                   ),
@@ -91,7 +92,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    '${shown.length} فاتورة · المجموع ${formatMoney(sum, iqdOnly: true)}',
+                    context.l10n.invSummary(
+                      shown.length,
+                      formatMoney(sum, iqdOnly: true),
+                    ),
                     key: const Key('invoicesSummary'),
                     style: const TextStyle(
                       fontSize: 12,
@@ -101,9 +105,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 ),
                 Expanded(
                   child: shown.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'لا فواتير محفوظة بعد — تُحفظ تلقائياً من «فاتورة ذكية»',
+                            context.l10n.invEmpty,
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
@@ -170,15 +174,15 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        inv.supplier ?? 'مجهّز غير معروف',
+                        inv.supplier ?? context.l10n.unknownSupplier,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${_shownDate(inv)} · ${inv.itemsCount} مادة'
-                        '${inv.number == null ? '' : ' · رقم ${inv.number}'}',
+                        '${_shownDate(inv)} · ${context.l10n.invItems(inv.itemsCount)}'
+                        '${inv.number == null ? '' : context.l10n.invNumberShort(inv.number!)}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -219,21 +223,20 @@ class InvoiceDetailScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('حذف الفاتورة'),
-        content: const Text(
-          'يُحذف سجل الفاتورة وصورها من كل الأجهزة. المخزون لا يتغيّر — '
-          'الكميات التي أضافتها تبقى.',
+        title: Text(context.l10n.invDeleteTitle),
+        content: Text(
+          context.l10n.invDeleteBody,
           style: TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('احذف'),
+            child: Text(context.l10n.cdDeleteConfirm),
           ),
         ],
       ),
@@ -256,11 +259,11 @@ class InvoiceDetailScreen extends StatelessWidget {
         (inv.linesTotal - printed).abs() > printed * .01;
     return Scaffold(
       appBar: GlassAppBar(
-        title: Text(inv.supplier ?? 'فاتورة'),
+        title: Text(inv.supplier ?? context.l10n.invoice),
         actions: [
           IconButton(
             key: const Key('deleteInvoice'),
-            tooltip: 'حذف السجل',
+            tooltip: context.l10n.invDeleteRecord,
             icon: const Icon(
               Icons.delete_outline_rounded,
               color: AppColors.danger,
@@ -277,11 +280,11 @@ class InvoiceDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               children: [
                 if (pages.isEmpty)
-                  const GlassSurface(
+                  GlassSurface(
                     key: Key('noInvoiceImage'),
                     padding: EdgeInsets.all(14),
                     child: Text(
-                      '📷 صورة الفاتورة على الهاتف الذي صوّرها',
+                      context.l10n.invPhotoElsewhere,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
@@ -312,9 +315,11 @@ class InvoiceDetailScreen extends StatelessWidget {
                             height: 220,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const SizedBox(
+                            errorBuilder: (_, _, _) => SizedBox(
                               height: 60,
-                              child: Center(child: Text('تعذّر عرض الصورة')),
+                              child: Center(
+                                child: Text(context.l10n.invPhotoFailed),
+                              ),
                             ),
                           ),
                         ),
@@ -325,17 +330,18 @@ class InvoiceDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _row('🏪 المجهّز', inv.supplier ?? '—'),
-                      _row('📅 التاريخ', _shownDate(inv)),
-                      if (inv.number != null) _row('🔢 الرقم', inv.number!),
+                      _row(context.l10n.invRowSupplier, inv.supplier ?? '—'),
+                      _row(context.l10n.invRowDate, _shownDate(inv)),
+                      if (inv.number != null)
+                        _row(context.l10n.invRowNumber, inv.number!),
                       _row(
-                        '💰 مجموع الفاتورة',
+                        context.l10n.invRowTotal,
                         printed == null
                             ? '—'
                             : formatMoney(printed, iqdOnly: true),
                       ),
                       _row(
-                        '🧮 مجموع الأسطر',
+                        context.l10n.invRowLinesTotal,
                         formatMoney(inv.linesTotal, iqdOnly: true),
                         color: off ? AppColors.warning : null,
                       ),
@@ -344,7 +350,7 @@ class InvoiceDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '${inv.itemsCount} مادة',
+                  context.l10n.invItems(inv.itemsCount),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
@@ -380,7 +386,9 @@ class InvoiceDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            l.merged ? '🔁 أُضيفت لموجودة' : '🆕 جديدة',
+                            l.merged
+                                ? context.l10n.invLineMerged
+                                : context.l10n.invLineNew,
                             style: TextStyle(
                               fontSize: 11,
                               color: l.merged

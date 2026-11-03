@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../theme.dart';
+import '../l10n/l10n.dart';
 
 /// شاشة مسح الباركود — كاميرا ملء الشاشة.
 /// ترجع نص الباركود عبر Navigator.pop، أو null إذا ألغى المستخدم.
@@ -132,8 +133,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     color: Colors.black.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Text(
-                    '🎯 وجّه الكاميرا نحو باركود الدواء',
+                  child: Text(
+                    context.l10n.scanAim,
                     style: TextStyle(color: Colors.white, fontSize: 15),
                   ),
                 ),
@@ -188,11 +189,9 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = switch (error.errorCode) {
-      MobileScannerErrorCode.permissionDenied =>
-        'لم يتم منح إذن الكاميرا.\nافتح إعدادات التطبيق وفعّل الكاميرا.',
-      MobileScannerErrorCode.unsupported =>
-        'الكاميرا غير مدعومة على هذا الجهاز.',
-      _ => 'تعذّر تشغيل الكاميرا.\n${error.errorDetails?.message ?? ''}',
+      MobileScannerErrorCode.permissionDenied => context.l10n.camDenied,
+      MobileScannerErrorCode.unsupported => context.l10n.camUnsupported,
+      _ => context.l10n.camFailed(error.errorDetails?.message ?? ''),
     };
 
     return Container(

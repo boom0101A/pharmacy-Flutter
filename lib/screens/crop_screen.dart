@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/product_cropper.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// شاشة تأكيد القص: الإطار يبدأ حول العلبة المكتشفة تلقائياً، ويستطيع
 /// المستخدم سحب زواياه قبل «تم». تعيد الملف النهائي (مقصوصاً أو الأصلي عند
@@ -101,7 +102,7 @@ class _CropScreenState extends State<CropScreen> {
   Widget build(BuildContext context) {
     final ready = _rect != null;
     return Scaffold(
-      appBar: const GlassAppBar(title: Text('قصّ الصورة')),
+      appBar: GlassAppBar(title: Text(context.l10n.cropTitle)),
       body: Stack(
         children: [
           const Positioned.fill(child: AuroraBackground()),
@@ -213,7 +214,7 @@ class _CropScreenState extends State<CropScreen> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('تم'),
+                  : Text(context.l10n.done),
             ),
           ),
           const SizedBox(width: 8),
@@ -222,7 +223,7 @@ class _CropScreenState extends State<CropScreen> {
             onPressed: ready && !_busy
                 ? () => setState(() => _rect = _suggested)
                 : null,
-            child: const Text('إعادة الضبط'),
+            child: Text(context.l10n.cropReset),
           ),
           TextButton(
             key: const Key('cropSkip'),
@@ -231,7 +232,7 @@ class _CropScreenState extends State<CropScreen> {
                 : () => _image == null
                       ? Navigator.of(context).pop(widget.file)
                       : _done(Offset.zero & _image!),
-            child: const Text('بلا قص'),
+            child: Text(context.l10n.cropNone),
           ),
         ],
       ),

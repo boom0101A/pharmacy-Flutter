@@ -921,5 +921,191 @@
   "cdNoBarcodeSub": "تحضير أو علبة بلا رمز — لن تُعدّ ناقصة بسبب الباركود",
   "takePhoto": "تصوير",
   "theGallery": "المعرض",
-  "cdSaveNext": "حفظ والتالي"
+  "cdSaveNext": "حفظ والتالي",
+  "invTitle": "📚 الفواتير",
+  "invSearchHint": "ابحث باسم المجهّز أو رقم الفاتورة…",
+  "invSummary": "{n} فاتورة · المجموع {total}",
+  "@invSummary": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "invEmpty": "لا فواتير محفوظة بعد — تُحفظ تلقائياً من «فاتورة ذكية»",
+  "invItems": "{n} مادة",
+  "@invItems": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "invNumberShort": " · رقم {n}",
+  "@invNumberShort": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "invDeleteTitle": "حذف الفاتورة",
+  "invDeleteBody": "يُحذف سجل الفاتورة وصورها من كل الأجهزة. المخزون لا يتغيّر — الكميات التي أضافتها تبقى.",
+  "invoice": "فاتورة",
+  "invDeleteRecord": "حذف السجل",
+  "invPhotoElsewhere": "📷 صورة الفاتورة على الهاتف الذي صوّرها",
+  "invPhotoFailed": "تعذّر عرض الصورة",
+  "invRowSupplier": "🏪 المجهّز",
+  "invRowDate": "📅 التاريخ",
+  "invRowNumber": "🔢 الرقم",
+  "invRowTotal": "💰 مجموع الفاتورة",
+  "invRowLinesTotal": "🧮 مجموع الأسطر",
+  "invLineMerged": "🔁 أُضيفت لموجودة",
+  "invLineNew": "🆕 جديدة",
+  "scanAim": "🎯 وجّه الكاميرا نحو باركود الدواء",
+  "camDenied": "لم يتم منح إذن الكاميرا.\nافتح إعدادات التطبيق وفعّل الكاميرا.",
+  "camUnsupported": "الكاميرا غير مدعومة على هذا الجهاز.",
+  "camFailed": "تعذّر تشغيل الكاميرا.\n{details}",
+  "@camFailed": {
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "cropTitle": "قصّ الصورة",
+  "cropReset": "إعادة الضبط",
+  "cropNone": "بلا قص",
+  "scReplaceTitle": "استبدال الصفحة؟",
+  "scReplaceBody": "ستُحذف {n} سطراً مقروءاً من الصفحة الحالية وتُقرأ الصورة الجديدة مكانها.",
+  "@scReplaceBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scReplace": "استبدال",
+  "scNoValidLines": "لا توجد أسطر صالحة للحفظ.",
+  "scRecordFailed": "حُفظت المواد، وتعذّر حفظ سجل الفاتورة",
+  "scLeaveTitle": "الخروج بلا حفظ؟",
+  "scLeaveBody": "ستضيع {n} سطراً مقروءاً من هذه الفاتورة.",
+  "@scLeaveBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scStay": "البقاء",
+  "scLeave": "خروج بلا حفظ",
+  "scTitle": "🧾 فاتورة ذكية",
+  "scSavedInvoices": "الفواتير المحفوظة",
+  "scSaveN": "حفظ ({n})",
+  "@scSaveN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scEmptyTitle": "صوّر الفاتورة أو اخترها من المعرض",
+  "scEmptySub": "تُقرأ أسطر الصفحة وتُملأ الحقول تلقائياً (الاسم، الكمية، السعر، الصلاحية) لتراجعها قبل الحفظ.",
+  "scReadFailed": "تعذّرت قراءة الصفحة: {error}\nاضغط «إعادة المحاولة» على الصفحة.",
+  "@scReadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "scFallbackModel": "⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع الأسطر بانتباه",
+  "scReading": "جاري قراءة الفاتورة… قد تستغرق حتى دقيقة للصفحات الكثيفة",
+  "scNoLines": "لم تُقرأ أي أسطر بعد",
+  "scHeader": "🧾 بيانات الفاتورة",
+  "scSupplier": "🏪 المجهّز",
+  "scNumber": "رقم الفاتورة",
+  "scDate": "📅 التاريخ",
+  "scTotal": "💰 مجموع الفاتورة ({currency})",
+  "@scTotal": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "scLinesTotal": "مجموع الأسطر: {total}",
+  "@scLinesTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "scPrinted": " · المطبوع: {total}",
+  "@scPrinted": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "scTotalsDiffer": "⚠️ المجموعان مختلفان — راجع الكميات والأسعار",
+  "scRetake": "تصوير من جديد",
+  "scFromGallery": "من المعرض",
+  "scDeletePage": "حذف الصفحة",
+  "scRetry": "إعادة المحاولة",
+  "close": "إغلاق",
+  "scLinesSummary": "{total} سطراً · {fresh} جديدة · {existing} ستُضاف لمخزون موجود",
+  "@scLinesSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "fresh": {
+        "type": "int"
+      },
+      "existing": {
+        "type": "int"
+      }
+    }
+  },
+  "scNeedReview": " · {n} تحتاج مراجعة",
+  "@scNeedReview": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scFlaggedOnly": "المشكوك فيها فقط",
+  "scAllLinesType": "نوع كل الأسطر:",
+  "scName": "الاسم",
+  "scCostPrice": "السعر (كلفة)",
+  "scQty": "الكمية",
+  "scBonus": "+{n} مجاناً",
+  "@scBonus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scExpiry": "الصلاحية (مثل 2027-11)",
+  "scBarcodeOpt": "الباركود (اختياري)",
+  "scExisting": "🔁 موجودة مسبقاً («{name}») — الرصيد {qty}، سيُضاف الوارد إليه",
+  "@scExisting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      }
+    }
+  },
+  "scDuplicateLine": "🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً"
 }

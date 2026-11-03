@@ -1194,4 +1194,248 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cdSaveNext => 'حفظ والتالي';
+
+  @override
+  String get invTitle => '📚 الفواتير';
+
+  @override
+  String get invSearchHint => 'ابحث باسم المجهّز أو رقم الفاتورة…';
+
+  @override
+  String invSummary(int n, String total) {
+    return '$n فاتورة · المجموع $total';
+  }
+
+  @override
+  String get invEmpty =>
+      'لا فواتير محفوظة بعد — تُحفظ تلقائياً من «فاتورة ذكية»';
+
+  @override
+  String invItems(int n) {
+    return '$n مادة';
+  }
+
+  @override
+  String invNumberShort(String n) {
+    return ' · رقم $n';
+  }
+
+  @override
+  String get invDeleteTitle => 'حذف الفاتورة';
+
+  @override
+  String get invDeleteBody =>
+      'يُحذف سجل الفاتورة وصورها من كل الأجهزة. المخزون لا يتغيّر — الكميات التي أضافتها تبقى.';
+
+  @override
+  String get invoice => 'فاتورة';
+
+  @override
+  String get invDeleteRecord => 'حذف السجل';
+
+  @override
+  String get invPhotoElsewhere => '📷 صورة الفاتورة على الهاتف الذي صوّرها';
+
+  @override
+  String get invPhotoFailed => 'تعذّر عرض الصورة';
+
+  @override
+  String get invRowSupplier => '🏪 المجهّز';
+
+  @override
+  String get invRowDate => '📅 التاريخ';
+
+  @override
+  String get invRowNumber => '🔢 الرقم';
+
+  @override
+  String get invRowTotal => '💰 مجموع الفاتورة';
+
+  @override
+  String get invRowLinesTotal => '🧮 مجموع الأسطر';
+
+  @override
+  String get invLineMerged => '🔁 أُضيفت لموجودة';
+
+  @override
+  String get invLineNew => '🆕 جديدة';
+
+  @override
+  String get scanAim => '🎯 وجّه الكاميرا نحو باركود الدواء';
+
+  @override
+  String get camDenied =>
+      'لم يتم منح إذن الكاميرا.\nافتح إعدادات التطبيق وفعّل الكاميرا.';
+
+  @override
+  String get camUnsupported => 'الكاميرا غير مدعومة على هذا الجهاز.';
+
+  @override
+  String camFailed(String details) {
+    return 'تعذّر تشغيل الكاميرا.\n$details';
+  }
+
+  @override
+  String get cropTitle => 'قصّ الصورة';
+
+  @override
+  String get cropReset => 'إعادة الضبط';
+
+  @override
+  String get cropNone => 'بلا قص';
+
+  @override
+  String get scReplaceTitle => 'استبدال الصفحة؟';
+
+  @override
+  String scReplaceBody(int n) {
+    return 'ستُحذف $n سطراً مقروءاً من الصفحة الحالية وتُقرأ الصورة الجديدة مكانها.';
+  }
+
+  @override
+  String get scReplace => 'استبدال';
+
+  @override
+  String get scNoValidLines => 'لا توجد أسطر صالحة للحفظ.';
+
+  @override
+  String get scRecordFailed => 'حُفظت المواد، وتعذّر حفظ سجل الفاتورة';
+
+  @override
+  String get scLeaveTitle => 'الخروج بلا حفظ؟';
+
+  @override
+  String scLeaveBody(int n) {
+    return 'ستضيع $n سطراً مقروءاً من هذه الفاتورة.';
+  }
+
+  @override
+  String get scStay => 'البقاء';
+
+  @override
+  String get scLeave => 'خروج بلا حفظ';
+
+  @override
+  String get scTitle => '🧾 فاتورة ذكية';
+
+  @override
+  String get scSavedInvoices => 'الفواتير المحفوظة';
+
+  @override
+  String scSaveN(int n) {
+    return 'حفظ ($n)';
+  }
+
+  @override
+  String get scEmptyTitle => 'صوّر الفاتورة أو اخترها من المعرض';
+
+  @override
+  String get scEmptySub =>
+      'تُقرأ أسطر الصفحة وتُملأ الحقول تلقائياً (الاسم، الكمية، السعر، الصلاحية) لتراجعها قبل الحفظ.';
+
+  @override
+  String scReadFailed(String error) {
+    return 'تعذّرت قراءة الصفحة: $error\nاضغط «إعادة المحاولة» على الصفحة.';
+  }
+
+  @override
+  String get scFallbackModel =>
+      '⚡ قُرئت بالنموذج البديل (النموذج الأساسي غير متاح الآن) — راجع الأسطر بانتباه';
+
+  @override
+  String get scReading =>
+      'جاري قراءة الفاتورة… قد تستغرق حتى دقيقة للصفحات الكثيفة';
+
+  @override
+  String get scNoLines => 'لم تُقرأ أي أسطر بعد';
+
+  @override
+  String get scHeader => '🧾 بيانات الفاتورة';
+
+  @override
+  String get scSupplier => '🏪 المجهّز';
+
+  @override
+  String get scNumber => 'رقم الفاتورة';
+
+  @override
+  String get scDate => '📅 التاريخ';
+
+  @override
+  String scTotal(String currency) {
+    return '💰 مجموع الفاتورة ($currency)';
+  }
+
+  @override
+  String scLinesTotal(String total) {
+    return 'مجموع الأسطر: $total';
+  }
+
+  @override
+  String scPrinted(String total) {
+    return ' · المطبوع: $total';
+  }
+
+  @override
+  String get scTotalsDiffer => '⚠️ المجموعان مختلفان — راجع الكميات والأسعار';
+
+  @override
+  String get scRetake => 'تصوير من جديد';
+
+  @override
+  String get scFromGallery => 'من المعرض';
+
+  @override
+  String get scDeletePage => 'حذف الصفحة';
+
+  @override
+  String get scRetry => 'إعادة المحاولة';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String scLinesSummary(int total, int fresh, int existing) {
+    return '$total سطراً · $fresh جديدة · $existing ستُضاف لمخزون موجود';
+  }
+
+  @override
+  String scNeedReview(int n) {
+    return ' · $n تحتاج مراجعة';
+  }
+
+  @override
+  String get scFlaggedOnly => 'المشكوك فيها فقط';
+
+  @override
+  String get scAllLinesType => 'نوع كل الأسطر:';
+
+  @override
+  String get scName => 'الاسم';
+
+  @override
+  String get scCostPrice => 'السعر (كلفة)';
+
+  @override
+  String get scQty => 'الكمية';
+
+  @override
+  String scBonus(int n) {
+    return '+$n مجاناً';
+  }
+
+  @override
+  String get scExpiry => 'الصلاحية (مثل 2027-11)';
+
+  @override
+  String get scBarcodeOpt => 'الباركود (اختياري)';
+
+  @override
+  String scExisting(String name, int qty) {
+    return '🔁 موجودة مسبقاً («$name») — الرصيد $qty، سيُضاف الوارد إليه';
+  }
+
+  @override
+  String get scDuplicateLine =>
+      '🔗 مكرر مع سطر آخر في هذه الفاتورة — سيُدمجان تلقائياً';
 }
