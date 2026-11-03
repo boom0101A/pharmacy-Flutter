@@ -6,6 +6,7 @@ import '../models/invoice.dart';
 import '../services/image_store.dart';
 import '../state/invoice_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
@@ -90,7 +91,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    '${shown.length} فاتورة · المجموع ${formatPrice(sum)} د.ع',
+                    '${shown.length} فاتورة · المجموع ${formatMoney(sum, iqdOnly: true)}',
                     key: const Key('invoicesSummary'),
                     style: const TextStyle(
                       fontSize: 12,
@@ -187,7 +188,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   ),
                 ),
                 Text(
-                  '${formatPrice(inv.total ?? inv.linesTotal)} د.ع',
+                  formatMoney(inv.total ?? inv.linesTotal, iqdOnly: true),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -329,11 +330,13 @@ class InvoiceDetailScreen extends StatelessWidget {
                       if (inv.number != null) _row('🔢 الرقم', inv.number!),
                       _row(
                         '💰 مجموع الفاتورة',
-                        printed == null ? '—' : '${formatPrice(printed)} د.ع',
+                        printed == null
+                            ? '—'
+                            : formatMoney(printed, iqdOnly: true),
                       ),
                       _row(
                         '🧮 مجموع الأسطر',
-                        '${formatPrice(inv.linesTotal)} د.ع',
+                        formatMoney(inv.linesTotal, iqdOnly: true),
                         color: off ? AppColors.warning : null,
                       ),
                     ],
@@ -367,7 +370,7 @@ class InvoiceDetailScreen extends StatelessWidget {
                                 ),
                                 Text(
                                   '${l.quantity} × ${formatPrice(l.price)} = '
-                                  '${formatPrice(l.total)} د.ع',
+                                  '${formatMoney(l.total, iqdOnly: true)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,

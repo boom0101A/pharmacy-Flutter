@@ -11,10 +11,10 @@ import '../services/gs1_parser.dart';
 import '../state/invoice_store.dart';
 import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
+import '../util/money.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
-import '../widgets/medicine_card.dart' show formatPrice;
 import 'invoices_screen.dart';
 import 'scanner_screen.dart';
 
@@ -668,14 +668,14 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [ThousandsSeparatorInputFormatter()],
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: '💰 مجموع الفاتورة (د.ع)',
+            decoration: InputDecoration(
+              labelText: '💰 مجموع الفاتورة (${currencyLabel(iqdOnly: true)})',
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'مجموع الأسطر: ${formatPrice(lines)} د.ع'
-            '${printed == null ? '' : ' · المطبوع: ${formatPrice(printed)} د.ع'}',
+            'مجموع الأسطر: ${formatMoney(lines, iqdOnly: true)}'
+            '${printed == null ? '' : ' · المطبوع: ${formatMoney(printed, iqdOnly: true)}'}',
             key: const Key('headerCompare'),
             style: TextStyle(
               fontSize: 12,

@@ -12,9 +12,9 @@ import '../services/product_cropper.dart';
 import '../services/product_image_picker.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 import '../util/number_parse.dart';
 import '../widgets/glass.dart';
-import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
 import 'scanner_screen.dart';
 
@@ -87,7 +87,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   void _loadCurrent() {
     final m = _current;
     if (m == null) return;
-    _price.text = m.price > 0 ? formatPriceInput(m.price) : '';
+    _price.text = m.price > 0 ? priceInputText(m.price) : '';
     _quantity.text = m.quantity > 0 ? '${m.quantity}' : '';
     _barcode.text = m.barcode;
     _noBarcode = m.noBarcode;
@@ -145,7 +145,12 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
 
   Future<void> _save(Medicine m) async {
     if (_busy) return;
-    final price = parseLocalizedNumber(_price.text) ?? 0;
+    final price =
+        priceFromInput(
+          _price.text,
+          originalIqd: m.price > 0 ? m.price : null,
+        ) ??
+        0;
     final qty = parseLocalizedInt(_quantity.text) ?? 0;
     final updated = m.copyWith(
       price: price < 0 ? 0 : price,
@@ -342,7 +347,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  'السعر ${formatPrice(match.price)} د.ع · الكمية '
+                  'السعر ${formatMoney(match.price)} · الكمية '
                   '${match.quantity}'
                   '${match.barcode.isEmpty ? '' : ' · ${match.barcode}'}',
                   style: const TextStyle(
@@ -372,7 +377,9 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                   decimal: true,
                 ),
                 inputFormatters: [ThousandsSeparatorInputFormatter()],
-                decoration: const InputDecoration(labelText: '💰 السعر (د.ع)'),
+                decoration: InputDecoration(
+                  labelText: '💰 السعر (${currencyLabel()})',
+                ),
               ),
             ),
             const SizedBox(width: 10),

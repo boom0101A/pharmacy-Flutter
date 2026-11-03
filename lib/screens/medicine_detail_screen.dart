@@ -9,6 +9,7 @@ import '../services/image_store.dart';
 import '../state/invoice_store.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/product_image.dart';
@@ -111,7 +112,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
     final expiry = m.expiry;
     return [
       m.name,
-      'السعر: ${formatPrice(m.price)} د.ع',
+      'السعر: ${formatMoney(m.price)}',
       'الكمية: ${m.quantity}',
       if (expiry != null) 'الصلاحية: ${_date(expiry.millisecondsSinceEpoch)}',
       if (m.barcode.isNotEmpty) 'الباركود: ${m.barcode}',
@@ -391,7 +392,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          cell('السعر', Text('${formatPrice(m.price)} د.ع', style: big)),
+          cell('السعر', Text(formatMoney(m.price), style: big)),
           cell(
             'الكمية',
             Row(
@@ -429,7 +430,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           cell(
             'قيمة المخزون',
             Text(
-              '${formatPrice(m.price * m.quantity)} د.ع',
+              formatMoney(m.price * m.quantity),
               style: big.copyWith(color: AppColors.primary),
             ),
           ),

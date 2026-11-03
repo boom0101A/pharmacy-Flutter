@@ -9,6 +9,7 @@ import '../services/notification_service.dart';
 import '../services/sync_service.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 import '../util/number_parse.dart';
 import '../widgets/glass.dart';
 import '../widgets/medicine_card.dart';
@@ -580,7 +581,6 @@ class _HomeScreenState extends State<HomeScreen>
                 child: _StatBox(
                   label: isSupplies ? 'عدد المستلزمات' : 'عدد الأدوية',
                   value: store.totalCount.toDouble(),
-                  decimals: 0,
                   color: AppColors.primary,
                 ),
               ),
@@ -588,9 +588,10 @@ class _HomeScreenState extends State<HomeScreen>
               Expanded(
                 child: _StatBox(
                   label: store.missingPriceCount == 0
-                      ? 'القيمة الإجمالية (د.ع)'
+                      ? 'القيمة الإجمالية (${currencyLabel()})'
                       : 'القيمة (${store.missingPriceCount} بلا سعر)',
                   value: store.totalValue,
+                  money: true,
                   color: AppColors.success,
                 ),
               ),
@@ -700,7 +701,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
               const SizedBox(height: 14),
-              const _SectionLabel('💰 نطاق السعر (د.ع)'),
+              _SectionLabel('💰 نطاق السعر (${currencyLabel()})'),
               _RangeRow(
                 // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
                 // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
@@ -708,13 +709,13 @@ class _HomeScreenState extends State<HomeScreen>
                 money: true,
                 initialMin: store.priceMin == null
                     ? null
-                    : formatPriceInput(store.priceMin!),
+                    : priceInputText(store.priceMin!),
                 initialMax: store.priceMax == null
                     ? null
-                    : formatPriceInput(store.priceMax!),
+                    : priceInputText(store.priceMax!),
                 onChanged: (min, max) => store.setPriceRange(
-                  min == null ? null : parseLocalizedNumber(min),
-                  max == null ? null : parseLocalizedNumber(max),
+                  min == null ? null : priceFromInput(min),
+                  max == null ? null : priceFromInput(max),
                 ),
               ),
               const SizedBox(height: 14),
@@ -1104,13 +1105,15 @@ class _StatBox extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
-    this.decimals = 0,
+    this.money = false,
   });
 
   final String label;
   final double value;
   final Color color;
-  final int decimals;
+
+  /// قيمة بالدينار تُعرض بعملة العرض (الدولار بكسرين)، لا عدد.
+  final bool money;
 
   @override
   Widget build(BuildContext context) => GlassSurface(
@@ -1127,7 +1130,7 @@ class _StatBox extends StatelessWidget {
           duration: const Duration(milliseconds: 420),
           curve: Curves.easeOutCubic,
           builder: (context, v, _) => Text(
-            decimals == 0 ? formatPrice(v.round()) : formatPrice(v),
+            money ? formatMoneyNumber(v) : formatPrice(v.round()),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(

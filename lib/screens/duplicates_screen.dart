@@ -8,9 +8,9 @@ import '../services/duplicates.dart';
 import '../state/invoice_store.dart';
 import '../state/medicine_store.dart';
 import '../util/number_parse.dart';
+import '../util/money.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
-import '../widgets/medicine_card.dart' show formatPrice;
 
 /// مراجعة المواد المكرّرة ودمجها.
 ///
@@ -501,7 +501,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   String _details(Medicine m) {
     final parts = <String>[
       'الكمية ${m.quantity}',
-      'السعر ${formatPrice(m.price)} د.ع',
+      'السعر ${formatMoney(m.price)}',
       if (m.expiryDate != null) 'الصلاحية ${_date(m.expiryDate!)}',
       if (m.barcode.isNotEmpty) m.barcode,
       if ((m.company ?? '').trim().isNotEmpty) '🏭 ${m.company!.trim()}',
@@ -551,6 +551,7 @@ class MergeDialog extends StatefulWidget {
 class _MergeDialogState extends State<MergeDialog> {
   late String _keeper;
   late final TextEditingController _price;
+  late final double _priceSource;
   late final TextEditingController _quantity;
 
   @override
@@ -563,7 +564,8 @@ class _MergeDialogState extends State<MergeDialog> {
         .map((m) => m.price)
         .firstWhere((p) => p > 0, orElse: () => 0);
     final qty = widget.items.fold<int>(0, (n, m) => n + m.quantity);
-    _price = TextEditingController(text: formatPriceInput(price));
+    _priceSource = price;
+    _price = TextEditingController(text: priceInputText(price));
     _quantity = TextEditingController(text: '$qty');
   }
 
@@ -576,7 +578,7 @@ class _MergeDialogState extends State<MergeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final price = parseLocalizedNumber(_price.text);
+    final price = priceFromInput(_price.text, originalIqd: _priceSource);
     final qty = parseLocalizedInt(_quantity.text);
     final valid = price != null && price >= 0 && qty != null && qty >= 0;
     return AlertDialog(
@@ -618,8 +620,8 @@ class _MergeDialogState extends State<MergeDialog> {
                 decimal: true,
               ),
               inputFormatters: [ThousandsSeparatorInputFormatter()],
-              decoration: const InputDecoration(
-                labelText: '💰 السعر النهائي (د.ع)',
+              decoration: InputDecoration(
+                labelText: '💰 السعر النهائي (${currencyLabel()})',
               ),
             ),
             const SizedBox(height: 10),

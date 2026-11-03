@@ -11,8 +11,8 @@ import '../services/product_cropper.dart';
 import '../services/product_image_picker.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 import '../widgets/glass.dart';
-import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/product_image.dart';
 import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
@@ -54,6 +54,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   late final TextEditingController _barcode;
   late final TextEditingController _name;
   late final TextEditingController _price;
+
+  /// الدينار الذي مُلئت منه خانة السعر — إن لم يُلمس النص يُحفظ كما هو بلا
+  /// تقريب عملة العرض (الدولار بكسرين).
+  double? _priceSource;
   late final TextEditingController _quantity;
 
   /// الشكل الصيدلاني — خاص بالمستلزمات فقط.
@@ -90,7 +94,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _barcode = TextEditingController(text: m?.barcode ?? '');
     _name = TextEditingController(text: m?.name ?? '');
     _price = TextEditingController(
-      text: m == null ? '' : formatPriceInput(m.price),
+      text: m == null ? '' : priceInputText(_priceSource = m.price),
     );
     _quantity = TextEditingController(
       text: m == null ? '' : m.quantity.toString(),
@@ -183,7 +187,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       }
       if (info.source == LookupSource.local) {
         if (_price.text.trim().isEmpty && info.price != null) {
-          _price.text = formatPriceInput(info.price!);
+          _price.text = priceInputText(_priceSource = info.price!);
         }
         if (_quantity.text.trim().isEmpty && info.quantity != null) {
           _quantity.text = info.quantity.toString();
@@ -206,7 +210,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _target = m;
     _barcode.text = m.barcode;
     _name.text = m.name;
-    _price.text = formatPriceInput(m.price);
+    _price.text = priceInputText(_priceSource = m.price);
     _quantity.text = m.quantity.toString();
     _imageFileName = m.imagePath;
     _category.text = m.category ?? '';
@@ -311,7 +315,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
     // نص غير قابل للقراءة كرقم يُرفض صراحةً — حفظه صفراً كان يدهس السعر
     // الحقيقي لمادة موجودة بلا أي تنبيه. الحقل الفارغ يبقى صفراً كما كان.
-    final parsedPrice = parseLocalizedNumber(_price.text);
+    // بعملة العرض ⇒ دينار؛ سعر لم يُلمس يعود بديناره الأصلي حرفياً
+    final parsedPrice = priceFromInput(_price.text, originalIqd: _priceSource);
     final parsedQty = parseLocalizedInt(_quantity.text);
     if (_price.text.trim().isNotEmpty && parsedPrice == null) {
       _toast('السعر غير صالح — اكتب أرقاماً فقط', color: AppColors.danger);
@@ -447,8 +452,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         title: const Text('⚠️ الباركود مسجَّل لمادة أخرى'),
         content: Text(
           'الباركود «${match.barcode}» يخص «${match.name}» المسجّلة لديك '
-          'بالفعل — الكمية ${match.quantity} بسعر ${formatPrice(match.price)} '
-          'د.ع.\n\n'
+          'بالفعل — الكمية ${match.quantity} بسعر ${formatMoney(match.price)}.\n\n'
           'لا يمكن حفظ مادتين بنفس الباركود. «تعديل الموجود» يفتحه للتحديث '
           '(يدعم "+" لإضافة الوارد إلى الرصيد الحالي).',
           style: const TextStyle(fontSize: 13, height: 1.6),
@@ -476,7 +480,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         title: const Text('⚠️ الباركود مسجَّل لمادة أخرى'),
         content: Text(
           'الباركود «${owner.barcode}» يخص «${owner.name}» — الكمية '
-          '${owner.quantity} بسعر ${formatPrice(owner.price)} د.ع.\n\n'
+          '${owner.quantity} بسعر ${formatMoney(owner.price)}.\n\n'
           'لا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين '
           'من «مراجعة التكرارات» في الإعدادات.',
           style: const TextStyle(fontSize: 13, height: 1.6),
@@ -501,7 +505,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         title: const Text('⚠️ مادة بنفس الاسم موجودة'),
         content: Text(
           '«${match.name}» مسجّلة لديك بالفعل — الكمية ${match.quantity} '
-          'بسعر ${formatPrice(match.price)} د.ع.\n\n'
+          'بسعر ${formatMoney(match.price)}.\n\n'
           'تعديل الموجود يفتحه للتحديث (يدعم "+" لإضافة الوارد). '
           'الحفظ كسجل منفصل يُبقي الاثنين قائمين.',
           style: const TextStyle(fontSize: 13, height: 1.6),
@@ -728,7 +732,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _Label('💰 السعر (د.ع)'),
+                        _Label('💰 السعر (${currencyLabel()})'),
                         TextFormField(
                           key: const Key('priceField'),
                           controller: _price,

@@ -24,9 +24,15 @@ String currencyLabel({bool iqdOnly = false}) {
 ///
 /// [iqdOnly] للفاتورة الذكية وسجل الفواتير: تطابق الورقة المطبوعة بالدينار.
 String formatMoney(num iqd, {bool iqdOnly = false}) {
-  if (!iqdOnly && _usd) return '\$${_usdFormat.format(toDisplay(iqd))}';
-  return '${_iqdFormat.format(iqd)} ${currencyLabel(iqdOnly: true)}';
+  final number = formatMoneyNumber(iqd, iqdOnly: iqdOnly);
+  if (!iqdOnly && _usd) return '\$$number';
+  return '$number ${currencyLabel(iqdOnly: true)}';
 }
+
+/// الرقم وحده بعملة العرض (حين يظهر الرمز في عنوان منفصل): `7,877` أو `6.01`.
+String formatMoneyNumber(num iqd, {bool iqdOnly = false}) => !iqdOnly && _usd
+    ? _usdFormat.format(toDisplay(iqd))
+    : _iqdFormat.format(iqd);
 
 /// دينار ⇒ عملة العرض.
 double toDisplay(num iqd) =>

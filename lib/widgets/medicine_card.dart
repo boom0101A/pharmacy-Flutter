@@ -8,6 +8,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../models/medicine.dart';
 import '../services/image_store.dart';
 import '../theme.dart';
+import '../util/money.dart';
 
 final _priceFormat = NumberFormat.decimalPattern('ar');
 
@@ -238,7 +239,7 @@ class MedicineCard extends StatelessWidget {
                         flex: 3,
                         child: _Stat(
                           label: 'السعر',
-                          value: '${formatPrice(medicine.price)} د.ع',
+                          value: formatMoney(medicine.price),
                           color: AppColors.textPrimary,
                         ),
                       ),

@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/models/medicine.dart';
 import 'package:saydaliyati/screens/invoice_scan_screen.dart';
 import 'package:saydaliyati/services/gemini_vision.dart';
+import 'package:saydaliyati/services/app_settings.dart';
 import 'package:saydaliyati/state/medicine_store.dart';
 import 'package:saydaliyati/theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// شاشة الفاتورة بصفحات متعددة: كل صفحة طلب مستقل، فشل صفحة لا يُسقط البقية،
 /// والأسطر المشكوك فيها معلَّمة قبل الحفظ.
@@ -257,6 +259,25 @@ void main() {
     await tester.enterText(price, '12000');
     await tester.pump();
     expect(find.widgetWithText(TextField, '12,000'), findsOneWidget);
+  });
+
+  // قرار المستخدم: الفاتورة تطابق الورقة المطبوعة بالدينار حتى مع الدولار
+  testWidgets('مع عملة الدولار تبقى الفاتورة الذكية بالدينار', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await AppSettings.instance.init();
+    await AppSettings.instance.setUsdRate(1310);
+    await AppSettings.instance.setCurrency('USD');
+    addTearDown(() async {
+      SharedPreferences.setMockInitialValues({});
+      await AppSettings.instance.init();
+    });
+
+    results['page1.jpg'] = InvoiceResult.success([
+      InvoiceLine(name: 'Adol', price: 1764, quantity: 12),
+    ]);
+    await pump(tester);
+    expect(find.widgetWithText(TextField, '1,764'), findsOneWidget);
+    expect(find.textContaining(r'$'), findsNothing);
   });
 
   // خانة الباركود: أيقونة ماسح تملؤها من صورة الباركود، والكتابة اليدوية باقية
