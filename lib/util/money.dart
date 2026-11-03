@@ -32,7 +32,9 @@ String formatMoney(num iqd, {bool iqdOnly = false}) {
 /// الرقم وحده بعملة العرض (حين يظهر الرمز في عنوان منفصل): `7,877` أو `6.01`.
 String formatMoneyNumber(num iqd, {bool iqdOnly = false}) => !iqdOnly && _usd
     ? _usdFormat.format(toDisplay(iqd))
-    : _iqdFormat.format(iqd);
+    // الدينار بلا كسور: مجموع «سعر × كمية» قد يحمل كسراً من سعر قديم فيطول
+    // الرقم ويُقصّ في الترويسة («31,550,331.6»)
+    : _iqdFormat.format(iqd.round());
 
 /// دينار ⇒ عملة العرض.
 double toDisplay(num iqd) =>

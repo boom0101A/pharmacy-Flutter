@@ -36,6 +36,13 @@ void main() {
     expect(currencyLabel(), r'$');
   });
 
+  // لقطة الهاتف: «31,550,331.6» فقُصّ إجمالي الترويسة — الدينار بلا كسور
+  test('الدينار يُعرض بلا كسور', () async {
+    await use();
+    expect(formatMoneyNumber(31550331.6), '31,550,332');
+    expect(formatMoney(7877.4), '7,877 د.ع');
+  });
+
   test('iqdOnly يبقى بالدينار مع الدولار (الفاتورة الذكية)', () async {
     await use(rate: 1310, usd: true);
     expect(formatMoney(393932, iqdOnly: true), '393,932 د.ع');

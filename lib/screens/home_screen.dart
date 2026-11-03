@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
     return IconButton(
       key: const Key('alertsBell'),
+      visualDensity: VisualDensity.compact,
       tooltip: context.l10n.alertsTooltip,
       onPressed: _openAlerts,
       icon: Badge(
@@ -606,22 +607,27 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Row(
             children: [
-              // الاسم يتقلّص أولاً: مؤشر المزامنة وزر الإعدادات أهم وظيفياً
+              // الاسم يصغر قليلاً ليتّسع ولا يُقصّ («صيد…» بعد إضافة الجرس) —
+              // مؤشر المزامنة والجرس والإعدادات أهم وظيفياً فتأخذ مساحتها أولاً
               Expanded(
-                child: Text(
-                  context.l10n.homeTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -.2,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    context.l10n.homeTitle,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -.2,
+                    ),
                   ),
                 ),
               ),
               const _SyncIndicator(),
               _alertsBell(),
               IconButton(
+                visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.settings_rounded, size: 20),
                 color: AppColors.textSecondary,
                 onPressed: () => showSettingsSheet(context, store),
