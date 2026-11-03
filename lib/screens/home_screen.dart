@@ -711,7 +711,11 @@ class _HomeScreenState extends State<HomeScreen>
               _RangeRow(
                 // مفتاح لكل قسم ولكل إعادة تعيين: الحقول تُبنى من جديد بقيم
                 // المخزن فلا تعرض قيمة القسم الآخر ولا رقماً أُلغي فلتره
-                key: ValueKey('price-${type.code}-${store.filterResetCount}'),
+                // والعملة وسعر الصرف: الحقل يُبنى بالقيمة المحوّلة لا بنص العملة السابقة
+                key: ValueKey(
+                  'price-${type.code}-${store.filterResetCount}-'
+                  '${AppSettings.instance.currency}-${AppSettings.instance.usdRate}',
+                ),
                 money: true,
                 initialMin: store.priceMin == null
                     ? null

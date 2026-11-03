@@ -11,6 +11,7 @@ import 'services/notification_service.dart';
 import 'services/sync_service.dart';
 import 'state/medicine_store.dart';
 import 'theme.dart';
+import 'widgets/display_prefs_scope.dart';
 import 'widgets/glass.dart';
 
 Future<void> main() async {
@@ -49,12 +50,16 @@ class PharmacyApp extends StatefulWidget {
 class _PharmacyAppState extends State<PharmacyApp> {
   final _store = MedicineStore();
 
+  /// سمة واحدة طوال عمر التطبيق: بناؤها من جديد يعطي نسخة «غير مساوية»
+  /// فيعيد Flutter الواجهة كلها بحركة تبديل سمة.
+  final _theme = buildAppTheme();
+
   @override
   Widget build(BuildContext context) {
-    // اللغة والعملة من الإعدادات: تبديلهما يعيد بناء الواجهة كلها فوراً
-    return ListenableBuilder(
-      listenable: AppSettings.instance,
-      builder: (context, _) => _app(AppSettings.instance.language),
+    // اللغة والعملة وسعر الصرف: تبديلها يعيد بناء الواجهة كلها مرة واحدة
+    // (DisplayPrefsScope)، وبقية الإعدادات لا تلمس الواجهة
+    return DisplayPrefsScope(
+      child: Builder(builder: (_) => _app(AppSettings.instance.language)),
     );
   }
 
@@ -63,7 +68,7 @@ class _PharmacyAppState extends State<PharmacyApp> {
       // اسم التطبيق في قائمة التطبيقات المفتوحة بلغة الواجهة
       onGenerateTitle: (context) => context.l10n.appName,
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      theme: _theme,
       // لغة الواجهة ومكوّنات Material نفسها (منتقي التاريخ، رسائل النظام)
       locale: Locale(language),
       supportedLocales: AppLocalizations.supportedLocales,
