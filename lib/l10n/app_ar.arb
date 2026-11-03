@@ -358,5 +358,161 @@
   "badgeIncomplete": "📝 بيانات ناقصة",
   "increase": "زيادة",
   "decrease": "إنقاص",
-  "stockValue": "قيمة المخزون"
+  "stockValue": "قيمة المخزون",
+  "formAlreadyRegistered": "هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي",
+  "formBarcodeNoData": "تم قراءة الباركود: {code} — لم نجد بياناته، أكمل الحقول يدوياً",
+  "@formBarcodeNoData": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "formConfirmedBy": " (أكّدته {n} صيدليات)",
+  "@formConfirmedBy": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "formFetchedFrom": "تم جلب بيانات الدواء من {source}{confirmed} ✅",
+  "@formFetchedFrom": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "confirmed": {
+        "type": "String"
+      }
+    }
+  },
+  "formAddIncomingTitle": "📦 إضافة كمية واردة",
+  "formAddIncomingHint": "العدد الوارد في الفاتورة",
+  "formAddedNowBalance": "أُضيف {added} — الرصيد الآن {total}",
+  "@formAddedNowBalance": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "formExpiryPickerTitle": "تاريخ انتهاء الصلاحية",
+  "formInvalidPrice": "السعر غير صالح — اكتب أرقاماً فقط",
+  "formInvalidQty": "الكمية غير صالحة — اكتب عدداً صحيحاً",
+  "formSaveFailed": "تعذّر الحفظ: {error}",
+  "@formSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "formBarcodeTakenTitle": "⚠️ الباركود مسجَّل لمادة أخرى",
+  "formBarcodeTakenBody": "الباركود «{barcode}» يخص «{name}» المسجّلة لديك بالفعل — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. «تعديل الموجود» يفتحه للتحديث (يدعم \"+\" لإضافة الوارد إلى الرصيد الحالي).",
+  "@formBarcodeTakenBody": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "editExisting": "تعديل الموجود",
+  "formBarcodeOwnerBody": "الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.",
+  "@formBarcodeOwnerBody": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "formSameNameTitle": "⚠️ مادة بنفس الاسم موجودة",
+  "formSameNameBody": "«{name}» مسجّلة لديك بالفعل — الكمية {qty} بسعر {price}.\n\nتعديل الموجود يفتحه للتحديث (يدعم \"+\" لإضافة الوارد). الحفظ كسجل منفصل يُبقي الاثنين قائمين.",
+  "@formSameNameBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "separateRecord": "سجل منفصل",
+  "formTitleEditSupply": "تعديل مستلزم",
+  "formTitleEditMedicine": "تعديل دواء",
+  "formTitleNewSupply": "إضافة مستلزم جديد",
+  "formTitleNewMedicine": "إضافة دواء جديد",
+  "formType": "🗂️ النوع",
+  "formBarcode": "📊 الباركود",
+  "formBarcodeHint": "أدخل الباركود يدوياً أو امسحه",
+  "formNoBarcode": "ليس لها باركود",
+  "formLookingUp": "جاري البحث عن معلومات الدواء...",
+  "formSupplyImage": "📷 صورة المستلزم",
+  "formMedicineImage": "📷 صورة الدواء",
+  "camera": "كاميرا",
+  "gallery": "معرض",
+  "formSupplyName": "🩹 اسم المستلزم *",
+  "formMedicineName": "💊 اسم الدواء *",
+  "formSupplyNameHint": "أدخل اسم المستلزم",
+  "formMedicineNameHint": "أدخل اسم الدواء",
+  "formNameRequired": "الاسم مطلوب",
+  "formCompany": "🏭 اسم الشركة (اختياري)",
+  "formCompanyHint": "مثل: Juman",
+  "formCategory": "🧪 نوع المادة (اختياري)",
+  "formCategoryHint": "مثل: Tablet، Cream، Syrup…",
+  "formPrice": "💰 السعر ({currency})",
+  "@formPrice": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "formQuantity": "📦 الكمية",
+  "formExpiry": "📅 تاريخ الصلاحية (اختياري)",
+  "notSet": "غير محدد",
+  "saveChanges": "حفظ التعديلات",
+  "saveSupply": "حفظ المستلزم",
+  "saveMedicine": "حفظ الدواء",
+  "chipExpiry": "📅 الصلاحية: {date}",
+  "@chipExpiry": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chipBatch": "🏷️ وجبة: {batch}",
+  "@chipBatch": {
+    "placeholders": {
+      "batch": {
+        "type": "String"
+      }
+    }
+  }
 }

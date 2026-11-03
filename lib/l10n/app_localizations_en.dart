@@ -553,4 +553,184 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stockValue => 'Stock value';
+
+  @override
+  String get formAlreadyRegistered =>
+      'This item is already registered — you are now editing its record';
+
+  @override
+  String formBarcodeNoData(String code) {
+    return 'Barcode read: $code — no data found, please fill in the fields';
+  }
+
+  @override
+  String formConfirmedBy(int n) {
+    return ' (confirmed by $n pharmacies)';
+  }
+
+  @override
+  String formFetchedFrom(String source, String confirmed) {
+    return 'Medicine data fetched from $source$confirmed ✅';
+  }
+
+  @override
+  String get formAddIncomingTitle => '📦 Add incoming quantity';
+
+  @override
+  String get formAddIncomingHint => 'Quantity received on the invoice';
+
+  @override
+  String formAddedNowBalance(int added, int total) {
+    return 'Added $added — balance is now $total';
+  }
+
+  @override
+  String get formExpiryPickerTitle => 'Expiry date';
+
+  @override
+  String get formInvalidPrice => 'Invalid price — numbers only';
+
+  @override
+  String get formInvalidQty => 'Invalid quantity — enter a whole number';
+
+  @override
+  String formSaveFailed(String error) {
+    return 'Couldn\'t save: $error';
+  }
+
+  @override
+  String get formBarcodeTakenTitle => '⚠️ Barcode belongs to another item';
+
+  @override
+  String formBarcodeTakenBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  ) {
+    return 'Barcode “$barcode” belongs to “$name”, already registered — quantity $qty at $price.\n\nTwo items can\'t share a barcode. “Edit existing” opens it for updating (supports “+” to add incoming stock to the current balance).';
+  }
+
+  @override
+  String get editExisting => 'Edit existing';
+
+  @override
+  String formBarcodeOwnerBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  ) {
+    return 'Barcode “$barcode” belongs to “$name” — quantity $qty at $price.\n\nTwo items can\'t share a barcode. Fix the barcode, or merge both items from “Review duplicates” in Settings.';
+  }
+
+  @override
+  String get formSameNameTitle => '⚠️ An item with the same name exists';
+
+  @override
+  String formSameNameBody(String name, int qty, String price) {
+    return '“$name” is already registered — quantity $qty at $price.\n\nEditing the existing one opens it for updating (supports “+” to add incoming stock). Saving as a separate record keeps both.';
+  }
+
+  @override
+  String get separateRecord => 'Separate record';
+
+  @override
+  String get formTitleEditSupply => 'Edit supply';
+
+  @override
+  String get formTitleEditMedicine => 'Edit medicine';
+
+  @override
+  String get formTitleNewSupply => 'Add new supply';
+
+  @override
+  String get formTitleNewMedicine => 'Add new medicine';
+
+  @override
+  String get formType => '🗂️ Type';
+
+  @override
+  String get formBarcode => '📊 Barcode';
+
+  @override
+  String get formBarcodeHint => 'Type the barcode or scan it';
+
+  @override
+  String get formNoBarcode => 'Has no barcode';
+
+  @override
+  String get formLookingUp => 'Looking up medicine info...';
+
+  @override
+  String get formSupplyImage => '📷 Supply photo';
+
+  @override
+  String get formMedicineImage => '📷 Medicine photo';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get formSupplyName => '🩹 Supply name *';
+
+  @override
+  String get formMedicineName => '💊 Medicine name *';
+
+  @override
+  String get formSupplyNameHint => 'Enter the supply name';
+
+  @override
+  String get formMedicineNameHint => 'Enter the medicine name';
+
+  @override
+  String get formNameRequired => 'Name is required';
+
+  @override
+  String get formCompany => '🏭 Company (optional)';
+
+  @override
+  String get formCompanyHint => 'e.g. Juman';
+
+  @override
+  String get formCategory => '🧪 Form (optional)';
+
+  @override
+  String get formCategoryHint => 'e.g. Tablet, Cream, Syrup…';
+
+  @override
+  String formPrice(String currency) {
+    return '💰 Price ($currency)';
+  }
+
+  @override
+  String get formQuantity => '📦 Quantity';
+
+  @override
+  String get formExpiry => '📅 Expiry date (optional)';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get saveChanges => 'Save changes';
+
+  @override
+  String get saveSupply => 'Save supply';
+
+  @override
+  String get saveMedicine => 'Save medicine';
+
+  @override
+  String chipExpiry(String date) {
+    return '📅 Expiry: $date';
+  }
+
+  @override
+  String chipBatch(String batch) {
+    return '🏷️ Batch: $batch';
+  }
 }

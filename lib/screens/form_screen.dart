@@ -166,10 +166,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         _looking = false;
         _adoptExisting(existing);
       });
-      _toast(
-        'هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي',
-        color: AppColors.warning,
-      );
+      _toast(context.l10n.formAlreadyRegistered, color: AppColors.warning);
       return;
     }
 
@@ -178,7 +175,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     setState(() => _looking = false);
 
     if (info == null) {
-      _toast('تم قراءة الباركود: $code — لم نجد بياناته، أكمل الحقول يدوياً');
+      _toast(context.l10n.formBarcodeNoData(code));
       return;
     }
 
@@ -198,10 +195,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     });
 
     final confirmed = info.confirmations != null && info.confirmations! > 1
-        ? ' (أكّدته ${info.confirmations} صيدليات)'
+        ? context.l10n.formConfirmedBy(info.confirmations!)
         : '';
     _toast(
-      'تم جلب بيانات الدواء من ${info.sourceLabel}$confirmed ✅',
+      context.l10n.formFetchedFrom(info.sourceLabel, confirmed),
       color: AppColors.success,
     );
   }
@@ -260,26 +257,26 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('📦 إضافة كمية واردة'),
+        title: Text(context.l10n.formAddIncomingTitle),
         content: TextField(
           key: const Key('addQuantityDialogField'),
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            hintText: 'العدد الوارد في الفاتورة',
+          decoration: InputDecoration(
+            hintText: context.l10n.formAddIncomingHint,
           ),
           onSubmitted: (v) => Navigator.pop(ctx, parseLocalizedInt(v)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(ctx, parseLocalizedInt(controller.text)),
-            child: const Text('إضافة'),
+            child: Text(context.l10n.add),
           ),
         ],
       ),
@@ -289,7 +286,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
     final current = parseLocalizedInt(_quantity.text) ?? 0;
     setState(() => _quantity.text = (current + added).toString());
-    _toast('أُضيف $added — الرصيد الآن ${current + added}');
+    _toast(context.l10n.formAddedNowBalance(added, current + added));
   }
 
   Future<void> _pickExpiry() async {
@@ -299,7 +296,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       initialDate: _expiry ?? DateTime(now.year + 1, now.month),
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 15),
-      helpText: 'تاريخ انتهاء الصلاحية',
+      helpText: context.l10n.formExpiryPickerTitle,
     );
     if (picked != null) setState(() => _expiry = picked);
   }
@@ -320,11 +317,11 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     final parsedPrice = priceFromInput(_price.text, originalIqd: _priceSource);
     final parsedQty = parseLocalizedInt(_quantity.text);
     if (_price.text.trim().isNotEmpty && parsedPrice == null) {
-      _toast('السعر غير صالح — اكتب أرقاماً فقط', color: AppColors.danger);
+      _toast(context.l10n.formInvalidPrice, color: AppColors.danger);
       return;
     }
     if (_quantity.text.trim().isNotEmpty && parsedQty == null) {
-      _toast('الكمية غير صالحة — اكتب عدداً صحيحاً', color: AppColors.danger);
+      _toast(context.l10n.formInvalidQty, color: AppColors.danger);
       return;
     }
 
@@ -423,7 +420,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       // يحفظ» ويعيد المحاولة بلا فائدة. نُبقي النموذج مفتوحاً ببياناته.
       if (!mounted) return;
       setState(() => _saving = false);
-      _toast('تعذّر الحفظ: $e', color: AppColors.danger);
+      _toast(context.l10n.formSaveFailed('$e'), color: AppColors.danger);
       return;
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -450,22 +447,24 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('⚠️ الباركود مسجَّل لمادة أخرى'),
+        title: Text(context.l10n.formBarcodeTakenTitle),
         content: Text(
-          'الباركود «${match.barcode}» يخص «${match.name}» المسجّلة لديك '
-          'بالفعل — الكمية ${match.quantity} بسعر ${formatMoney(match.price)}.\n\n'
-          'لا يمكن حفظ مادتين بنفس الباركود. «تعديل الموجود» يفتحه للتحديث '
-          '(يدعم "+" لإضافة الوارد إلى الرصيد الحالي).',
+          context.l10n.formBarcodeTakenBody(
+            match.barcode,
+            match.name,
+            match.quantity,
+            formatMoney(match.price),
+          ),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تعديل الموجود'),
+            child: Text(context.l10n.editExisting),
           ),
         ],
       ),
@@ -478,18 +477,20 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('⚠️ الباركود مسجَّل لمادة أخرى'),
+        title: Text(context.l10n.formBarcodeTakenTitle),
         content: Text(
-          'الباركود «${owner.barcode}» يخص «${owner.name}» — الكمية '
-          '${owner.quantity} بسعر ${formatMoney(owner.price)}.\n\n'
-          'لا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين '
-          'من «مراجعة التكرارات» في الإعدادات.',
+          context.l10n.formBarcodeOwnerBody(
+            owner.barcode,
+            owner.name,
+            owner.quantity,
+            formatMoney(owner.price),
+          ),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('حسناً'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -503,26 +504,27 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('⚠️ مادة بنفس الاسم موجودة'),
+        title: Text(context.l10n.formSameNameTitle),
         content: Text(
-          '«${match.name}» مسجّلة لديك بالفعل — الكمية ${match.quantity} '
-          'بسعر ${formatMoney(match.price)}.\n\n'
-          'تعديل الموجود يفتحه للتحديث (يدعم "+" لإضافة الوارد). '
-          'الحفظ كسجل منفصل يُبقي الاثنين قائمين.',
+          context.l10n.formSameNameBody(
+            match.name,
+            match.quantity,
+            formatMoney(match.price),
+          ),
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.cancel),
           ),
           OutlinedButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('سجل منفصل'),
+            child: Text(context.l10n.separateRecord),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('تعديل الموجود'),
+            child: Text(context.l10n.editExisting),
           ),
         ],
       ),
@@ -537,8 +539,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       appBar: GlassAppBar(
         title: Text(
           _isEdit
-              ? (_isSupply ? 'تعديل مستلزم' : 'تعديل دواء')
-              : (_isSupply ? 'إضافة مستلزم جديد' : 'إضافة دواء جديد'),
+              ? (_isSupply
+                    ? context.l10n.formTitleEditSupply
+                    : context.l10n.formTitleEditMedicine)
+              : (_isSupply
+                    ? context.l10n.formTitleNewSupply
+                    : context.l10n.formTitleNewMedicine),
         ),
       ),
       body: AbsorbPointer(
@@ -549,7 +555,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               // ----- النوع -----
-              const _Label('🗂️ النوع'),
+              _Label(context.l10n.formType),
               SegmentedButton<ItemType>(
                 segments: [
                   for (final t in ItemType.values)
@@ -565,7 +571,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
               // ----- الباركود -----
               const SizedBox(height: 20),
-              const _Label('📊 الباركود'),
+              _Label(context.l10n.formBarcode),
               Row(
                 children: [
                   Expanded(
@@ -573,8 +579,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                       key: const Key('barcodeField'),
                       controller: _barcode,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'أدخل الباركود يدوياً أو امسحه',
+                      decoration: InputDecoration(
+                        hintText: context.l10n.formBarcodeHint,
                       ),
                       onChanged: (_) => setState(() {}),
                       onFieldSubmitted: (v) {
@@ -595,7 +601,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   key: const Key('noBarcodeCheck'),
                   value: _noBarcode,
                   onChanged: (v) => setState(() => _noBarcode = v ?? false),
-                  title: const Text('ليس لها باركود'),
+                  title: Text(context.l10n.formNoBarcode),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                   dense: true,
@@ -607,17 +613,17 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
               ],
               if (_looking) ...[
                 const SizedBox(height: 12),
-                const Row(
+                Row(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text(
-                      'جاري البحث عن معلومات الدواء...',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      context.l10n.formLookingUp,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -625,7 +631,11 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
               // ----- الصورة -----
               const SizedBox(height: 20),
-              _Label(_isSupply ? '📷 صورة المستلزم' : '📷 صورة الدواء'),
+              _Label(
+                _isSupply
+                    ? context.l10n.formSupplyImage
+                    : context.l10n.formMedicineImage,
+              ),
               // صندوق الصورة: توهّج تيل خفيف وحدّ لامع (`.photo-box` في ملف التصميم)
               Container(
                 // بلا صورة: صندوق ثابت. بصورة: الارتفاع من اتجاهها الحقيقي
@@ -678,7 +688,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _pickImage(ImageSource.camera),
                       icon: const Icon(Icons.photo_camera_rounded),
-                      label: const Text('كاميرا'),
+                      label: Text(context.l10n.camera),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -686,7 +696,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _pickImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library_rounded),
-                      label: const Text('معرض'),
+                      label: Text(context.l10n.gallery),
                     ),
                   ),
                 ],
@@ -694,35 +704,44 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
               // ----- الاسم -----
               const SizedBox(height: 20),
-              _Label(_isSupply ? '🩹 اسم المستلزم *' : '💊 اسم الدواء *'),
+              _Label(
+                _isSupply
+                    ? context.l10n.formSupplyName
+                    : context.l10n.formMedicineName,
+              ),
               TextFormField(
                 key: const Key('nameField'),
                 controller: _name,
                 decoration: InputDecoration(
-                  hintText: _isSupply ? 'أدخل اسم المستلزم' : 'أدخل اسم الدواء',
+                  hintText: _isSupply
+                      ? context.l10n.formSupplyNameHint
+                      : context.l10n.formMedicineNameHint,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? context.l10n.formNameRequired
+                    : null,
               ),
 
               // ----- الشركة المصنّعة — للقسمين -----
               const SizedBox(height: 20),
-              const _Label('🏭 اسم الشركة (اختياري)'),
+              _Label(context.l10n.formCompany),
               TextFormField(
                 key: const Key('companyField'),
                 controller: _company,
-                decoration: const InputDecoration(hintText: 'مثل: Juman'),
+                decoration: InputDecoration(
+                  hintText: context.l10n.formCompanyHint,
+                ),
               ),
 
               // ----- نوع المادة (الشكل الصيدلاني) — للأدوية فقط -----
               if (!_isSupply) ...[
                 const SizedBox(height: 20),
-                const _Label('🧪 نوع المادة (اختياري)'),
+                _Label(context.l10n.formCategory),
                 TextFormField(
                   key: const Key('categoryField'),
                   controller: _category,
-                  decoration: const InputDecoration(
-                    hintText: 'مثل: Tablet، Cream، Syrup…',
+                  decoration: InputDecoration(
+                    hintText: context.l10n.formCategoryHint,
                   ),
                 ),
               ],
@@ -736,7 +755,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Label('💰 السعر (${currencyLabel()})'),
+                        _Label(context.l10n.formPrice(currencyLabel())),
                         TextFormField(
                           key: const Key('priceField'),
                           controller: _price,
@@ -754,7 +773,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _Label('📦 الكمية'),
+                        _Label(context.l10n.formQuantity),
                         Row(
                           children: [
                             Expanded(
@@ -797,7 +816,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
               // ----- تاريخ الصلاحية -----
               const SizedBox(height: 20),
-              const _Label('📅 تاريخ الصلاحية (اختياري)'),
+              _Label(context.l10n.formExpiry),
               InkWell(
                 onTap: _pickExpiry,
                 borderRadius: BorderRadius.circular(12),
@@ -812,7 +831,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   ),
                   child: Text(
                     _expiry == null
-                        ? 'غير محدد'
+                        ? context.l10n.notSet
                         : '${_expiry!.year}/'
                               '${_expiry!.month.toString().padLeft(2, '0')}/'
                               '${_expiry!.day.toString().padLeft(2, '0')}',
@@ -851,8 +870,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                         : const Icon(Icons.check_rounded),
                     label: Text(
                       _isEdit
-                          ? 'حفظ التعديلات'
-                          : (_isSupply ? 'حفظ المستلزم' : 'حفظ الدواء'),
+                          ? context.l10n.saveChanges
+                          : (_isSupply
+                                ? context.l10n.saveSupply
+                                : context.l10n.saveMedicine),
                     ),
                     style: FilledButton.styleFrom(
                       textStyle: const TextStyle(
@@ -869,7 +890,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                 height: 48,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('إلغاء'),
+                  child: Text(context.l10n.cancel),
                 ),
               ),
             ],
@@ -898,11 +919,13 @@ class _Gs1Chips extends StatelessWidget {
       children: [
         if (expiry != null)
           _chip(
-            '📅 الصلاحية: ${expiry.year}/${expiry.month.toString().padLeft(2, '0')}',
+            context.l10n.chipExpiry(
+              '${expiry.year}/${expiry.month.toString().padLeft(2, '0')}',
+            ),
             soon ? AppColors.warning : AppColors.success,
           ),
         if (scan.batch != null)
-          _chip('🏷️ وجبة: ${scan.batch}', AppColors.textMuted),
+          _chip(context.l10n.chipBatch(scan.batch!), AppColors.textMuted),
       ],
     );
   }

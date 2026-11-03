@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:saydaliyati/l10n/l10n.dart';
 import 'package:saydaliyati/models/medicine.dart';
+import 'package:saydaliyati/screens/form_screen.dart';
 import 'package:saydaliyati/screens/home_screen.dart';
 import 'package:saydaliyati/screens/medicine_detail_screen.dart';
 import 'package:saydaliyati/state/invoice_store.dart';
@@ -137,6 +138,17 @@ void main() {
     expect(find.text('Stock value'), findsOneWidget);
     expect(find.text('7,877 IQD'), findsOneWidget);
     expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
+  });
+
+  testWidgets('نموذج الإضافة بالإنجليزية', (tester) async {
+    tester.view.physicalSize = const Size(420, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(englishHost(MedicineFormScreen(store: _Store())));
+    await tester.pumpAndSettle();
+    expect(find.text('Add new medicine'), findsOneWidget);
+    expect(find.text('💰 Price (IQD)'), findsOneWidget);
+    expect(arabicTexts(tester), isEmpty);
   });
 
   group('الترحيب بالإنجليزية', () {

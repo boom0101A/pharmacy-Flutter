@@ -522,4 +522,184 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get stockValue => 'قيمة المخزون';
+
+  @override
+  String get formAlreadyRegistered =>
+      'هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي';
+
+  @override
+  String formBarcodeNoData(String code) {
+    return 'تم قراءة الباركود: $code — لم نجد بياناته، أكمل الحقول يدوياً';
+  }
+
+  @override
+  String formConfirmedBy(int n) {
+    return ' (أكّدته $n صيدليات)';
+  }
+
+  @override
+  String formFetchedFrom(String source, String confirmed) {
+    return 'تم جلب بيانات الدواء من $source$confirmed ✅';
+  }
+
+  @override
+  String get formAddIncomingTitle => '📦 إضافة كمية واردة';
+
+  @override
+  String get formAddIncomingHint => 'العدد الوارد في الفاتورة';
+
+  @override
+  String formAddedNowBalance(int added, int total) {
+    return 'أُضيف $added — الرصيد الآن $total';
+  }
+
+  @override
+  String get formExpiryPickerTitle => 'تاريخ انتهاء الصلاحية';
+
+  @override
+  String get formInvalidPrice => 'السعر غير صالح — اكتب أرقاماً فقط';
+
+  @override
+  String get formInvalidQty => 'الكمية غير صالحة — اكتب عدداً صحيحاً';
+
+  @override
+  String formSaveFailed(String error) {
+    return 'تعذّر الحفظ: $error';
+  }
+
+  @override
+  String get formBarcodeTakenTitle => '⚠️ الباركود مسجَّل لمادة أخرى';
+
+  @override
+  String formBarcodeTakenBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  ) {
+    return 'الباركود «$barcode» يخص «$name» المسجّلة لديك بالفعل — الكمية $qty بسعر $price.\n\nلا يمكن حفظ مادتين بنفس الباركود. «تعديل الموجود» يفتحه للتحديث (يدعم \"+\" لإضافة الوارد إلى الرصيد الحالي).';
+  }
+
+  @override
+  String get editExisting => 'تعديل الموجود';
+
+  @override
+  String formBarcodeOwnerBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  ) {
+    return 'الباركود «$barcode» يخص «$name» — الكمية $qty بسعر $price.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.';
+  }
+
+  @override
+  String get formSameNameTitle => '⚠️ مادة بنفس الاسم موجودة';
+
+  @override
+  String formSameNameBody(String name, int qty, String price) {
+    return '«$name» مسجّلة لديك بالفعل — الكمية $qty بسعر $price.\n\nتعديل الموجود يفتحه للتحديث (يدعم \"+\" لإضافة الوارد). الحفظ كسجل منفصل يُبقي الاثنين قائمين.';
+  }
+
+  @override
+  String get separateRecord => 'سجل منفصل';
+
+  @override
+  String get formTitleEditSupply => 'تعديل مستلزم';
+
+  @override
+  String get formTitleEditMedicine => 'تعديل دواء';
+
+  @override
+  String get formTitleNewSupply => 'إضافة مستلزم جديد';
+
+  @override
+  String get formTitleNewMedicine => 'إضافة دواء جديد';
+
+  @override
+  String get formType => '🗂️ النوع';
+
+  @override
+  String get formBarcode => '📊 الباركود';
+
+  @override
+  String get formBarcodeHint => 'أدخل الباركود يدوياً أو امسحه';
+
+  @override
+  String get formNoBarcode => 'ليس لها باركود';
+
+  @override
+  String get formLookingUp => 'جاري البحث عن معلومات الدواء...';
+
+  @override
+  String get formSupplyImage => '📷 صورة المستلزم';
+
+  @override
+  String get formMedicineImage => '📷 صورة الدواء';
+
+  @override
+  String get camera => 'كاميرا';
+
+  @override
+  String get gallery => 'معرض';
+
+  @override
+  String get formSupplyName => '🩹 اسم المستلزم *';
+
+  @override
+  String get formMedicineName => '💊 اسم الدواء *';
+
+  @override
+  String get formSupplyNameHint => 'أدخل اسم المستلزم';
+
+  @override
+  String get formMedicineNameHint => 'أدخل اسم الدواء';
+
+  @override
+  String get formNameRequired => 'الاسم مطلوب';
+
+  @override
+  String get formCompany => '🏭 اسم الشركة (اختياري)';
+
+  @override
+  String get formCompanyHint => 'مثل: Juman';
+
+  @override
+  String get formCategory => '🧪 نوع المادة (اختياري)';
+
+  @override
+  String get formCategoryHint => 'مثل: Tablet، Cream، Syrup…';
+
+  @override
+  String formPrice(String currency) {
+    return '💰 السعر ($currency)';
+  }
+
+  @override
+  String get formQuantity => '📦 الكمية';
+
+  @override
+  String get formExpiry => '📅 تاريخ الصلاحية (اختياري)';
+
+  @override
+  String get notSet => 'غير محدد';
+
+  @override
+  String get saveChanges => 'حفظ التعديلات';
+
+  @override
+  String get saveSupply => 'حفظ المستلزم';
+
+  @override
+  String get saveMedicine => 'حفظ الدواء';
+
+  @override
+  String chipExpiry(String date) {
+    return '📅 الصلاحية: $date';
+  }
+
+  @override
+  String chipBatch(String batch) {
+    return '🏷️ وجبة: $batch';
+  }
 }

@@ -979,6 +979,310 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'قيمة المخزون'**
   String get stockValue;
+
+  /// No description provided for @formAlreadyRegistered.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي'**
+  String get formAlreadyRegistered;
+
+  /// No description provided for @formBarcodeNoData.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم قراءة الباركود: {code} — لم نجد بياناته، أكمل الحقول يدوياً'**
+  String formBarcodeNoData(String code);
+
+  /// No description provided for @formConfirmedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **' (أكّدته {n} صيدليات)'**
+  String formConfirmedBy(int n);
+
+  /// No description provided for @formFetchedFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم جلب بيانات الدواء من {source}{confirmed} ✅'**
+  String formFetchedFrom(String source, String confirmed);
+
+  /// No description provided for @formAddIncomingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 إضافة كمية واردة'**
+  String get formAddIncomingTitle;
+
+  /// No description provided for @formAddIncomingHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدد الوارد في الفاتورة'**
+  String get formAddIncomingHint;
+
+  /// No description provided for @formAddedNowBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيف {added} — الرصيد الآن {total}'**
+  String formAddedNowBalance(int added, int total);
+
+  /// No description provided for @formExpiryPickerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ انتهاء الصلاحية'**
+  String get formExpiryPickerTitle;
+
+  /// No description provided for @formInvalidPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر غير صالح — اكتب أرقاماً فقط'**
+  String get formInvalidPrice;
+
+  /// No description provided for @formInvalidQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية غير صالحة — اكتب عدداً صحيحاً'**
+  String get formInvalidQty;
+
+  /// No description provided for @formSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الحفظ: {error}'**
+  String formSaveFailed(String error);
+
+  /// No description provided for @formBarcodeTakenTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ الباركود مسجَّل لمادة أخرى'**
+  String get formBarcodeTakenTitle;
+
+  /// No description provided for @formBarcodeTakenBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود «{barcode}» يخص «{name}» المسجّلة لديك بالفعل — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. «تعديل الموجود» يفتحه للتحديث (يدعم \"+\" لإضافة الوارد إلى الرصيد الحالي).'**
+  String formBarcodeTakenBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  );
+
+  /// No description provided for @editExisting.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الموجود'**
+  String get editExisting;
+
+  /// No description provided for @formBarcodeOwnerBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.'**
+  String formBarcodeOwnerBody(
+    String barcode,
+    String name,
+    int qty,
+    String price,
+  );
+
+  /// No description provided for @formSameNameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ مادة بنفس الاسم موجودة'**
+  String get formSameNameTitle;
+
+  /// No description provided for @formSameNameBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{name}» مسجّلة لديك بالفعل — الكمية {qty} بسعر {price}.\n\nتعديل الموجود يفتحه للتحديث (يدعم \"+\" لإضافة الوارد). الحفظ كسجل منفصل يُبقي الاثنين قائمين.'**
+  String formSameNameBody(String name, int qty, String price);
+
+  /// No description provided for @separateRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل منفصل'**
+  String get separateRecord;
+
+  /// No description provided for @formTitleEditSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مستلزم'**
+  String get formTitleEditSupply;
+
+  /// No description provided for @formTitleEditMedicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل دواء'**
+  String get formTitleEditMedicine;
+
+  /// No description provided for @formTitleNewSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستلزم جديد'**
+  String get formTitleNewSupply;
+
+  /// No description provided for @formTitleNewMedicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دواء جديد'**
+  String get formTitleNewMedicine;
+
+  /// No description provided for @formType.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗂️ النوع'**
+  String get formType;
+
+  /// No description provided for @formBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 الباركود'**
+  String get formBarcode;
+
+  /// No description provided for @formBarcodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الباركود يدوياً أو امسحه'**
+  String get formBarcodeHint;
+
+  /// No description provided for @formNoBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس لها باركود'**
+  String get formNoBarcode;
+
+  /// No description provided for @formLookingUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري البحث عن معلومات الدواء...'**
+  String get formLookingUp;
+
+  /// No description provided for @formSupplyImage.
+  ///
+  /// In ar, this message translates to:
+  /// **'📷 صورة المستلزم'**
+  String get formSupplyImage;
+
+  /// No description provided for @formMedicineImage.
+  ///
+  /// In ar, this message translates to:
+  /// **'📷 صورة الدواء'**
+  String get formMedicineImage;
+
+  /// No description provided for @camera.
+  ///
+  /// In ar, this message translates to:
+  /// **'كاميرا'**
+  String get camera;
+
+  /// No description provided for @gallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرض'**
+  String get gallery;
+
+  /// No description provided for @formSupplyName.
+  ///
+  /// In ar, this message translates to:
+  /// **'🩹 اسم المستلزم *'**
+  String get formSupplyName;
+
+  /// No description provided for @formMedicineName.
+  ///
+  /// In ar, this message translates to:
+  /// **'💊 اسم الدواء *'**
+  String get formMedicineName;
+
+  /// No description provided for @formSupplyNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم المستلزم'**
+  String get formSupplyNameHint;
+
+  /// No description provided for @formMedicineNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم الدواء'**
+  String get formMedicineNameHint;
+
+  /// No description provided for @formNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم مطلوب'**
+  String get formNameRequired;
+
+  /// No description provided for @formCompany.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏭 اسم الشركة (اختياري)'**
+  String get formCompany;
+
+  /// No description provided for @formCompanyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: Juman'**
+  String get formCompanyHint;
+
+  /// No description provided for @formCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧪 نوع المادة (اختياري)'**
+  String get formCategory;
+
+  /// No description provided for @formCategoryHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثل: Tablet، Cream، Syrup…'**
+  String get formCategoryHint;
+
+  /// No description provided for @formPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'💰 السعر ({currency})'**
+  String formPrice(String currency);
+
+  /// No description provided for @formQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 الكمية'**
+  String get formQuantity;
+
+  /// No description provided for @formExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 تاريخ الصلاحية (اختياري)'**
+  String get formExpiry;
+
+  /// No description provided for @notSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير محدد'**
+  String get notSet;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التعديلات'**
+  String get saveChanges;
+
+  /// No description provided for @saveSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ المستلزم'**
+  String get saveSupply;
+
+  /// No description provided for @saveMedicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ الدواء'**
+  String get saveMedicine;
+
+  /// No description provided for @chipExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'📅 الصلاحية: {date}'**
+  String chipExpiry(String date);
+
+  /// No description provided for @chipBatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏷️ وجبة: {batch}'**
+  String chipBatch(String batch);
 }
 
 class _AppLocalizationsDelegate
