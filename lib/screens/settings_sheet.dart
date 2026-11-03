@@ -13,6 +13,7 @@ import '../widgets/smooth_route.dart';
 import '../state/invoice_store.dart';
 import 'duplicates_screen.dart';
 import 'invoices_screen.dart';
+import 'language_currency_section.dart';
 import 'launch_flow.dart';
 import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
@@ -54,6 +55,10 @@ class _SettingsSheet extends StatelessWidget {
                   style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
+                const LanguageCurrencySection(),
+                const SizedBox(height: 18),
+                const GlassDivider(),
+                const SizedBox(height: 14),
 
                 SwitchListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),

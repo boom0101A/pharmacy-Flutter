@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "settingsLanguageCurrency": "🌐 Language & currency",
+  "languageLabel": "Language",
+  "currencyLabel": "Currency",
+  "currencyIqd": "Dinar",
+  "currencyUsd": "Dollar",
+  "usdRateLine": "1 $ = {rate} IQD",
+  "usdRateEdit": "Edit exchange rate",
+  "usdRateTitle": "Dollar exchange rate",
+  "usdRateHint": "How many dinars per dollar? (the market rate you use)",
+  "usdRateField": "1 dollar = … dinars",
+  "usdRateInvalid": "Enter a rate greater than zero",
+  "currencyNote": "Prices are always stored and synced in dinars; the dollar is for display and entry only. Smart invoices and the invoice log stay in dinars.",
+  "save": "Save",
+  "cancel": "Cancel"
+}

@@ -1,0 +1,6 @@
+# نصوص الواجهة: العربية القالب، والإنجليزية ترجمتها. البيانات لا تُترجم.
+arb-dir: lib/l10n
+template-arb-file: app_ar.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: true

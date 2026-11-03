@@ -85,6 +85,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  # نصوص الواجهة بالعربية والإنجليزية من lib/l10n/*.arb
+  generate: true
 
   fonts:
     - family: Cairo

@@ -1,0 +1,18 @@
+{
+  "@@locale": "ar",
+  "settingsLanguageCurrency": "🌐 اللغة والعملة",
+  "languageLabel": "اللغة",
+  "currencyLabel": "العملة",
+  "currencyIqd": "دينار",
+  "currencyUsd": "دولار",
+  "usdRateLine": "1 $ = {rate} د.ع",
+  "@usdRateLine": {"placeholders": {"rate": {"type": "String"}}},
+  "usdRateEdit": "تعديل سعر الصرف",
+  "usdRateTitle": "سعر صرف الدولار",
+  "usdRateHint": "كم ديناراً للدولار الواحد؟ (سعر السوق الذي تتعامل به)",
+  "usdRateField": "1 دولار = … دينار",
+  "usdRateInvalid": "اكتب سعراً أكبر من صفر",
+  "currencyNote": "الأسعار تُحفظ وتُزامَن بالدينار دائماً؛ الدولار للعرض والإدخال فقط. الفاتورة الذكية وسجل الفواتير بالدينار.",
+  "save": "حفظ",
+  "cancel": "إلغاء"
+}

@@ -16,6 +16,9 @@ class AppSettings extends ChangeNotifier {
   static const _kPharmacyId = 'pharmacy_id';
   static const _kPharmacyBackfill = 'pharmacy_backfill_done';
   static const _kWelcomeSeen = 'welcome_seen';
+  static const _kLanguage = 'ui_language';
+  static const _kCurrency = 'display_currency';
+  static const _kUsdRate = 'usd_rate';
 
   SharedPreferences? _prefs;
 
@@ -53,6 +56,20 @@ class AppSettings extends ChangeNotifier {
   bool _welcomeSeen = false;
   bool get welcomeSeen => _welcomeSeen;
 
+  /// لغة الواجهة (`ar` أو `en`) — محلية لكل جهاز، لا تُزامَن، والبيانات
+  /// نفسها (أسماء الأدوية…) لا تُترجم.
+  String _language = 'ar';
+  String get language => _language;
+
+  /// عملة **العرض** (`IQD` أو `USD`). الأسعار تُخزَّن وتُزامَن بالدينار
+  /// دائماً؛ الدولار تحويل للعرض والإدخال فقط بسعر [usdRate].
+  String _currency = 'IQD';
+  String get currency => _currency;
+
+  /// كم ديناراً للدولار الواحد — يضبطه المستخدم يدوياً (سعر السوق).
+  double? _usdRate;
+  double? get usdRate => _usdRate;
+
   /// المفتاح المستخدَم دائماً هو المفتاح المضمّن من ملف .env
   String get geminiKey => ApiKeys.geminiDefault;
 
@@ -68,7 +85,36 @@ class AppSettings extends ChangeNotifier {
     _pharmacyId = _prefs?.getString(_kPharmacyId);
     _pharmacyBackfillDone = _prefs?.getBool(_kPharmacyBackfill) ?? false;
     _welcomeSeen = _prefs?.getBool(_kWelcomeSeen) ?? false;
+    _language = _prefs?.getString(_kLanguage) == 'en' ? 'en' : 'ar';
+    _usdRate = _prefs?.getDouble(_kUsdRate);
+    _currency = _prefs?.getString(_kCurrency) == 'USD' && _usdRate != null
+        ? 'USD'
+        : 'IQD';
     notifyListeners();
+  }
+
+  Future<void> setLanguage(String value) async {
+    _language = value == 'en' ? 'en' : 'ar';
+    notifyListeners();
+    await _prefs?.setString(_kLanguage, _language);
+  }
+
+  /// `false` إن طُلب الدولار بلا سعر صرف — لا تُعرض أسعار بسعر لم يُختر.
+  Future<bool> setCurrency(String value) async {
+    final next = value == 'USD' ? 'USD' : 'IQD';
+    if (next == 'USD' && _usdRate == null) return false;
+    _currency = next;
+    notifyListeners();
+    await _prefs?.setString(_kCurrency, next);
+    return true;
+  }
+
+  Future<bool> setUsdRate(double value) async {
+    if (!(value > 0)) return false;
+    _usdRate = value;
+    notifyListeners();
+    await _prefs?.setDouble(_kUsdRate, value);
+    return true;
   }
 
   Future<void> markWelcomeSeen() async {
