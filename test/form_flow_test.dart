@@ -430,6 +430,41 @@ void main() {
     expect(store.saved.single.price, 12000);
   });
 
+  testWidgets('حد التنبيه الخاص يُحفظ مع المادة', (tester) async {
+    useTallSurface(tester);
+    await tester.pumpWidget(host(MedicineFormScreen(store: store)));
+    await tester.pump();
+    await tester.enterText(nameField(), 'Panadol');
+    await tester.enterText(find.byKey(const Key('minQtyField')), '20');
+    await tester.pump();
+    await tapSave(tester);
+    expect(store.saved.single.minQuantity, 20);
+  });
+
+  testWidgets('مسح حد التنبيه يعيد المادة إلى الحد العام', (tester) async {
+    useTallSurface(tester);
+    const existing = Medicine(
+      id: 'm1',
+      barcode: '',
+      name: 'Panadol',
+      price: 1000,
+      quantity: 4,
+      minQuantity: 20,
+      createdAt: 1,
+      updatedAt: 1,
+    );
+    await tester.pumpWidget(
+      host(MedicineFormScreen(store: store, existing: existing)),
+    );
+    await tester.pump();
+    final field = find.byKey(const Key('minQtyField'));
+    expect(tester.widget<TextField>(field).controller!.text, '20');
+    await tester.enterText(field, '');
+    await tester.pump();
+    await tapSave(tester);
+    expect(store.saved.single.minQuantity, isNull);
+  });
+
   group('حماية الأرقام السالبة (فحص أخير)', () {
     testWidgets('خانة السعر لا تقبل الإشارة السالبة، والكمية السالبة صفر', (
       tester,

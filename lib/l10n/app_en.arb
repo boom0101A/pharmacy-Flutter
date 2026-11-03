@@ -475,5 +475,9 @@
   "notifLineOut": "🚫 {name} — out of stock",
   "notifLineLow": "⚠️ {name} — {n} left",
   "notifLineSoon": "🕐 {name} — {n, plural, =1{1 day} other{{n} days}}",
-  "notifMore": "and {n} more"
+  "notifMore": "and {n} more",
+  "formMinQty": "🔔 Alert threshold (optional)",
+  "formMinQtyHint": "Default {n}",
+  "settingsLowStock": "Default low-stock threshold",
+  "settingsLowStockSub": "You're alerted when quantity reaches it — for items without their own threshold, shared across the pharmacy's devices."
 }

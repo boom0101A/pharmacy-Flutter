@@ -18,6 +18,7 @@ import '../widgets/smooth_route.dart';
 import '../util/number_parse.dart';
 import 'scanner_screen.dart';
 import '../l10n/l10n.dart';
+import '../services/pharmacy_prefs.dart';
 
 /// شاشة إضافة/تعديل دواء.
 class MedicineFormScreen extends StatefulWidget {
@@ -61,6 +62,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   double? _priceSource;
   late final TextEditingController _quantity;
 
+  /// حد التنبيه الخاص — فارغ = الحد العام للصيدلية.
+  late final TextEditingController _minQty;
+
   /// الشكل الصيدلاني — خاص بالمستلزمات فقط.
   late final TextEditingController _category;
 
@@ -100,6 +104,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _quantity = TextEditingController(
       text: m == null ? '' : m.quantity.toString(),
     );
+    _minQty = TextEditingController(text: m?.minQuantity?.toString() ?? '');
     _category = TextEditingController(text: m?.category ?? '');
     _company = TextEditingController(text: m?.company ?? '');
     _imageFileName = m?.imagePath;
@@ -118,9 +123,15 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _name.dispose();
     _price.dispose();
     _quantity.dispose();
+    _minQty.dispose();
     _category.dispose();
     _company.dispose();
     super.dispose();
+  }
+
+  int? _minQtyOrNull() {
+    final v = parseLocalizedInt(_minQty.text);
+    return v == null || v < 1 ? null : v;
   }
 
   void _toast(String message, {Color? color}) {
@@ -394,6 +405,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           company: _orNull(_company),
           clearCompany: _orNull(_company) == null,
           noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
+          minQuantity: _minQtyOrNull(),
+          clearMinQuantity: _minQtyOrNull() == null,
           updatedAt: now,
         ) ??
         Medicine(
@@ -408,6 +421,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           category: _isSupply ? null : _categoryOrNull(),
           company: _orNull(_company),
           noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
+          minQuantity: _minQtyOrNull(),
           createdAt: now,
           updatedAt: now,
         );
@@ -812,6 +826,19 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 16),
+              _Label(context.l10n.formMinQty),
+              TextField(
+                key: const Key('minQtyField'),
+                controller: _minQty,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: context.l10n.formMinQtyHint(
+                    PharmacyPrefs.instance.lowStockDefault,
+                  ),
+                ),
               ),
 
               // ----- تاريخ الصلاحية -----

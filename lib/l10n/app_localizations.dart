@@ -2963,6 +2963,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'و{n} أخرى'**
   String notifMore(int n);
+
+  /// No description provided for @formMinQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔔 حد التنبيه (اختياري)'**
+  String get formMinQty;
+
+  /// No description provided for @formMinQtyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الافتراضي {n}'**
+  String formMinQtyHint(int n);
+
+  /// No description provided for @settingsLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد المخزون المنخفض الافتراضي'**
+  String get settingsLowStock;
+
+  /// No description provided for @settingsLowStockSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُنبَّه حين تصل الكمية إليه — لكل المواد بلا حد خاص، ومشترك بين أجهزة الصيدلية.'**
+  String get settingsLowStockSub;
 }
 
 class _AppLocalizationsDelegate

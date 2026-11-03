@@ -18,6 +18,7 @@ import 'launch_flow.dart';
 import 'linked_devices_sheet.dart';
 import 'pairing_sheet.dart';
 import '../l10n/l10n.dart';
+import '../services/pharmacy_prefs.dart';
 
 /// لوحة الإعدادات — تُفتح من أيقونة الترس في الترويسة.
 Future<void> showSettingsSheet(BuildContext context, MedicineStore store) {
@@ -102,6 +103,8 @@ class _SettingsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                const _LowStockStepper(),
                 const SizedBox(height: 4),
 
                 SwitchListTile(
@@ -499,4 +502,70 @@ class _SettingsSheet extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// الحد العام للمخزون المنخفض — مشترك بين أجهزة الصيدلية (PharmacyPrefs).
+class _LowStockStepper extends StatelessWidget {
+  const _LowStockStepper();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = PharmacyPrefs.instance;
+    return ListenableBuilder(
+      listenable: prefs,
+      builder: (context, _) => Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 4, 8),
+        decoration: BoxDecoration(
+          color: const Color(0x0AFFFFFF),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.settingsLowStock,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.settingsLowStockSub,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              key: const Key('lowStockMinus'),
+              icon: const Icon(Icons.remove_rounded),
+              onPressed: prefs.lowStockDefault > 1
+                  ? () => prefs.setLowStockDefault(prefs.lowStockDefault - 1)
+                  : null,
+            ),
+            Text(
+              '${prefs.lowStockDefault}',
+              key: const Key('lowStockValue'),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              key: const Key('lowStockPlus'),
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () =>
+                  prefs.setLowStockDefault(prefs.lowStockDefault + 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

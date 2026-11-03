@@ -1461,5 +1461,16 @@
         "type": "int"
       }
     }
-  }
+  },
+  "formMinQty": "🔔 حد التنبيه (اختياري)",
+  "formMinQtyHint": "الافتراضي {n}",
+  "@formMinQtyHint": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsLowStock": "حد المخزون المنخفض الافتراضي",
+  "settingsLowStockSub": "تُنبَّه حين تصل الكمية إليه — لكل المواد بلا حد خاص، ومشترك بين أجهزة الصيدلية."
 }

@@ -1883,4 +1883,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String notifMore(int n) {
     return 'and $n more';
   }
+
+  @override
+  String get formMinQty => '🔔 Alert threshold (optional)';
+
+  @override
+  String formMinQtyHint(int n) {
+    return 'Default $n';
+  }
+
+  @override
+  String get settingsLowStock => 'Default low-stock threshold';
+
+  @override
+  String get settingsLowStockSub =>
+      'You\'re alerted when quantity reaches it — for items without their own threshold, shared across the pharmacy\'s devices.';
 }

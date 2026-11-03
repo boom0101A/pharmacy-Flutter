@@ -1765,4 +1765,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String notifMore(int n) {
     return 'و$n أخرى';
   }
+
+  @override
+  String get formMinQty => '🔔 حد التنبيه (اختياري)';
+
+  @override
+  String formMinQtyHint(int n) {
+    return 'الافتراضي $n';
+  }
+
+  @override
+  String get settingsLowStock => 'حد المخزون المنخفض الافتراضي';
+
+  @override
+  String get settingsLowStockSub =>
+      'تُنبَّه حين تصل الكمية إليه — لكل المواد بلا حد خاص، ومشترك بين أجهزة الصيدلية.';
 }

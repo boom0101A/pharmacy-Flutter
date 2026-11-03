@@ -106,10 +106,17 @@ class Medicine {
   static const urgentDays = 30;
 
   /// الأيام المتبقية حتى الانتهاء بالنسبة إلى [now] (سالبة للمنتهية).
+  /// بالأيام **التقويمية** كمركز التنبيهات وصفحة المادة — المدة المنقضية
+  /// كانت تعدّ «90 يوماً و13 ساعة» 90 فتظهر المادة «قريبة» في الفلتر وحده.
   int? daysToExpiry([DateTime? now]) {
     final e = expiry;
     if (e == null) return null;
-    return e.difference(now ?? DateTime.now()).inDays;
+    final n = now ?? DateTime.now();
+    return DateTime(
+      e.year,
+      e.month,
+      e.day,
+    ).difference(DateTime(n.year, n.month, n.day)).inDays;
   }
 
   bool get isExpiringSoon {

@@ -22,11 +22,7 @@ Medicine _m(String id, String name, {int qty = 20, int? inDays}) => Medicine(
   name: name,
   price: 1000,
   quantity: qty,
-  expiryDate: inDays == null
-      ? null
-      : DateTime.now()
-            .add(Duration(days: inDays, hours: 2))
-            .millisecondsSinceEpoch,
+  expiryDate: inDays == null ? null : _noonIn(inDays).millisecondsSinceEpoch,
   createdAt: 0,
   updatedAt: 0,
 );
@@ -159,4 +155,11 @@ void main() {
     expect(criticalAlertCount(store.all, dismissed: {}), 4);
     expect(criticalAlertCount(store.all, dismissed: {'e:expired'}), 3);
   });
+}
+
+/// ظهر اليوم المطلوب: النتيجة لا تتغيّر بساعة تشغيل الاختبار (قرب منتصف
+/// الليل كانت «+ساعتان» تعبر إلى اليوم التالي).
+DateTime _noonIn(int days) {
+  final n = DateTime.now();
+  return DateTime(n.year, n.month, n.day + days, 12);
 }

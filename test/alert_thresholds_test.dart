@@ -11,11 +11,7 @@ Medicine _m({int qty = 10, int? minQty, int? inDays}) => Medicine(
   price: 1000,
   quantity: qty,
   minQuantity: minQty,
-  expiryDate: inDays == null
-      ? null
-      : DateTime.now()
-            .add(Duration(days: inDays, hours: 2))
-            .millisecondsSinceEpoch,
+  expiryDate: inDays == null ? null : _noonIn(inDays).millisecondsSinceEpoch,
   createdAt: 0,
   updatedAt: 0,
 );
@@ -78,4 +74,11 @@ void main() {
       );
     });
   });
+}
+
+/// ظهر اليوم المطلوب: النتيجة لا تتغيّر بساعة تشغيل الاختبار (قرب منتصف
+/// الليل كانت «+ساعتان» تعبر إلى اليوم التالي).
+DateTime _noonIn(int days) {
+  final n = DateTime.now();
+  return DateTime(n.year, n.month, n.day + days, 12);
 }

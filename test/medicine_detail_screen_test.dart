@@ -159,7 +159,9 @@ void main() {
   });
 
   testWidgets('الصلاحية مع الأيام المتبقية', (tester) async {
-    final in30 = DateTime.now().add(const Duration(days: 30, hours: 2));
+    final n = DateTime.now();
+    // ظهر اليوم الثلاثين: لا يتأثر بساعة التشغيل قرب منتصف الليل
+    final in30 = DateTime(n.year, n.month, n.day + 30, 12);
     await open(tester, _med(expiry: in30));
     expect(find.textContaining('متبقٍ 30'), findsOneWidget);
   });
