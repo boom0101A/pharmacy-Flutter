@@ -7,7 +7,16 @@ import 'gs1_parser.dart';
 
 /// مجموعة مواد يُشتبه أنها نفس المادة مكرّرة.
 class DuplicateGroup {
-  DuplicateGroup(this.items, {required this.byBarcode, this.similarity});
+  DuplicateGroup(
+    this.items, {
+    required this.byBarcode,
+    this.similarity,
+    this.differentBarcodes = false,
+  });
+
+  /// متشابهة تحمل باركودين صالحين مختلفين — قد تكون حجماً أو نكهة أخرى، لا
+  /// تكراراً. تُعرض مع تنبيه (قرار المستخدم) بدل استبعادها.
+  final bool differentBarcodes;
 
   final List<Medicine> items;
 
@@ -76,15 +85,98 @@ String? invoiceLabel(Medicine m, Invoice? latest) {
 /// أقصى حجم لمجموعة متشابهة — أكبر من ذلك تصير المراجعة متعبة وغير دقيقة.
 const _maxSimilarGroup = 6;
 
-/// مواد بأسماء متقاربة لا متطابقة: خطأ إملائي بحرف أو حرفين، أو اسم ناقص
-/// كلمة («Panadol Extra» / «Panadol Extra Tab»)، أو تركيز/حجم آخر — قرار
-/// المستخدم أن تُعرض كلها ويقرّر هو. اقتراحات لا يقين: تظهر في قسم منفصل
-/// ولا يعدّها شريط الرئيسية.
+/// كلمة تظهر في أكثر من هذا العدد من المواد عامّة جداً لتربط بينها.
+const _maxTokenFanout = 40;
+
+/// كلمات لا تميّز منتجاً عن آخر: أشكال صيدلانية، وصفات عامة، ووحدات.
+const _stopWords = {
+  'tab',
+  'tabs',
+  'tablet',
+  'tablets',
+  'cap',
+  'caps',
+  'capsule',
+  'capsules',
+  'syrup',
+  'susp',
+  'suspension',
+  'drop',
+  'drops',
+  'cream',
+  'gel',
+  'oint',
+  'ointment',
+  'spray',
+  'inj',
+  'injection',
+  'amp',
+  'ampoule',
+  'vial',
+  'sachet',
+  'sachets',
+  'solution',
+  'oral',
+  'supp',
+  'soln',
+  'bottle',
+  'pack',
+  'box',
+  'new',
+  'original',
+  'lotion',
+  'shampoo',
+  'adult',
+  'adults',
+  'kids',
+  'baby',
+  'ml',
+  'mg',
+  'mcg',
+  'gm',
+  'iu',
+  'اصلي',
+  'عادي',
+  'حبة',
+  'حبوب',
+  'شراب',
+  'كريم',
+  'قطرة',
+  'بخاخ',
+  'امبول',
+  'ابرة',
+  'جل',
+  'مرهم',
+  'كبير',
+  'صغير',
+  'وسط',
+  'اطفال',
+  'للاطفال',
+  'بالغين',
+  'عدد',
+  'مل',
+  'غم',
+  'غرام',
+  'ملغ',
+  'سم',
+};
+
+final _unitPattern = RegExp(
+  r'(\d+(?:\.\d+)?)\s*(ml|mg|mcg|gm|g|iu|%|cc|سم|مل|غم|ملغ)(?=\s|$)',
+);
+final _numberOrDose = RegExp(r'^\d+(\.\d+)?([a-z%؀-ۿ]{0,3})$');
+
+/// مواد بأسماء متقاربة لا متطابقة — **واسعة عمداً** (قرار المستخدم): خطأ
+/// إملائي، اسم ناقص كلمة، حجم أو تركيز آخر، أو اشتراك في كلمتين مميّزتين
+/// أو أكثر. اقتراحات لا يقين: قسم منفصل، الأقرب أولاً، ولا يعدّها شريط
+/// الرئيسية.
 ///
-/// - النوع نفسه فقط، ولا زوج بباركودين صالحين مختلفين (صنفان مؤكّدان).
+/// - النوع نفسه فقط.
+/// - الباركودان المختلفان **لا يمنعان** (قرار المستخدم): المجموعة تُعلَّم
+///   [DuplicateGroup.differentBarcodes] فتُنبّه الشاشة إلى احتمال حجم أو نكهة.
 /// - [exclude]: معرّفات في مجموعات مؤكّدة — لا تُعرض مرتين.
-/// - المقارنة داخل «كتلة» أول 3 حروف من أول كلمة فقط: ~670 دواء تعني 224
-///   ألف زوج بلا تقسيم؛ خطأ إملائي في أول 3 حروف نادر ويُفوَّت.
+/// - المقارنة بين المواد التي تشترك في كلمة مميّزة أو في أول 3 حروف (فهرس)،
+///   لا كل الأزواج.
 List<DuplicateGroup> findSimilarGroups(
   List<Medicine> items, {
   Set<String> dismissed = const {},
@@ -97,18 +189,23 @@ List<DuplicateGroup> findSimilarGroups(
   final keys = [for (final m in pool) similarityKey(m.name)];
   final codes = [for (final m in pool) Gs1Parser.canonicalKey(m.barcode)];
 
-  final blocks = <String, List<int>>{};
+  final index = <String, List<int>>{};
   for (var i = 0; i < pool.length; i++) {
     final k = keys[i];
     if (k.length < 3) continue;
+    final type = pool[i].type.name;
     final first = k.split(' ').first;
     final head = first.length < 3 ? first : first.substring(0, 3);
-    (blocks['${pool[i].type.name}::$head'] ??= []).add(i);
+    (index['$type::h:$head'] ??= []).add(i);
+    for (final w in distinctiveTokens(k)) {
+      (index['$type::w:$w'] ??= []).add(i);
+    }
   }
 
   final parent = List<int>.generate(pool.length, (i) => i);
   final size = List<int>.filled(pool.length, 1);
   final best = List<double>.filled(pool.length, 0);
+  final mixedCodes = List<bool>.filled(pool.length, false);
   int find(int i) {
     while (parent[i] != i) {
       parent[i] = parent[parent[i]];
@@ -117,24 +214,29 @@ List<DuplicateGroup> findSimilarGroups(
     return i;
   }
 
-  for (final idx in blocks.values) {
+  final seen = <int>{};
+  for (final idx in index.values) {
+    if (idx.length > _maxTokenFanout) continue;
     for (var a = 0; a < idx.length; a++) {
       for (var b = a + 1; b < idx.length; b++) {
-        final i = idx[a], j = idx[b];
-        if (keys[i] == keys[j]) continue; // متطابقة: شأن المجموعات المؤكّدة
-        final ci = codes[i], cj = codes[j];
-        if (ci != null && cj != null && ci != cj) continue;
+        final i = idx[a] < idx[b] ? idx[a] : idx[b];
+        final j = idx[a] < idx[b] ? idx[b] : idx[a];
+        if (!seen.add(i * pool.length + j)) continue;
         final score = nameSimilarity(keys[i], keys[j]);
         if (score == 0) continue;
+        final ci = codes[i], cj = codes[j];
+        final differs = ci != null && cj != null && ci != cj;
         final ri = find(i), rj = find(j);
         if (ri == rj) {
           if (score > best[ri]) best[ri] = score;
+          mixedCodes[ri] = mixedCodes[ri] || differs;
           continue;
         }
         if (size[ri] + size[rj] > _maxSimilarGroup) continue;
         parent[ri] = rj;
         size[rj] += size[ri];
         best[rj] = [best[ri], best[rj], score].reduce((x, y) => x > y ? x : y);
+        mixedCodes[rj] = mixedCodes[ri] || mixedCodes[rj] || differs;
       }
     }
   }
@@ -150,44 +252,69 @@ List<DuplicateGroup> findSimilarGroups(
           [for (final i in e.value) pool[i]],
           byBarcode: false,
           similarity: best[e.key],
+          differentBarcodes: mixedCodes[e.key],
         ),
   ].where((g) => !dismissed.contains(g.key)).toList();
   out.sort((a, b) => b.similarity!.compareTo(a.similarity!));
   return out;
 }
 
-/// الاسم للمقارنة: صغير، بلا ترقيم ولا أقواس، ومسافات موحّدة.
+/// الاسم للمقارنة: صغير، بلا رموز ولا أقواس، والوحدات ملتصقة بأرقامها
+/// («15 ml» = «15ml») — وإلا اختلف اسمان لا يختلفان إلا بمسافة.
 @visibleForTesting
-String similarityKey(String name) => MedicineStore.normalizeName(
-  name.replaceAll(
-    RegExp(
-      r'[()\[\]{},.\-_/+*«»"'
-      "'"
-      r']',
+String similarityKey(String name) {
+  final cleaned = MedicineStore.normalizeName(
+    name.replaceAll(
+      RegExp(
+        r'[()\[\]{},.\-_/+*«»|:;#"'
+        "'"
+        r']',
+      ),
+      ' ',
     ),
-    ' ',
-  ),
-);
+  );
+  return cleaned.replaceAllMapped(_unitPattern, (m) => '${m[1]}${m[2]}');
+}
 
-/// تشابه اسمين مطبَّعين (0 = غير متشابهين):
-/// - حرفي ≥ 0.85 (مسافة Levenshtein) — خطأ إملائي بحرف أو حرفين.
-/// - أو كل كلمات الأقصر موجودة في الأطول («panadol extra» ⊂ «panadol extra
-///   tab»)، بشرط أن يكون الأقصر مميِّزاً: كلمتان، أو كلمة من 5 أحرف فأكثر —
-///   وإلا طابقت «gel» كل جل في المخزون.
+/// كلمات تميّز المنتج: 3 أحرف فأكثر، ليست رقماً ولا جرعة («500mg»)، وليست
+/// كلمة عامة ([_stopWords]). هي ما يُعدّ في قاعدة «كلمتان مشتركتان».
+@visibleForTesting
+Set<String> distinctiveTokens(String key) => {
+  for (final w in key.split(' '))
+    if (w.length >= 3 && !_stopWords.contains(w) && !_numberOrDose.hasMatch(w))
+      w,
+};
+
+/// تشابه اسمين مطبَّعين (0 = غير متشابهين)، والقيمة للترتيب:
+/// - 1.0: متطابقان بعد التطبيع (يصلان هنا حين يمنع باركودان مختلفان دمجهما
+///   في المؤكّدة).
+/// - 0.85–0.99: خطأ إملائي (Levenshtein)، أو كل كلمات الأقصر في الأطول
+///   بشرط أن يكون الأقصر مميِّزاً (كلمتان، أو كلمة من 5 أحرف) — وإلا طابقت
+///   «gel» كل جل في المخزون.
+/// - 0.5–0.8: اشتراك في كلمتين مميّزتين أو أكثر (قاعدة واسعة بقرار المستخدم).
 @visibleForTesting
 double nameSimilarity(String a, String b) {
+  if (a == b) return 1;
   final longest = a.length > b.length ? a.length : b.length;
   if (longest == 0) return 0;
   final ratio = 1 - _levenshtein(a, b) / longest;
-  if (ratio >= .85) return ratio;
+  if (ratio >= .85) return ratio > .99 ? .99 : ratio;
 
-  final ta = a.split(' ').where((w) => w.length >= 2).toSet();
-  final tb = b.split(' ').where((w) => w.length >= 2).toSet();
+  bool keep(String w) => w.length >= 2 && !_stopWords.contains(w);
+  final ta = a.split(' ').where(keep).toSet();
+  final tb = b.split(' ').where(keep).toSet();
   final (short, long) = ta.length <= tb.length ? (ta, tb) : (tb, ta);
   final distinctive =
       short.length >= 2 || (short.length == 1 && short.first.length >= 5);
   if (distinctive && long.containsAll(short)) {
-    return short.length / long.length * .9 + .05;
+    return .85 + .14 * (short.length / long.length);
+  }
+
+  final da = distinctiveTokens(a), db = distinctiveTokens(b);
+  final shared = da.intersection(db).length;
+  if (shared >= 2) {
+    final union = da.union(db).length;
+    return .5 + .3 * (shared / union);
   }
   return 0;
 }

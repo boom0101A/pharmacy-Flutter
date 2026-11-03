@@ -256,9 +256,19 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     }
     final groups = _groups;
     final similar = _similar;
+    final hidden = _hiddenCount;
     if (groups.isEmpty && similar.isEmpty) {
-      return const Center(
-        child: Text('لا توجد تكرارات ✅', style: TextStyle(fontSize: 16)),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('لا توجد تكرارات ✅', style: TextStyle(fontSize: 16)),
+            if (hidden > 0) ...[
+              const SizedBox(height: 14),
+              _showHiddenButton(hidden),
+            ],
+          ],
+        ),
       );
     }
     return ListView(
@@ -298,8 +308,59 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           ),
           for (final g in similar) _groupCard(g),
         ],
+        if (hidden > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: _showHiddenButton(hidden)),
+          ),
       ],
     );
+  }
+
+  /// مجموعات مخفية حالياً بقرار «ليست مكرّرة» (أو بدمج جزئي سابق).
+  int get _hiddenCount {
+    final dismissed = DuplicateDismissals.instance.keys;
+    if (dismissed.isEmpty) return 0;
+    return findDuplicateGroups(
+          _items,
+        ).where((g) => dismissed.contains(g.key)).length +
+        _similarAll.where((g) => dismissed.contains(g.key)).length;
+  }
+
+  Widget _showHiddenButton(int hidden) => OutlinedButton.icon(
+    key: const Key('showHidden'),
+    onPressed: () => _showHidden(hidden),
+    icon: const Text('🙈'),
+    label: Text('إظهار المخفية ($hidden)'),
+  );
+
+  /// يلغي كل قرارات الإخفاء على كل الأجهزة — المواد نفسها لا تتغيّر.
+  Future<void> _showHidden(int hidden) async {
+    final ok = await showGlassDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: const Text('إظهار المجموعات المخفية'),
+        content: Text(
+          'ستعود $hidden مجموعة للمراجعة على كل الأجهزة. المواد لا تتغيّر.',
+          style: const TextStyle(fontSize: 13, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            key: const Key('confirmShowHidden'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('إظهار'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await DuplicateDismissals.instance.clearAll();
+    if (mounted) setState(() {});
   }
 
   Widget _lockBanner() => Container(
@@ -347,6 +408,15 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                     : AppColors.primary,
               ),
             ),
+            if (g.differentBarcodes)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  '🏷️ باركودان مختلفان — تأكّد أنها ليست حجماً أو نكهة أخرى',
+                  key: Key('differentBarcodesNote'),
+                  style: TextStyle(fontSize: 12, color: AppColors.warning),
+                ),
+              ),
             const Padding(
               padding: EdgeInsets.only(top: 4),
               child: Text(

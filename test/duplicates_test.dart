@@ -123,14 +123,74 @@ void main() {
       );
     });
 
-    test('باركودان صالحان مختلفان ← لا', () {
+    test('باركودان صالحان مختلفان ← تظهر مع تنبيه (قرار المستخدم)', () {
+      final g = findSimilarGroups([
+        m('a', name: 'لوشن جونسون اطفال', barcode: '6285128013338'),
+        m('b', name: 'لوشن جونسن اطفال', barcode: '06291100000012'),
+      ]).single;
+      expect(g.differentBarcodes, isTrue);
+    });
+
+    test('الاسم نفسه بباركودين مختلفين (epixx) ← 100% مع تنبيه', () {
+      final g = findSimilarGroups([
+        m(
+          'a',
+          name: 'epixx ( Levetiracetam 100mg ) Syrup 300ml',
+          barcode: '6285128013338',
+        ),
+        m(
+          'b',
+          name: 'epixx (Levetiracetam 100mg) Syrup 300ml',
+          barcode: '06291100000012',
+        ),
+      ]).single;
+      expect(g.similarity, 1);
+      expect(g.differentBarcodes, isTrue);
+    });
+
+    test('«15ml» و«15 ml» والرموز (APISAL) ← متشابهة', () {
+      final g = findSimilarGroups([
+        m('a', name: 'APISAL Stuffy Nose 15ml', barcode: '6285128013338'),
+        m('b', name: 'APISAL Stuffy Nose ( 15 ml ) Drop | API'),
+      ]).single;
+      expect(g.similarity, greaterThanOrEqualTo(.85));
+      expect(g.differentBarcodes, isFalse);
+    });
+
+    test('كلمتان مميّزتان مشتركتان ← متشابهة بنسبة أقل', () {
+      final g = findSimilarGroups([
+        m('a', name: 'Avoxin ( Levofloxacin 500 mg ) 7 tab'),
+        m('b', name: 'ILFLOX ( Levofloxacin 500 mg ) 7 tab'),
+        m('c', name: 'Cefixime Hikma 400 mg'),
+      ]);
+      // Levofloxacin + … : تشتركان في كلمة مميّزة واحدة فقط هنا
+      expect(g, isEmpty);
+
+      final two = findSimilarGroups([
+        m('a', name: 'Omega Plus Fish Oil'),
+        m('b', name: 'Omega Gold Fish Capsules'),
+      ]).single;
+      expect(two.similarity, lessThan(.85));
+    });
+
+    test('مشتركتان في كلمات عامة وجرعة فقط ← لا', () {
       expect(
         ids([
-          m('a', name: 'لوشن جونسون اطفال', barcode: '6285128013338'),
-          m('b', name: 'لوشن جونسن اطفال', barcode: '06291100000012'),
+          m('a', name: 'X-COUGH Syrup 100ml'),
+          m('b', name: 'Rennie Syrup 100ml'),
         ]),
         isEmpty,
       );
+    });
+
+    test('الأقرب أولاً في الترتيب', () {
+      final groups = findSimilarGroups([
+        m('a', name: 'Omega Plus Fish Oil'),
+        m('b', name: 'Omega Gold Fish Capsules'),
+        m('c', name: 'لوشن جونسون اطفال'),
+        m('d', name: 'لوشن جونسن اطفال'),
+      ]);
+      expect(groups.first.items.map((x) => x.id), containsAll(['c', 'd']));
     });
 
     test('قسمان مختلفان ← لا', () {

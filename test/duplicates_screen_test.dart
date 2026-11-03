@@ -41,9 +41,10 @@ Medicine m(
   int qty = 1,
   int updated = 1,
   String? image,
+  String barcode = '',
 }) => Medicine(
   id: id,
-  barcode: '',
+  barcode: barcode,
   name: name,
   price: 500,
   quantity: qty,
@@ -309,5 +310,38 @@ void main() {
 
     expect(find.textContaining('تعذّر الدمج'), findsOneWidget);
     expect(find.text('لزقة خافض حرارة'), findsNWidgets(2));
+  });
+
+  testWidgets('باركودان مختلفان: تظهر مع تنبيه', (tester) async {
+    cloud = [
+      m(
+        'a',
+        'epixx ( Levetiracetam 100mg ) Syrup 300ml',
+        barcode: '6285128013338',
+      ),
+      m(
+        'b',
+        'epixx (Levetiracetam 100mg) Syrup 300ml',
+        barcode: '06291100000012',
+      ),
+    ];
+    await open(tester);
+    expect(find.byKey(const Key('differentBarcodesNote')), findsOneWidget);
+    expect(find.textContaining('بنسبة 100%'), findsOneWidget);
+  });
+
+  testWidgets('«إظهار المخفية» يعيد المجموعات المخفية', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('ليست مكرّرة'));
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد تكرارات ✅'), findsOneWidget);
+    expect(find.text('إظهار المخفية (1)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('showHidden')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmShowHidden')));
+    await tester.pumpAndSettle();
+    expect(find.text('لزقة خافض حرارة'), findsNWidgets(2));
+    expect(DuplicateDismissals.instance.keys, isEmpty);
   });
 }
