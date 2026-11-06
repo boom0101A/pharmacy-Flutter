@@ -334,6 +334,20 @@ void main() {
         expect(store.saved.single.barcode, '1234567890123');
       });
 
+      testWidgets('ثلاثة أزرار على شاشة ضيقة (360) بلا فيضان', (tester) async {
+        await openWithExisting(tester);
+        tester.view.physicalSize = const Size(360, 1800);
+        await tester.pump();
+        await tester.enterText(find.byKey(const Key('nameField')), 'دواء آخر');
+        await typeTakenBarcode(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(const Key('confirmDeleteOwner')), findsOneWidget);
+      });
+
       testWidgets('تعديل: «إلغاء» في التأكيد لا يحذف ولا يحفظ', (tester) async {
         await openEditing(tester);
         await typeTakenBarcode(tester);

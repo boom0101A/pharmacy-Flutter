@@ -57,6 +57,15 @@ class _Store extends MedicineStore {
   Future<void> refreshFromCloud({bool manual = false}) async {}
 }
 
+class _BarcodeStore extends _Store {
+  _BarcodeStore(this.owner);
+  final Medicine owner;
+
+  @override
+  Future<Medicine?> findByBarcode(String barcode) async =>
+      barcode.trim() == owner.barcode ? owner : null;
+}
+
 Medicine _med(String id, String name, double price) => Medicine(
   id: id,
   barcode: '',
@@ -218,6 +227,28 @@ void main() {
     expect(find.text('Add new medicine'), findsOneWidget);
     expect(find.text('💰 Price (IQD)'), findsOneWidget);
     expect(arabicTexts(tester), isEmpty);
+  });
+
+  testWidgets('حذف مالك الباركود بالإنجليزية', (tester) async {
+    tester.view.physicalSize = const Size(360, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final owner = _med('o1', 'شراب أطفال', 1310).copyWith(barcode: '111222');
+    final store = _BarcodeStore(owner);
+    await tester.pumpWidget(englishHost(MedicineFormScreen(store: store)));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('barcodeField')), '111222');
+    await tester.enterText(find.byKey(const Key('nameField')), 'Other');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('🗑️ Delete linked'), findsOneWidget);
+    expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
+    await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete the linked medicine?'), findsOneWidget);
+    expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   group('الترحيب بالإنجليزية', () {
