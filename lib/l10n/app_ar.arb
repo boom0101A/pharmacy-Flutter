@@ -422,7 +422,34 @@
     }
   },
   "editExisting": "تعديل الموجود",
-  "formBarcodeOwnerBody": "الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.",
+  "formDeleteOwner": "🗑️ حذف المرتبط",
+  "formDeleteOwnerTitle": "حذف الدواء المرتبط؟",
+  "formDeleteOwnerBody": "هل تريد حذف «{name}» المرتبط بالباركود «{barcode}»؟\nالكمية {qty} بسعر {price}.\n\nيُحذف بكل تفاصيله ولا يمكن التراجع.",
+  "@formDeleteOwnerBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "barcode": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "formOwnerDeleted": "🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذا الدواء",
+  "@formOwnerDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formBarcodeOwnerBody": "الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو احذف المادة المرتبطة، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.",
   "@formBarcodeOwnerBody": {
     "placeholders": {
       "barcode": {

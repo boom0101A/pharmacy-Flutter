@@ -579,13 +579,34 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editExisting => 'تعديل الموجود';
 
   @override
+  String get formDeleteOwner => '🗑️ حذف المرتبط';
+
+  @override
+  String get formDeleteOwnerTitle => 'حذف الدواء المرتبط؟';
+
+  @override
+  String formDeleteOwnerBody(
+    String name,
+    String barcode,
+    int qty,
+    String price,
+  ) {
+    return 'هل تريد حذف «$name» المرتبط بالباركود «$barcode»؟\nالكمية $qty بسعر $price.\n\nيُحذف بكل تفاصيله ولا يمكن التراجع.';
+  }
+
+  @override
+  String formOwnerDeleted(String name) {
+    return '🗑️ حُذف «$name» — اضغط حفظ لربط الباركود بهذا الدواء';
+  }
+
+  @override
   String formBarcodeOwnerBody(
     String barcode,
     String name,
     int qty,
     String price,
   ) {
-    return 'الباركود «$barcode» يخص «$name» — الكمية $qty بسعر $price.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.';
+    return 'الباركود «$barcode» يخص «$name» — الكمية $qty بسعر $price.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو احذف المادة المرتبطة، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.';
   }
 
   @override

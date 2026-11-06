@@ -610,13 +610,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editExisting => 'Edit existing';
 
   @override
+  String get formDeleteOwner => '🗑️ Delete linked';
+
+  @override
+  String get formDeleteOwnerTitle => 'Delete the linked medicine?';
+
+  @override
+  String formDeleteOwnerBody(
+    String name,
+    String barcode,
+    int qty,
+    String price,
+  ) {
+    return 'Delete “$name”, linked to barcode “$barcode”?\nQuantity $qty at $price.\n\nIt will be deleted with all its details. This can\'t be undone.';
+  }
+
+  @override
+  String formOwnerDeleted(String name) {
+    return '🗑️ Deleted “$name” — tap Save to link the barcode to this medicine';
+  }
+
+  @override
   String formBarcodeOwnerBody(
     String barcode,
     String name,
     int qty,
     String price,
   ) {
-    return 'Barcode “$barcode” belongs to “$name” — quantity $qty at $price.\n\nTwo items can\'t share a barcode. Fix the barcode, or merge both items from “Review duplicates” in Settings.';
+    return 'Barcode “$barcode” belongs to “$name” — quantity $qty at $price.\n\nTwo items can\'t share a barcode. Fix the barcode, delete the linked item, or merge both items from “Review duplicates” in Settings.';
   }
 
   @override

@@ -48,6 +48,15 @@ class _MemoryStore extends MedicineStore {
     saved.add(medicine);
     if (medicine.barcode.isNotEmpty) byBarcode[medicine.barcode] = medicine;
   }
+
+  final List<Medicine> deleted = [];
+
+  @override
+  Future<void> delete(Medicine medicine) async {
+    deleted.add(medicine);
+    byBarcode.removeWhere((_, m) => m.id == medicine.id);
+    all.removeWhere((m) => m.id == medicine.id);
+  }
 }
 
 void main() {
@@ -253,6 +262,115 @@ void main() {
       expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsNothing);
       expect(store.saved.length, 1);
       expect(store.saved.single.barcode, '9999999999999');
+    });
+
+    group('حذف الدواء المرتبط بالباركود', () {
+      const current = Medicine(
+        id: 'cur1',
+        barcode: '',
+        name: 'حب انفلونزا',
+        price: 3102,
+        quantity: 20,
+        createdAt: 0,
+        updatedAt: 0,
+      );
+
+      Future<void> typeTakenBarcode(WidgetTester tester) async {
+        await tester.enterText(
+          find.byKey(const Key('barcodeField')),
+          '1234567890123',
+        );
+        await tester.pump();
+        await tester.tap(find.byIcon(Icons.check_rounded));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> openEditing(WidgetTester tester) async {
+        useTallSurface(tester);
+        store.all.addAll([existing, current]);
+        store.byBarcode[existing.barcode] = existing;
+        await tester.pumpWidget(
+          host(MedicineFormScreen(store: store, existing: current)),
+        );
+        await tester.pump();
+      }
+
+      Future<void> settleSave(WidgetTester tester) async {
+        await tester.tap(find.byIcon(Icons.check_rounded));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      testWidgets('تعديل: الحذف بعد التأكيد يُبقي النموذج، ثم الحفظ يمرّ', (
+        tester,
+      ) async {
+        await openEditing(tester);
+        await typeTakenBarcode(tester);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+
+        // التأكيد بالاسم والكمية والسعر
+        expect(find.text('حذف الدواء المرتبط؟'), findsOneWidget);
+        final body = find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.textContaining('باراسيتامول'),
+        );
+        expect(body, findsOneWidget);
+        final text = tester.widget<Text>(body).data!;
+        expect(text, contains('200'));
+        expect(text, contains('500 د.ع'));
+
+        await tester.tap(find.byKey(const Key('confirmDeleteOwner')));
+        await tester.pumpAndSettle();
+
+        expect(store.deleted.single.id, 'old1');
+        expect(store.saved, isEmpty, reason: 'لا حفظ تلقائي');
+        expect(find.text('تعديل دواء'), findsOneWidget);
+        expect(find.byType(AlertDialog), findsNothing);
+
+        await settleSave(tester);
+        expect(store.saved.single.id, 'cur1');
+        expect(store.saved.single.barcode, '1234567890123');
+      });
+
+      testWidgets('تعديل: «إلغاء» في التأكيد لا يحذف ولا يحفظ', (tester) async {
+        await openEditing(tester);
+        await typeTakenBarcode(tester);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('إلغاء'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(store.deleted, isEmpty);
+        expect(store.saved, isEmpty);
+        expect(find.text('تعديل دواء'), findsOneWidget);
+      });
+
+      testWidgets('إضافة: زر الحذف بجانب «تعديل الموجود» ويحذف بعد التأكيد', (
+        tester,
+      ) async {
+        await openWithExisting(tester);
+        await tester.enterText(find.byKey(const Key('nameField')), 'دواء آخر');
+        await typeTakenBarcode(tester);
+        expect(find.text('تعديل الموجود'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirmDeleteOwner')));
+        await tester.pumpAndSettle();
+
+        expect(store.deleted.single.id, 'old1');
+        expect(store.saved, isEmpty);
+        expect(find.text('إضافة دواء جديد'), findsOneWidget);
+
+        await settleSave(tester);
+        expect(store.saved.single.name, 'دواء آخر');
+        expect(store.saved.single.barcode, '1234567890123');
+      });
     });
   });
 }

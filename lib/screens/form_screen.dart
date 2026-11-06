@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/medicine.dart';
@@ -21,6 +22,9 @@ import '../l10n/l10n.dart';
 import '../services/pharmacy_prefs.dart';
 
 /// شاشة إضافة/تعديل دواء.
+/// قرار المستخدم في تنبيه «الباركود مسجّل» عند الإضافة.
+enum _BarcodeChoice { editExisting, deleteOwner }
+
 class MedicineFormScreen extends StatefulWidget {
   const MedicineFormScreen({
     super.key,
@@ -352,8 +356,9 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       final owner = await widget.store.findByBarcode(typedBarcode);
       if (!mounted) return;
       if (owner != null && owner.id != _target!.id) {
-        await _showBarcodeTaken(owner);
-        return;
+        final delete = await _showBarcodeTaken(owner);
+        if (mounted && delete == true) await _deleteOwner(owner);
+        return; // لا حفظ تلقائي — المستخدم يضغط «حفظ» بنفسه بعد الحذف
       }
     }
 
@@ -361,8 +366,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       final byBarcode = await widget.store.findByBarcode(typedBarcode);
       if (!mounted) return;
       if (byBarcode != null) {
-        final adopt = await _confirmDuplicateBarcode(byBarcode);
-        if (!mounted || adopt != true) return;
+        final choice = await _confirmDuplicateBarcode(byBarcode);
+        if (!mounted || choice == null) return;
+        if (choice == _BarcodeChoice.deleteOwner) {
+          await _deleteOwner(byBarcode);
+          return;
+        }
         setState(() => _adoptExisting(byBarcode));
         return; // صار تعديلاً للسجل الموجود بدل استبداله صامتاً
       }
@@ -455,9 +464,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   /// لا خيار «سجل منفصل» هنا بخلاف حوار الاسم: الفهرس الفريد على `barcode`
   /// يجعل السجلين مستحيلين — محاولة الحفظ تحذف القديم صامتاً. فالخياران
   /// الحقيقيان الوحيدان: تعديل الموجود، أو الإلغاء.
-  /// يعيد: true = عدّل الموجود · null/false = إلغاء.
-  Future<bool?> _confirmDuplicateBarcode(Medicine match) {
-    return showGlassDialog<bool>(
+  /// ومعهما «حذف المرتبط» حين يكون القديم خطأً لا يُراد إبقاؤه.
+  /// يعيد: الاختيار · null = إلغاء.
+  Future<_BarcodeChoice?> _confirmDuplicateBarcode(Medicine match) {
+    return showGlassDialog<_BarcodeChoice>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -476,8 +486,11 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(context.l10n.cancel),
           ),
+          _deleteOwnerButton(
+            () => Navigator.pop(ctx, _BarcodeChoice.deleteOwner),
+          ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Navigator.pop(ctx, _BarcodeChoice.editExisting),
             child: Text(context.l10n.editExisting),
           ),
         ],
@@ -485,9 +498,65 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     );
   }
 
+  Widget _deleteOwnerButton(VoidCallback onPressed) => TextButton(
+    key: const Key('deleteBarcodeOwner'),
+    style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+    onPressed: onPressed,
+    child: Text(context.l10n.formDeleteOwner),
+  );
+
+  /// يحذف المادة المالكة للباركود بعد تأكيد صريح، ويُبقي النموذج مفتوحاً
+  /// ببياناته — الضغطة التالية على «حفظ» تمرّ لأن الباركود صار حراً.
+  Future<void> _deleteOwner(Medicine owner) async {
+    final ok = await showGlassDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        title: Text(context.l10n.formDeleteOwnerTitle),
+        content: Text(
+          context.l10n.formDeleteOwnerBody(
+            owner.name,
+            owner.barcode,
+            owner.quantity,
+            formatMoney(owner.price),
+          ),
+          style: const TextStyle(fontSize: 13, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            key: const Key('confirmDeleteOwner'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || ok != true) return;
+    try {
+      await widget.store.delete(owner);
+    } catch (e) {
+      if (mounted) {
+        _toast(context.l10n.formSaveFailed('$e'), color: AppColors.danger);
+      }
+      return;
+    }
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    _toast(context.l10n.formOwnerDeleted(owner.name));
+  }
+
   /// تنبيه عند تعديل باركود مادة إلى باركود تملكه مادة أخرى — لا حفظ.
-  Future<void> _showBarcodeTaken(Medicine owner) {
-    return showGlassDialog<void>(
+  /// يعيد true إن اختار المستخدم حذف المادة المالكة.
+  Future<bool?> _showBarcodeTaken(Medicine owner) {
+    return showGlassDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgCard,
@@ -502,6 +571,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           style: const TextStyle(fontSize: 13, height: 1.6),
         ),
         actions: [
+          _deleteOwnerButton(() => Navigator.pop(ctx, true)),
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(context.l10n.ok),

@@ -1063,10 +1063,39 @@ abstract class AppLocalizations {
   /// **'تعديل الموجود'**
   String get editExisting;
 
+  /// No description provided for @formDeleteOwner.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗑️ حذف المرتبط'**
+  String get formDeleteOwner;
+
+  /// No description provided for @formDeleteOwnerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الدواء المرتبط؟'**
+  String get formDeleteOwnerTitle;
+
+  /// No description provided for @formDeleteOwnerBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد حذف «{name}» المرتبط بالباركود «{barcode}»؟\nالكمية {qty} بسعر {price}.\n\nيُحذف بكل تفاصيله ولا يمكن التراجع.'**
+  String formDeleteOwnerBody(
+    String name,
+    String barcode,
+    int qty,
+    String price,
+  );
+
+  /// No description provided for @formOwnerDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذا الدواء'**
+  String formOwnerDeleted(String name);
+
   /// No description provided for @formBarcodeOwnerBody.
   ///
   /// In ar, this message translates to:
-  /// **'الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.'**
+  /// **'الباركود «{barcode}» يخص «{name}» — الكمية {qty} بسعر {price}.\n\nلا يمكن حفظ مادتين بنفس الباركود. صحّح الباركود، أو احذف المادة المرتبطة، أو ادمج المادتين من «مراجعة التكرارات» في الإعدادات.'**
   String formBarcodeOwnerBody(
     String barcode,
     String name,
