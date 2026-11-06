@@ -188,19 +188,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get add => 'إضافة';
 
   @override
-  String get statMedicines => 'عدد الأدوية';
-
-  @override
-  String get statSupplies => 'عدد المستلزمات';
-
-  @override
-  String statTotalValue(String currency) {
-    return 'القيمة الإجمالية ($currency)';
+  String homeCountMedicines(int n) {
+    return '$n دواء';
   }
 
   @override
-  String statValueMissing(int n) {
-    return 'القيمة ($n بلا سعر)';
+  String homeCountSupplies(int n) {
+    return '$n مستلزم';
   }
 
   @override

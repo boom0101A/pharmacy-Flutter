@@ -175,8 +175,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TabBar), findsOneWidget);
-      expect(find.textContaining('💊 دواء  (2)'), findsOneWidget);
-      expect(find.textContaining('🩹 مستلزم طبي  (1)'), findsOneWidget);
+      // العدد شارة بجانب اسم القسم داخل التبويب نفسه
+      Finder badge(String label, String n) => find.descendant(
+        of: find.ancestor(of: find.text(label), matching: find.byType(Tab)),
+        matching: find.text(n),
+      );
+      expect(badge('💊 دواء', '2'), findsOneWidget);
+      expect(badge('🩹 مستلزم طبي', '1'), findsOneWidget);
     });
 
     testWidgets('TabBarView موجود فيمكن السحب بين القسمين', (tester) async {
@@ -201,14 +206,42 @@ void main() {
       expect(find.text('Panadol'), findsNothing);
     });
 
-    testWidgets('عنوان الإحصاء يتبع القسم', (tester) async {
+    String countLine(WidgetTester tester) => tester
+        .widget<RichText>(
+          find.descendant(
+            of: find.byKey(const Key('homeSectionCount')),
+            matching: find.byType(RichText),
+          ),
+        )
+        .text
+        .toPlainText();
+
+    testWidgets('سطر العدد تحت الاسم يتبع القسم', (tester) async {
       await tester.pumpWidget(_app(store));
       await tester.pumpAndSettle();
-      expect(find.text('عدد الأدوية'), findsOneWidget);
+      expect(countLine(tester), '2 دواء');
 
       await tester.tap(find.textContaining('مستلزم طبي'));
       await tester.pumpAndSettle();
-      expect(find.text('عدد المستلزمات'), findsOneWidget);
+      expect(countLine(tester), '1 مستلزم');
+    });
+
+    // الترويسة كانت صفّين (عنوان + بطاقتا العدد والقيمة) فتدفع التبويبات
+    // والقائمة إلى الأسفل — والقيمة الإجمالية لا يحتاجها المستخدم
+    testWidgets('ترويسة بصفّ واحد بلا القيمة الإجمالية، والتبويبات تحتها', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('القيمة'), findsNothing);
+      expect(find.text('600'), findsNothing); // مجموع القيمة 6 × 100
+
+      final title = tester.getRect(find.text('💊 صيدليتي'));
+      final tabs = tester.getRect(find.byType(TabBar));
+      expect(tabs.top - title.top, lessThan(110));
+      // التبويبات أوضح: 48 بدل 40، والعدد شارة لا بين قوسين
+      expect(tabs.height, greaterThanOrEqualTo(48));
+      expect(find.textContaining('('), findsNothing);
     });
 
     testWidgets('البحث لا يتسرّب بين القسمين', (tester) async {

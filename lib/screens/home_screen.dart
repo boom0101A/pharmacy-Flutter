@@ -549,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen>
   /// كبسولة زجاجية بمؤشر متدرّج ينزلق بين القسمين (`.tabs` في ملف التصميم).
   Widget _tabBar() {
     return GlassSurface(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       padding: const EdgeInsets.all(4),
       radius: 18,
       shadow: false,
@@ -573,19 +573,41 @@ class _HomeScreenState extends State<HomeScreen>
         unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(
           fontFamily: 'Cairo',
-          fontSize: 13.5,
+          fontSize: 15,
           fontWeight: FontWeight.bold,
         ),
         tabs: [
           for (final t in ItemType.values)
             Tab(
-              height: 40,
-              // «🩹 مستلزم طبي (1)» لا يتّسع في نصف شاشة عرضها 320؛
+              height: 48,
+              // «🩹 مستلزم طبي ⟨1⟩» لا يتّسع في نصف شاشة عرضها 320؛
               // التصغير عند الحاجة أفضل من قصّ النص أو من شريط فيضان
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  '${t.labelIn(context.l10n)}  (${store.countOf(t)})',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(t.labelIn(context.l10n)),
+                    const SizedBox(width: 8),
+                    // شارة العدد: داكنة شفافة تصلح فوق التدرّج والخلفية معاً
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x24000000),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${store.countOf(t)}',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -601,16 +623,21 @@ class _HomeScreenState extends State<HomeScreen>
       radius: 28,
       gradient: AppGradients.header,
       borderColor: AppColors.borderHi,
-      margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      child: Column(
+      margin: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 8, 10),
+      // صفّ واحد: كانت بطاقتا «العدد» و«القيمة الإجمالية» صفّاً ثانياً يدفع
+      // التبويبات والقائمة للأسفل — والقيمة لا يحتاجها المستخدم، والعدد
+      // صار سطراً تحت الاسم
+      child: Row(
         children: [
-          Row(
-            children: [
-              // الاسم يصغر قليلاً ليتّسع ولا يُقصّ («صيد…» بعد إضافة الجرس) —
-              // مؤشر المزامنة والجرس والإعدادات أهم وظيفياً فتأخذ مساحتها أولاً
-              Expanded(
-                child: FittedBox(
+          // الاسم يصغر قليلاً ليتّسع ولا يُقصّ («صيد…» بعد إضافة الجرس) —
+          // مؤشر المزامنة والجرس والإعدادات أهم وظيفياً فتأخذ مساحتها أولاً
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
@@ -620,44 +647,21 @@ class _HomeScreenState extends State<HomeScreen>
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -.2,
+                      height: 1.25,
                     ),
                   ),
                 ),
-              ),
-              const _SyncIndicator(),
-              _alertsBell(),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.settings_rounded, size: 20),
-                color: AppColors.textSecondary,
-                onPressed: () => showSettingsSheet(context, store),
-              ),
-            ],
+                _SectionCount(count: store.totalCount, supplies: isSupplies),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _StatBox(
-                  label: isSupplies
-                      ? context.l10n.statSupplies
-                      : context.l10n.statMedicines,
-                  value: store.totalCount.toDouble(),
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _StatBox(
-                  label: store.missingPriceCount == 0
-                      ? context.l10n.statTotalValue(currencyLabel())
-                      : context.l10n.statValueMissing(store.missingPriceCount),
-                  value: store.totalValue,
-                  money: true,
-                  color: AppColors.success,
-                ),
-              ),
-            ],
+          const _SyncIndicator(),
+          _alertsBell(),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.settings_rounded, size: 20),
+            color: AppColors.textSecondary,
+            onPressed: () => showSettingsSheet(context, store),
           ),
         ],
       ),
@@ -1167,68 +1171,39 @@ class _SyncIndicator extends StatelessWidget {
   }
 }
 
-/// صندوق إحصاء يعدّ رقمه تصاعدياً بدل أن يقفز.
+/// سطر العدد تحت اسم التطبيق: «640 دواء» / «513 مستلزم» بحسب القسم.
 ///
-/// الفائدة ليست زخرفية: عند تبديل التبويب يتغيّر الرقمان معاً، والعدّ المتدرّج
-/// يجعل العين تتابع التغيير بدل أن تفاجأ به.
-class _StatBox extends StatelessWidget {
-  const _StatBox({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.money = false,
-  });
+/// يعدّ تدرّجاً عند تبديل التبويب بدل أن يقفز، فتتابع العين التغيير.
+class _SectionCount extends StatelessWidget {
+  const _SectionCount({required this.count, required this.supplies});
 
-  final String label;
-  final double value;
-  final Color color;
-
-  /// قيمة بالدينار تُعرض بعملة العرض (الدولار بكسرين)، لا عدد.
-  final bool money;
+  final int count;
+  final bool supplies;
 
   @override
-  Widget build(BuildContext context) => GlassSurface(
-    radius: 18,
-    color: const Color(0x5906101E),
-    shadow: false,
-    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-    child: Column(
-      children: [
-        TweenAnimationBuilder<double>(
-          // `begin` يُستعمل في أول بناء فقط، فتبدأ القيمة ثابتة بلا استعراض؛
-          // وكل تغيّر لاحق في `end` يُعدّ من القيمة الحالية إلى الجديدة.
-          tween: Tween(begin: value, end: value),
-          duration: const Duration(milliseconds: 420),
-          curve: Curves.easeOutCubic,
-          builder: (context, v, _) => Text(
-            money ? formatMoneyNumber(v) : formatPrice(v.round()),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    key: const Key('homeSectionCount'),
+    // `begin` يُستعمل في أول بناء فقط، فتبدأ القيمة ثابتة بلا استعراض؛
+    // وكل تغيّر لاحق في `end` يُعدّ من القيمة الحالية إلى الجديدة.
+    tween: Tween(begin: count.toDouble(), end: count.toDouble()),
+    duration: const Duration(milliseconds: 420),
+    curve: Curves.easeOutCubic,
+    builder: (context, v, _) {
+      final n = v.round();
+      return Text(
+        supplies
+            ? context.l10n.homeCountSupplies(n)
+            : context.l10n.homeCountMedicines(n),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+          fontFeatures: [FontFeature.tabularFigures()],
         ),
-        const SizedBox(height: 2),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: Text(
-            label,
-            key: ValueKey(label),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
-    ),
+      );
+    },
   );
 }
 

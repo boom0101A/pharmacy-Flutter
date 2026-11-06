@@ -115,18 +115,16 @@
   "scanBarcode": "مسح باركود",
   "smartInvoice": "فاتورة ذكية",
   "add": "إضافة",
-  "statMedicines": "عدد الأدوية",
-  "statSupplies": "عدد المستلزمات",
-  "statTotalValue": "القيمة الإجمالية ({currency})",
-  "@statTotalValue": {
+  "homeCountMedicines": "{n} دواء",
+  "@homeCountMedicines": {
     "placeholders": {
-      "currency": {
-        "type": "String"
+      "n": {
+        "type": "int"
       }
     }
   },
-  "statValueMissing": "القيمة ({n} بلا سعر)",
-  "@statValueMissing": {
+  "homeCountSupplies": "{n} مستلزم",
+  "@homeCountSupplies": {
     "placeholders": {
       "n": {
         "type": "int"

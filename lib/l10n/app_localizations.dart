@@ -410,29 +410,17 @@ abstract class AppLocalizations {
   /// **'إضافة'**
   String get add;
 
-  /// No description provided for @statMedicines.
+  /// No description provided for @homeCountMedicines.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الأدوية'**
-  String get statMedicines;
+  /// **'{n} دواء'**
+  String homeCountMedicines(int n);
 
-  /// No description provided for @statSupplies.
+  /// No description provided for @homeCountSupplies.
   ///
   /// In ar, this message translates to:
-  /// **'عدد المستلزمات'**
-  String get statSupplies;
-
-  /// No description provided for @statTotalValue.
-  ///
-  /// In ar, this message translates to:
-  /// **'القيمة الإجمالية ({currency})'**
-  String statTotalValue(String currency);
-
-  /// No description provided for @statValueMissing.
-  ///
-  /// In ar, this message translates to:
-  /// **'القيمة ({n} بلا سعر)'**
-  String statValueMissing(int n);
+  /// **'{n} مستلزم'**
+  String homeCountSupplies(int n);
 
   /// No description provided for @searchSupplies.
   ///

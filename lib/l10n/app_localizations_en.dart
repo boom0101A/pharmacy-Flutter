@@ -206,19 +206,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
-  String get statMedicines => 'Medicines';
-
-  @override
-  String get statSupplies => 'Supplies';
-
-  @override
-  String statTotalValue(String currency) {
-    return 'Total value ($currency)';
+  String homeCountMedicines(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n medicines',
+      one: '1 medicine',
+    );
+    return '$_temp0';
   }
 
   @override
-  String statValueMissing(int n) {
-    return 'Value ($n without price)';
+  String homeCountSupplies(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n supplies',
+      one: '1 supply',
+    );
+    return '$_temp0';
   }
 
   @override

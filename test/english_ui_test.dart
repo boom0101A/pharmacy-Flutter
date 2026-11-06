@@ -120,6 +120,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Medicine'), findsWidgets);
+      expect(find.text('2 medicines'), findsOneWidget);
+      expect(find.textContaining('Total value'), findsNothing);
       expect(find.text(r'$6.01'), findsOneWidget);
       expect(find.text(r'$1.00'), findsOneWidget);
       expect(arabicTexts(tester, allowed: {'شراب أطفال'}), isEmpty);
