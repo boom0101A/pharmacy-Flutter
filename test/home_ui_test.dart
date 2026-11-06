@@ -226,6 +226,16 @@ void main() {
       expect(countLine(tester), '1 مستلزم');
     });
 
+    // بطاقة العدد القديمة كانت بفواصل الآلاف — السطر الجديد كذلك
+    testWidgets('العدد بفواصل الآلاف', (tester) async {
+      store.seed([
+        for (var i = 0; i < 1153; i++) _item(id: 'x$i', name: 'Item $i'),
+      ]);
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(countLine(tester), '1,153 دواء');
+    });
+
     // الترويسة كانت صفّين (عنوان + بطاقتا العدد والقيمة) فتدفع التبويبات
     // والقائمة إلى الأسفل — والقيمة الإجمالية لا يحتاجها المستخدم
     testWidgets('ترويسة بصفّ واحد بلا القيمة الإجمالية، والتبويبات تحتها', (

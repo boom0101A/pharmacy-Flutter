@@ -115,19 +115,26 @@
   "scanBarcode": "مسح باركود",
   "smartInvoice": "فاتورة ذكية",
   "add": "إضافة",
-  "homeCountMedicines": "{n} دواء",
+  "homeCountMedicines": "{n, plural, other{{count} دواء}}",
   "@homeCountMedicines": {
+    "description": "n للجمع، وcount هو n منسّقاً بفواصل الآلاف",
     "placeholders": {
       "n": {
         "type": "int"
+      },
+      "count": {
+        "type": "String"
       }
     }
   },
-  "homeCountSupplies": "{n} مستلزم",
+  "homeCountSupplies": "{n, plural, other{{count} مستلزم}}",
   "@homeCountSupplies": {
     "placeholders": {
       "n": {
         "type": "int"
+      },
+      "count": {
+        "type": "String"
       }
     }
   },

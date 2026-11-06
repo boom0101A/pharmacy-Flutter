@@ -410,17 +410,17 @@ abstract class AppLocalizations {
   /// **'إضافة'**
   String get add;
 
-  /// No description provided for @homeCountMedicines.
+  /// n للجمع، وcount هو n منسّقاً بفواصل الآلاف
   ///
   /// In ar, this message translates to:
-  /// **'{n} دواء'**
-  String homeCountMedicines(int n);
+  /// **'{n, plural, other{{count} دواء}}'**
+  String homeCountMedicines(int n, String count);
 
   /// No description provided for @homeCountSupplies.
   ///
   /// In ar, this message translates to:
-  /// **'{n} مستلزم'**
-  String homeCountSupplies(int n);
+  /// **'{n, plural, other{{count} مستلزم}}'**
+  String homeCountSupplies(int n, String count);
 
   /// No description provided for @searchSupplies.
   ///

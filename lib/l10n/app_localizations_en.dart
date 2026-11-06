@@ -206,23 +206,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
-  String homeCountMedicines(int n) {
+  String homeCountMedicines(int n, String count) {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n medicines',
-      one: '1 medicine',
+      other: '$count medicines',
+      one: '$count medicine',
     );
     return '$_temp0';
   }
 
   @override
-  String homeCountSupplies(int n) {
+  String homeCountSupplies(int n, String count) {
     String _temp0 = intl.Intl.pluralLogic(
       n,
       locale: localeName,
-      other: '$n supplies',
-      one: '1 supply',
+      other: '$count supplies',
+      one: '$count supply',
     );
     return '$_temp0';
   }

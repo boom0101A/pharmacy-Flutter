@@ -188,13 +188,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get add => 'إضافة';
 
   @override
-  String homeCountMedicines(int n) {
-    return '$n دواء';
+  String homeCountMedicines(int n, String count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$count دواء',
+    );
+    return '$_temp0';
   }
 
   @override
-  String homeCountSupplies(int n) {
-    return '$n مستلزم';
+  String homeCountSupplies(int n, String count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$count مستلزم',
+    );
+    return '$_temp0';
   }
 
   @override

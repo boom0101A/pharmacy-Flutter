@@ -1190,10 +1190,11 @@ class _SectionCount extends StatelessWidget {
     curve: Curves.easeOutCubic,
     builder: (context, v, _) {
       final n = v.round();
+      final count = formatPrice(n); // فواصل الآلاف كبقية الأرقام
       return Text(
         supplies
-            ? context.l10n.homeCountSupplies(n)
-            : context.l10n.homeCountMedicines(n),
+            ? context.l10n.homeCountSupplies(n, count)
+            : context.l10n.homeCountMedicines(n, count),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
