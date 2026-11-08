@@ -183,7 +183,12 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   }
 
   Future<void> _save(Medicine m) async {
-    if (_busy) return;
+    // نقرة ثانية سريعة قد تحمل المادة السابقة (الزر لم يُعَد بناؤه بعد):
+    // حفظها مرة أخرى ثم التقدّم كان يتخطّى المادة التالية بلا حفظ
+    if (_busy || _current?.id != m.id) return;
+    // الحارس يُرفع **قبل** أي انتظار: فحص الباركود أدناه ينتظر القاعدة،
+    // ونقرتان سريعتان كانتا تمرّان معاً فتتقدّم الشاشة مادتين
+    setState(() => _busy = true);
     // باركود مكتوب يخص مادة أخرى: التنبيه نفسه. بعد «حذف المرتبط» لا حفظ
     // تلقائي — كالنموذج، يضغط المستخدم «حفظ» مرة أخرى
     final typed = _barcode.text.trim();
@@ -191,6 +196,7 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       final owner = await widget.store.findByBarcode(typed);
       if (!mounted) return;
       if (owner != null && owner.id != m.id) {
+        setState(() => _busy = false);
         await _checkOwner(m, typed, previous: m.barcode);
         return;
       }
@@ -212,7 +218,6 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       expiryDate: _expiry,
       clearExpiry: _expiry == null,
     );
-    setState(() => _busy = true);
     try {
       await widget.store.save(updated);
     } on BarcodeConflictException {

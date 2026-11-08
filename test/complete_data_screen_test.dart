@@ -200,6 +200,20 @@ void main() {
     expect(store.deleted, ['blank']);
   });
 
+  // فحص الباركود قبل الحفظ ينتظر القاعدة — نقرتان سريعتان كانتا تمرّان
+  // معاً قبل رفع _busy فتتقدّم الشاشة مادتين وتُتخطّى واحدة بلا قصد
+  testWidgets('نقرتان سريعتان على «حفظ والتالي» تتقدّمان مادة واحدة', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.enterText(find.byKey(const Key('completePrice')), '100');
+    await tester.tap(find.byKey(const Key('completeSaveNext')));
+    await tester.tap(find.byKey(const Key('completeSaveNext')));
+    await tester.pumpAndSettle();
+    expect(store.saved.map((m) => m.id).toList(), ['blank']);
+    expect(find.text('مادة 2 من 3'), findsOneWidget);
+  });
+
   // شبكة أمان: تعارض لم يكشفه الفحص المسبق (من الهاتف الآخر مثلاً)
   testWidgets('تعارض الباركود عند الحفظ يُظهر رسالة ولا يتقدّم', (tester) async {
     store.conflict = true;
