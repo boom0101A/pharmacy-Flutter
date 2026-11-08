@@ -523,10 +523,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get stockValue => 'قيمة المخزون';
 
   @override
-  String get formAlreadyRegistered =>
-      'هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي';
-
-  @override
   String formBarcodeNoData(String code) {
     return 'تم قراءة الباركود: $code — لم نجد بياناته، أكمل الحقول يدوياً';
   }

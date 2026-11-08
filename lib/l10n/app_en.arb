@@ -144,7 +144,6 @@
   "increase": "Increase",
   "decrease": "Decrease",
   "stockValue": "Stock value",
-  "formAlreadyRegistered": "This item is already registered — you are now editing its record",
   "formBarcodeNoData": "Barcode read: {code} — no data found, please fill in the fields",
   "formConfirmedBy": " (confirmed by {n} pharmacies)",
   "formFetchedFrom": "Medicine data fetched from {source}{confirmed} ✅",

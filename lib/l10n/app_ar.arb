@@ -356,7 +356,6 @@
   "increase": "زيادة",
   "decrease": "إنقاص",
   "stockValue": "قيمة المخزون",
-  "formAlreadyRegistered": "هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي",
   "formBarcodeNoData": "تم قراءة الباركود: {code} — لم نجد بياناته، أكمل الحقول يدوياً",
   "@formBarcodeNoData": {
     "placeholders": {

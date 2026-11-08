@@ -363,6 +363,9 @@ void main() {
       expect(find.text('إضافة دواء جديد'), findsOneWidget);
 
       await submitBarcode(tester, '06291100000012');
+      // التنبيه نفسه كعند الحفظ — لا تحويل صامت
+      await tester.tap(find.text('تعديل الموجود'));
+      await tester.pumpAndSettle();
 
       expect(
         find.text('تعديل دواء'),
@@ -371,7 +374,6 @@ void main() {
       );
       expect(find.text('Panadol'), findsOneWidget);
       expect(find.text('حفظ التعديلات'), findsOneWidget);
-      expect(find.textContaining('مسجّلة لديك'), findsOneWidget);
 
       await tester.enterText(quantityField(), '10');
       await tester.pump();
@@ -393,6 +395,8 @@ void main() {
 
       // المسح يعطي EAN-13 بلا صفر بادئ — نفس المنتج
       await submitBarcode(tester, '6291100000012');
+      await tester.tap(find.text('تعديل الموجود'));
+      await tester.pumpAndSettle();
 
       expect(find.text('تعديل دواء'), findsOneWidget);
       expect(find.text('Panadol'), findsOneWidget);

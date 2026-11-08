@@ -556,10 +556,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockValue => 'Stock value';
 
   @override
-  String get formAlreadyRegistered =>
-      'This item is already registered — you are now editing its record';
-
-  @override
   String formBarcodeNoData(String code) {
     return 'Barcode read: $code — no data found, please fill in the fields';
   }

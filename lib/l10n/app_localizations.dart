@@ -962,12 +962,6 @@ abstract class AppLocalizations {
   /// **'قيمة المخزون'**
   String get stockValue;
 
-  /// No description provided for @formAlreadyRegistered.
-  ///
-  /// In ar, this message translates to:
-  /// **'هذه المادة مسجّلة لديك — تعدّل الآن سجلها الحالي'**
-  String get formAlreadyRegistered;
-
   /// No description provided for @formBarcodeNoData.
   ///
   /// In ar, this message translates to:

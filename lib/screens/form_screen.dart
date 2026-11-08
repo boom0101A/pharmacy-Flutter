@@ -33,6 +33,7 @@ class MedicineFormScreen extends StatefulWidget {
     this.openScannerOnStart = false,
     this.initialType = ItemType.medicine,
     this.pickImagePath,
+    this.scanBarcode,
     this.cropper = const ProductCropper(),
   });
 
@@ -47,6 +48,9 @@ class MedicineFormScreen extends StatefulWidget {
 
   /// بديل منتقي الصور للاختبارات — يعيد مسار الصورة أو null.
   final Future<String?> Function(ImageSource source)? pickImagePath;
+
+  /// بديل الماسح للاختبارات — يعيد النص الممسوح أو null.
+  final Future<String?> Function(BuildContext context)? scanBarcode;
 
   /// قصّ الصورة حول العلبة قبل حفظها.
   final ProductCropper cropper;
@@ -154,44 +158,54 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
   // ---------- المسح والملء التلقائي ----------
 
   Future<void> _scan() async {
-    final code = await Navigator.of(
-      context,
-    ).push<String>(SmoothPageRoute(builder: (_) => const ScannerScreen()));
+    final code = widget.scanBarcode != null
+        ? await widget.scanBarcode!(context)
+        : await Navigator.of(context).push<String>(
+            SmoothPageRoute(builder: (_) => const ScannerScreen()),
+          );
     if (code == null || !mounted) return;
 
     // رموز GS1 تحمل الرقم التسلسلي ورقم الوجبة إضافة للباركود.
     // بدون تفكيكها تصبح كل علبة دواءً منفصلاً ولا تطابق أي قاعدة بيانات.
     final parsed = Gs1Parser.parse(code);
+    final previous = _barcode.text;
+    final previousExpiry = _expiry;
+    final previousScan = _lastScan;
     _lastScan = parsed;
     _barcode.text = parsed.barcode;
     // الصلاحية المستخرجة من الرمز تُحفظ فعلياً لا تُعرض فقط
     if (parsed.expiryDate != null) _expiry ??= parsed.expiryDate;
-    await _autoFill(parsed.barcode);
+    final kept = await _autoFill(parsed.barcode, previous: previous);
+    // رُفض الباركود الممسوح (يخص مادة أخرى): ما استُخرج منه يُرفض معه
+    if (!kept && mounted) {
+      setState(() {
+        _expiry = previousExpiry;
+        _lastScan = previousScan;
+      });
+    }
   }
 
-  Future<void> _autoFill(String code) async {
+  /// يعيد false إن رُفض الباركود وعادت الخانة إلى [previous].
+  Future<bool> _autoFill(String code, {required String previous}) async {
     setState(() => _looking = true);
 
-    // الباركود موجود في مخزنك؟ إذن هذه إعادة تعبئة لا مادة جديدة.
-    // بدون هذا التحويل كان كل مسح لدواء موجود يولّد سجلاً مكرراً.
+    // الباركود لمادة أخرى في مخزنك: التنبيه نفسه الذي يظهر عند الحفظ —
+    // سواء كُتب الباركود أو لُصق أو مُسح. كان المسح يحوّل النموذج بصمت إلى
+    // تعديل المادة الأخرى، فتضيع تعديلات المادة الحالية في وضع التعديل.
     final existing = await widget.store.findByBarcode(code);
+    if (!mounted) return false;
     if (existing != null && existing.id != _target?.id) {
-      if (!mounted) return;
-      setState(() {
-        _looking = false;
-        _adoptExisting(existing);
-      });
-      _toast(context.l10n.formAlreadyRegistered, color: AppColors.warning);
-      return;
+      setState(() => _looking = false);
+      return _resolveTakenBarcode(existing, previous: previous);
     }
 
     final info = await DrugLookup.byBarcode(code);
-    if (!mounted) return;
+    if (!mounted) return true;
     setState(() => _looking = false);
 
     if (info == null) {
       _toast(context.l10n.formBarcodeNoData(code));
-      return;
+      return true;
     }
 
     setState(() {
@@ -216,6 +230,46 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       context.l10n.formFetchedFrom(info.sourceLabel, confirmed),
       color: AppColors.success,
     );
+    return true;
+  }
+
+  /// باركود ممسوح أو مُدخل يخص [owner]: التنبيه نفسه كعند الحفظ.
+  /// يعيد false إن ألغى المستخدم فعادت الخانة إلى [previous].
+  Future<bool> _resolveTakenBarcode(
+    Medicine owner, {
+    required String previous,
+  }) async {
+    if (_target != null) {
+      final delete = await _showBarcodeTaken(owner);
+      if (!mounted) return false;
+      if (delete == true) {
+        await _deleteOwner(owner);
+        // الحذف أُلغي من التأكيد أو فشل: الباركود ما زال لغيرها
+        if (!mounted) return false;
+        if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
+          return true;
+        }
+      }
+    } else {
+      final choice = await _confirmDuplicateBarcode(owner);
+      if (!mounted) return false;
+      switch (choice) {
+        case _BarcodeChoice.editExisting:
+          setState(() => _adoptExisting(owner));
+          return true;
+        case _BarcodeChoice.deleteOwner:
+          await _deleteOwner(owner);
+          if (!mounted) return false;
+          if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
+            return true;
+          }
+        case null:
+          break;
+      }
+    }
+    if (!mounted) return false;
+    setState(() => _barcode.text = previous);
+    return false;
   }
 
   /// تحويل النموذج إلى تعديل سجل قائم — يُستدعى داخل setState.
@@ -668,7 +722,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                       ),
                       onChanged: (_) => setState(() {}),
                       onFieldSubmitted: (v) {
-                        if (v.trim().isNotEmpty) _autoFill(v.trim());
+                        if (v.trim().isNotEmpty) {
+                          _autoFill(
+                            v.trim(),
+                            previous: _target?.barcode ?? '',
+                          );
+                        }
                       },
                     ),
                   ),

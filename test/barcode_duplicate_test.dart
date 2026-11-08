@@ -264,6 +264,138 @@ void main() {
       expect(store.saved.single.barcode, '9999999999999');
     });
 
+    // كان المسح (وضغط «تم») يحوّل النموذج بصمت إلى تعديل المادة الأخرى —
+    // في وضع التعديل تضيع تعديلات المادة الحالية ولا يظهر أي تنبيه
+    group('المسح وضغط «تم» يُظهران التنبيه نفسه', () {
+      const current = Medicine(
+        id: 'cur1',
+        barcode: '5555555555555',
+        name: 'حب انفلونزا',
+        price: 3102,
+        quantity: 20,
+        createdAt: 0,
+        updatedAt: 0,
+      );
+
+      Finder barcodeField() => find.byKey(const Key('barcodeField'));
+      String barcodeText(WidgetTester tester) =>
+          tester
+              .widget<TextField>(
+                find.descendant(
+                  of: barcodeField(),
+                  matching: find.byType(TextField),
+                ),
+              )
+              .controller!
+              .text;
+
+      Future<void> open(WidgetTester tester, {Medicine? editing}) async {
+        useTallSurface(tester);
+        store.all.add(existing);
+        store.byBarcode[existing.barcode] = existing;
+        if (editing != null) {
+          store.all.add(editing);
+          store.byBarcode[editing.barcode] = editing;
+        }
+        await tester.pumpWidget(
+          host(
+            MedicineFormScreen(
+              store: store,
+              existing: editing,
+              scanBarcode: (_) async => existing.barcode,
+            ),
+          ),
+        );
+        await tester.pump();
+      }
+
+      Future<void> scan(WidgetTester tester) async {
+        await tester.tap(find.byIcon(Icons.qr_code_scanner_rounded));
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('تعديل + مسح: تنبيه، والنموذج يبقى على المادة نفسها', (
+        tester,
+      ) async {
+        await open(tester, editing: current);
+        await scan(tester);
+        expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsOneWidget);
+        expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+        expect(find.text('حب انفلونزا'), findsOneWidget);
+        expect(store.saved, isEmpty);
+      });
+
+      testWidgets('تعديل + مسح ثم «حسناً»: يعود الباركود السابق', (
+        tester,
+      ) async {
+        await open(tester, editing: current);
+        await scan(tester);
+        await tester.tap(find.text('حسناً'));
+        await tester.pumpAndSettle();
+        expect(barcodeText(tester), '5555555555555');
+        expect(find.text('تعديل دواء'), findsOneWidget);
+        expect(find.text('حب انفلونزا'), findsOneWidget);
+      });
+
+      testWidgets('تعديل + مسح ثم حذف المرتبط: الباركود يبقى ويُحفظ', (
+        tester,
+      ) async {
+        await open(tester, editing: current);
+        await scan(tester);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirmDeleteOwner')));
+        await tester.pumpAndSettle();
+        expect(store.deleted.single.id, 'old1');
+        expect(barcodeText(tester), existing.barcode);
+
+        await tester.tap(find.byIcon(Icons.check_rounded));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(store.saved.single.id, 'cur1');
+        expect(store.saved.single.barcode, existing.barcode);
+      });
+
+      testWidgets('إضافة + مسح: ثلاثة أزرار، و«إلغاء» يُفرغ الخانة', (
+        tester,
+      ) async {
+        await open(tester);
+        await scan(tester);
+        expect(find.text('تعديل الموجود'), findsOneWidget);
+        expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+        await tester.tap(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('إلغاء'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(barcodeText(tester), '');
+        expect(find.text('إضافة دواء جديد'), findsOneWidget);
+      });
+
+      testWidgets('إضافة + مسح ثم «تعديل الموجود» يتبنّاها', (tester) async {
+        await open(tester);
+        await scan(tester);
+        await tester.tap(find.text('تعديل الموجود'));
+        await tester.pumpAndSettle();
+        expect(find.text('تعديل دواء'), findsOneWidget);
+        expect(find.text('باراسيتامول'), findsOneWidget);
+      });
+
+      testWidgets('إضافة + ضغط «تم» في لوحة المفاتيح: التنبيه نفسه', (
+        tester,
+      ) async {
+        await open(tester);
+        await tester.enterText(barcodeField(), existing.barcode);
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+        expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsOneWidget);
+        expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+      });
+    });
+
     group('حذف الدواء المرتبط بالباركود', () {
       const current = Medicine(
         id: 'cur1',
