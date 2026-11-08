@@ -248,6 +248,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('صيدليتي'), findsOneWidget);
       expect(find.textContaining('💊 صيدليتي'), findsNothing);
+      // التدرّج بطلاء الحروف لا بقناع: القناع لا يغطي نقطتي «ي» تحت صندوق
+      // النص فظهرتا بيضاوين على الهاتف
+      final title = tester.widget<Text>(find.text('صيدليتي'));
+      expect(title.style?.foreground?.shader, isNotNull);
+      expect(
+        find.ancestor(
+          of: find.text('صيدليتي'),
+          matching: find.byType(ShaderMask),
+        ),
+        findsNothing,
+      );
       // حالة المزامنة اسمٌ للزر لا نصٌّ مرئي
       expect(find.byKey(const Key('syncButton')), findsOneWidget);
       expect(

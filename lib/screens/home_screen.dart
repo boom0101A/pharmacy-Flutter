@@ -12,7 +12,6 @@ import '../theme.dart';
 import '../util/money.dart';
 import '../util/number_parse.dart';
 import '../widgets/glass.dart';
-import '../widgets/launch_art.dart' show GradientText;
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
 import 'complete_data_screen.dart';
@@ -642,15 +641,22 @@ class _HomeScreenState extends State<HomeScreen>
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.centerStart,
-                  child: GradientText(
+                  // التدرّج بطلاء الحروف نفسها لا بقناع (ShaderMask): القناع
+                  // لا يصل إلا داخل صندوق النص، فظهرت نقطتا «ي» الأخيرة —
+                  // وهما تحته — بيضاوين على الهاتف
+                  child: Text(
                     context.l10n.appName,
-                    gradient: AppGradients.brand,
-                    style: const TextStyle(
+                    maxLines: 1,
+                    style: TextStyle(
                       fontFamily: 'Cairo',
                       fontSize: 25,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -.3,
                       height: 1.2,
+                      foreground: Paint()
+                        ..shader = AppGradients.brand.createShader(
+                          const Rect.fromLTWH(0, 0, 140, 34),
+                        ),
                     ),
                   ),
                 ),
