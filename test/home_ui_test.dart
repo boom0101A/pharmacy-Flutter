@@ -239,6 +239,36 @@ void main() {
       expect(find.byTooltip('الإعدادات'), findsOneWidget);
     });
 
+    // كانت الترويسة: 💊 + كبسولة نصية «مزامنة سحابية ✓» + أيقونتان مجرّدتان
+    // — غير متناسقة. الآن اسم بلا إيموجي وثلاث دوائر متطابقة
+    testWidgets('ترويسة متناسقة: اسم بلا 💊 وثلاث دوائر متطابقة', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      expect(find.text('صيدليتي'), findsOneWidget);
+      expect(find.textContaining('💊 صيدليتي'), findsNothing);
+      // حالة المزامنة اسمٌ للزر لا نصٌّ مرئي
+      expect(find.byKey(const Key('syncButton')), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('syncButton')),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
+      final sizes = [
+        for (final k in const [
+          Key('settingsButton'),
+          Key('alertsBell'),
+          Key('syncButton'),
+        ])
+          tester.getSize(find.byKey(k)),
+      ];
+      expect(sizes.toSet().length, 1, reason: 'الثلاثة بحجم واحد: $sizes');
+      expect(sizes.first.width, greaterThanOrEqualTo(48));
+    });
+
     // بطاقة العدد القديمة كانت بفواصل الآلاف — السطر الجديد كذلك
     testWidgets('العدد بفواصل الآلاف', (tester) async {
       store.seed([
@@ -259,7 +289,7 @@ void main() {
       expect(find.textContaining('القيمة'), findsNothing);
       expect(find.text('600'), findsNothing); // مجموع القيمة 6 × 100
 
-      final title = tester.getRect(find.text('💊 صيدليتي'));
+      final title = tester.getRect(find.text('صيدليتي'));
       final tabs = tester.getRect(find.byType(TabBar));
       expect(tabs.top - title.top, lessThan(110));
       // التبويبات أوضح: 48 بدل 40، والعدد شارة لا بين قوسين

@@ -40,7 +40,6 @@
   "welcome3Body": "Instant cloud sync with your colleagues, plus expiry and low-stock alerts before they surprise you.",
   "typeMedicine": "💊 Medicine",
   "typeSupply": "🩹 Medical supply",
-  "homeTitle": "💊 Saydaliyati",
   "priceRepaired": "Fixed the price of {n, plural, =1{1 item} other{{n} items}} misread by the smart invoice",
   "invoiceAddedNew": "{n, plural, =1{1 new item added} other{{n} new items added}}",
   "invoiceMerged": "{n} merged with existing items",

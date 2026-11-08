@@ -140,9 +140,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get typeSupply => '🩹 Medical supply';
 
   @override
-  String get homeTitle => '💊 Saydaliyati';
-
-  @override
   String priceRepaired(int n) {
     String _temp0 = intl.Intl.pluralLogic(
       n,

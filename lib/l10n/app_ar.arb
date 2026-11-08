@@ -61,7 +61,6 @@
   "welcome3Body": "مزامنة سحابية فورية مع زملائك، وتنبيهات للصلاحية والمخزون المنخفض قبل أن تتفاجأ.",
   "typeMedicine": "💊 دواء",
   "typeSupply": "🩹 مستلزم طبي",
-  "homeTitle": "💊 صيدليتي",
   "priceRepaired": "صُحّح سعر {n} مادة قرأتها الفاتورة الذكية خطأً",
   "@priceRepaired": {
     "placeholders": {

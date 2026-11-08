@@ -338,12 +338,6 @@ abstract class AppLocalizations {
   /// **'🩹 مستلزم طبي'**
   String get typeSupply;
 
-  /// No description provided for @homeTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'💊 صيدليتي'**
-  String get homeTitle;
-
   /// No description provided for @priceRepaired.
   ///
   /// In ar, this message translates to:

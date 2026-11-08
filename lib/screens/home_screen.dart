@@ -12,6 +12,7 @@ import '../theme.dart';
 import '../util/money.dart';
 import '../util/number_parse.dart';
 import '../widgets/glass.dart';
+import '../widgets/launch_art.dart' show GradientText;
 import '../widgets/medicine_card.dart';
 import '../widgets/smooth_route.dart';
 import 'complete_data_screen.dart';
@@ -76,20 +77,19 @@ class _HomeScreenState extends State<HomeScreen>
       store.all,
       dismissed: PharmacyPrefs.instance.alertDismissals,
     );
-    return IconButton(
+    return _HeaderButton(
       key: const Key('alertsBell'),
-      // 48dp لا compact (40): أكثر زرّين يُضغطان في الترويسة — حد Android
       tooltip: context.l10n.alertsTooltip,
       onPressed: _openAlerts,
-      icon: Badge(
+      child: Badge(
         isLabelVisible: count > 0,
         backgroundColor: AppColors.danger,
+        largeSize: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        offset: const Offset(8, -6),
         label: Text('$count'),
-        child: const Icon(
-          Icons.notifications_rounded,
-          size: 21,
-          color: AppColors.textSecondary,
-        ),
+        child: const Icon(Icons.notifications_none_rounded),
       ),
     );
   }
@@ -637,17 +637,20 @@ class _HomeScreenState extends State<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                // الاسم بتدرّج العلامة (كشاشة الترحيب والتبويب المختار) بلا
+                // إيموجي — هو هوية التطبيق لا عنوان صفحة
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    context.l10n.homeTitle,
-                    maxLines: 1,
+                  child: GradientText(
+                    context.l10n.appName,
+                    gradient: AppGradients.brand,
                     style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -.2,
-                      height: 1.25,
+                      fontFamily: 'Cairo',
+                      fontSize: 25,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.3,
+                      height: 1.2,
                     ),
                   ),
                 ),
@@ -655,14 +658,16 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
           ),
+          // ثلاث دوائر زجاجية متطابقة بدل كبسولة نصية وأيقونتين مجرّدتين
           const _SyncIndicator(),
+          const SizedBox(width: 4),
           _alertsBell(),
-          IconButton(
+          const SizedBox(width: 4),
+          _HeaderButton(
             key: const Key('settingsButton'),
             tooltip: context.l10n.settingsTooltip,
-            icon: const Icon(Icons.settings_rounded, size: 20),
-            color: AppColors.textSecondary,
             onPressed: () => showSettingsSheet(context, store),
+            child: const Icon(Icons.settings_outlined),
           ),
         ],
       ),
@@ -1061,6 +1066,68 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
+/// زر دائري زجاجي للترويسة (الإعدادات، الجرس، المزامنة): الثلاثة بشكل
+/// وحجم واحد فتبدو مجموعة متناسقة. منطقة اللمس 48 (حد Android) والدائرة
+/// المرئية 42؛ اسم الزر (tooltip) يقرؤه قارئ الشاشة.
+class _HeaderButton extends StatefulWidget {
+  const _HeaderButton({
+    super.key,
+    required this.child,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final Widget child;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  State<_HeaderButton> createState() => _HeaderButtonState();
+}
+
+class _HeaderButtonState extends State<_HeaderButton> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: widget.tooltip,
+    child: SizedBox.square(
+      dimension: 48,
+      child: Center(
+        child: AnimatedScale(
+          scale: _down ? 0.9 : 1,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
+          child: Material(
+            color: AppColors.glass,
+            shape: const CircleBorder(
+              side: BorderSide(color: AppColors.border),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: widget.onPressed,
+              onHighlightChanged: (v) => setState(() => _down = v),
+              child: SizedBox.square(
+                dimension: 42,
+                child: Center(
+                  child: IconTheme.merge(
+                    data: const IconThemeData(
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                    child: widget.child,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// مؤشر حالة المزامنة مع Firestore.
 class _SyncIndicator extends StatelessWidget {
   const _SyncIndicator();
@@ -1078,70 +1145,47 @@ class _SyncIndicator extends StatelessWidget {
           SyncStatus.error => AppColors.danger,
           SyncStatus.disabled => AppColors.textMuted,
         };
-        // كبسولة زجاجية بنقطة متوهّجة (`.sync` في ملف التصميم). التوهّج
-        // ثابت: النبض المستمر يعيد الرسم بلا توقف طوال فتح التطبيق.
-        return Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () => _showDetails(context, sync),
-            borderRadius: BorderRadius.circular(20),
-            child: Ink(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0x14FFFFFF),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (sync.status == SyncStatus.syncing)
-                    const SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withValues(alpha: .55),
-                            blurRadius: 6,
-                            spreadRadius: 1,
+        // دائرة سحابة بنقطة حالة متوهّجة — كانت كبسولة نصية «مزامنة سحابية
+        // ✓» تكسر تناسق الترويسة. النص الكامل اسمُ الزر (tooltip) والتفاصيل
+        // بالضغط. التوهّج ثابت: النبض المستمر يعيد الرسم بلا توقف.
+        return _HeaderButton(
+          key: const Key('syncButton'),
+          tooltip: sync.statusLabel,
+          onPressed: () => _showDetails(context, sync),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.cloud_outlined),
+              PositionedDirectional(
+                end: -3,
+                bottom: -2,
+                child: sync.status == SyncStatus.syncing
+                    ? const SizedBox(
+                        width: 9,
+                        height: 9,
+                        child: CircularProgressIndicator(strokeWidth: 1.6),
+                      )
+                    : Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.bgDark,
+                            width: 1.5,
                           ),
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: .55),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  const SizedBox(width: 6),
-                  // «مزامنة سحابية ✓» أطول نص في الترويسة — يُقصّ ولا يفيض
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 120),
-                    child: Text(
-                      sync.statusLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  if (sync.lastError != null) ...[
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      size: 14,
-                      color: AppColors.textMuted,
-                    ),
-                  ],
-                ],
               ),
-            ),
+            ],
           ),
         );
       },

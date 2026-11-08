@@ -140,9 +140,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get typeSupply => '🩹 مستلزم طبي';
 
   @override
-  String get homeTitle => '💊 صيدليتي';
-
-  @override
   String priceRepaired(int n) {
     return 'صُحّح سعر $n مادة قرأتها الفاتورة الذكية خطأً';
   }
