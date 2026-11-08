@@ -1057,6 +1057,12 @@ abstract class AppLocalizations {
   /// **'حذف الدواء المرتبط؟'**
   String get formDeleteOwnerTitle;
 
+  /// No description provided for @formDeleteOwnerTitleSupply.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المستلزم المرتبط؟'**
+  String get formDeleteOwnerTitleSupply;
+
   /// No description provided for @formDeleteOwnerBody.
   ///
   /// In ar, this message translates to:
@@ -1071,7 +1077,7 @@ abstract class AppLocalizations {
   /// No description provided for @formOwnerDeleted.
   ///
   /// In ar, this message translates to:
-  /// **'🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذا الدواء'**
+  /// **'🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذه المادة'**
   String formOwnerDeleted(String name);
 
   /// No description provided for @formBarcodeOwnerBody.

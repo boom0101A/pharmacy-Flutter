@@ -618,6 +618,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get formDeleteOwnerTitle => 'Delete the linked medicine?';
 
   @override
+  String get formDeleteOwnerTitleSupply => 'Delete the linked supply?';
+
+  @override
   String formDeleteOwnerBody(
     String name,
     String barcode,
@@ -629,7 +632,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String formOwnerDeleted(String name) {
-    return '🗑️ Deleted “$name” — tap Save to link the barcode to this medicine';
+    return '🗑️ Deleted “$name” — tap Save to link the barcode to this item';
   }
 
   @override

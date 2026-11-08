@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/medicine.dart';
@@ -13,6 +12,7 @@ import '../services/product_image_picker.dart';
 import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../util/money.dart';
+import '../widgets/barcode_owner_dialogs.dart';
 import '../widgets/glass.dart';
 import '../widgets/product_image.dart';
 import '../widgets/smooth_route.dart';
@@ -240,10 +240,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     required String previous,
   }) async {
     if (_target != null) {
-      final delete = await _showBarcodeTaken(owner);
+      final delete = await showBarcodeOwnerDialog(context, owner);
       if (!mounted) return false;
       if (delete == true) {
-        await _deleteOwner(owner);
+        await deleteBarcodeOwner(context, widget.store, owner);
         // الحذف أُلغي من التأكيد أو فشل: الباركود ما زال لغيرها
         if (!mounted) return false;
         if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
@@ -258,7 +258,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           setState(() => _adoptExisting(owner));
           return true;
         case _BarcodeChoice.deleteOwner:
-          await _deleteOwner(owner);
+          await deleteBarcodeOwner(context, widget.store, owner);
           if (!mounted) return false;
           if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
             return true;
@@ -410,8 +410,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       final owner = await widget.store.findByBarcode(typedBarcode);
       if (!mounted) return;
       if (owner != null && owner.id != _target!.id) {
-        final delete = await _showBarcodeTaken(owner);
-        if (mounted && delete == true) await _deleteOwner(owner);
+        final delete = await showBarcodeOwnerDialog(context, owner);
+        if (mounted && delete == true) {
+          await deleteBarcodeOwner(context, widget.store, owner);
+        }
         return; // لا حفظ تلقائي — المستخدم يضغط «حفظ» بنفسه بعد الحذف
       }
     }
@@ -423,7 +425,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
         final choice = await _confirmDuplicateBarcode(byBarcode);
         if (!mounted || choice == null) return;
         if (choice == _BarcodeChoice.deleteOwner) {
-          await _deleteOwner(byBarcode);
+          await deleteBarcodeOwner(context, widget.store, byBarcode);
           return;
         }
         setState(() => _adoptExisting(byBarcode));
@@ -540,95 +542,13 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
             onPressed: () => Navigator.pop(ctx),
             child: Text(context.l10n.cancel),
           ),
-          _deleteOwnerButton(
+          deleteBarcodeOwnerButton(
+            context,
             () => Navigator.pop(ctx, _BarcodeChoice.deleteOwner),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, _BarcodeChoice.editExisting),
             child: Text(context.l10n.editExisting),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _deleteOwnerButton(VoidCallback onPressed) => TextButton(
-    key: const Key('deleteBarcodeOwner'),
-    style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-    onPressed: onPressed,
-    child: Text(context.l10n.formDeleteOwner),
-  );
-
-  /// يحذف المادة المالكة للباركود بعد تأكيد صريح، ويُبقي النموذج مفتوحاً
-  /// ببياناته — الضغطة التالية على «حفظ» تمرّ لأن الباركود صار حراً.
-  Future<void> _deleteOwner(Medicine owner) async {
-    final ok = await showGlassDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        title: Text(context.l10n.formDeleteOwnerTitle),
-        content: Text(
-          context.l10n.formDeleteOwnerBody(
-            owner.name,
-            owner.barcode,
-            owner.quantity,
-            formatMoney(owner.price),
-          ),
-          style: const TextStyle(fontSize: 13, height: 1.6),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton(
-            key: const Key('confirmDeleteOwner'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.l10n.delete),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || ok != true) return;
-    try {
-      await widget.store.delete(owner);
-    } catch (e) {
-      if (mounted) {
-        _toast(context.l10n.formSaveFailed('$e'), color: AppColors.danger);
-      }
-      return;
-    }
-    if (!mounted) return;
-    HapticFeedback.mediumImpact();
-    _toast(context.l10n.formOwnerDeleted(owner.name));
-  }
-
-  /// تنبيه عند تعديل باركود مادة إلى باركود تملكه مادة أخرى — لا حفظ.
-  /// يعيد true إن اختار المستخدم حذف المادة المالكة.
-  Future<bool?> _showBarcodeTaken(Medicine owner) {
-    return showGlassDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        title: Text(context.l10n.formBarcodeTakenTitle),
-        content: Text(
-          context.l10n.formBarcodeOwnerBody(
-            owner.barcode,
-            owner.name,
-            owner.quantity,
-            formatMoney(owner.price),
-          ),
-          style: const TextStyle(fontSize: 13, height: 1.6),
-        ),
-        actions: [
-          _deleteOwnerButton(() => Navigator.pop(ctx, true)),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -723,10 +643,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                       onChanged: (_) => setState(() {}),
                       onFieldSubmitted: (v) {
                         if (v.trim().isNotEmpty) {
-                          _autoFill(
-                            v.trim(),
-                            previous: _target?.barcode ?? '',
-                          );
+                          _autoFill(v.trim(), previous: _target?.barcode ?? '');
                         }
                       },
                     ),

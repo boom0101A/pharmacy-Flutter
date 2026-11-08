@@ -428,6 +428,7 @@
   "editExisting": "تعديل الموجود",
   "formDeleteOwner": "🗑️ حذف المرتبط",
   "formDeleteOwnerTitle": "حذف الدواء المرتبط؟",
+  "formDeleteOwnerTitleSupply": "حذف المستلزم المرتبط؟",
   "formDeleteOwnerBody": "هل تريد حذف «{name}» المرتبط بالباركود «{barcode}»؟\nالكمية {qty} بسعر {price}.\n\nيُحذف بكل تفاصيله ولا يمكن التراجع.",
   "@formDeleteOwnerBody": {
     "placeholders": {
@@ -445,7 +446,7 @@
       }
     }
   },
-  "formOwnerDeleted": "🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذا الدواء",
+  "formOwnerDeleted": "🗑️ حُذف «{name}» — اضغط حفظ لربط الباركود بهذه المادة",
   "@formOwnerDeleted": {
     "placeholders": {
       "name": {

@@ -14,6 +14,7 @@ import '../state/medicine_store.dart';
 import '../theme.dart';
 import '../util/money.dart';
 import '../util/number_parse.dart';
+import '../widgets/barcode_owner_dialogs.dart';
 import '../widgets/glass.dart';
 import '../widgets/smooth_route.dart';
 import 'scanner_screen.dart';
@@ -126,12 +127,49 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
               SmoothPageRoute(builder: (_) => const ScannerScreen()),
             ));
     if (code == null || code.trim().isEmpty || !mounted) return;
+    final m = _current;
+    if (m == null) return;
     final parsed = Gs1Parser.parse(code);
+    final previous = _barcode.text;
+    final previousExpiry = _expiry;
+    final previousNoBarcode = _noBarcode;
     setState(() {
       _barcode.text = parsed.barcode;
       _noBarcode = false;
       _expiry ??= parsed.expiryDate?.millisecondsSinceEpoch;
     });
+    // باركود مادة أخرى: التنبيه فوراً كما في نموذج المادة — رفضه يعيد
+    // الخانة وما استُخرج من الرمز إلى ما كان قبل المسح
+    if (!await _checkOwner(m, parsed.barcode, previous: previous) && mounted) {
+      setState(() {
+        _expiry = previousExpiry;
+        _noBarcode = previousNoBarcode;
+      });
+    }
+  }
+
+  /// [code] يخص مادة غير [m]؟ تنبيه «الباركود مسجَّل» بزر «حذف المرتبط».
+  /// يعيد true إن صار الباركود حراً لـ[m] (أو كان حراً أصلاً)، وإلا يعيد
+  /// الخانة إلى [previous] ويعيد false.
+  Future<bool> _checkOwner(
+    Medicine m,
+    String code, {
+    required String previous,
+  }) async {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return true;
+    final owner = await widget.store.findByBarcode(trimmed);
+    if (owner == null || owner.id == m.id || !mounted) return true;
+    final delete = await showBarcodeOwnerDialog(context, owner);
+    if (!mounted) return false;
+    if (delete == true &&
+        await deleteBarcodeOwner(context, widget.store, owner)) {
+      _similarCache.clear(); // قد تكون المحذوفة هي «المادة المشابهة»
+      if (mounted) setState(() {});
+      return true;
+    }
+    if (mounted) setState(() => _barcode.text = previous);
+    return false;
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -146,6 +184,17 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
 
   Future<void> _save(Medicine m) async {
     if (_busy) return;
+    // باركود مكتوب يخص مادة أخرى: التنبيه نفسه. بعد «حذف المرتبط» لا حفظ
+    // تلقائي — كالنموذج، يضغط المستخدم «حفظ» مرة أخرى
+    final typed = _barcode.text.trim();
+    if (typed.isNotEmpty) {
+      final owner = await widget.store.findByBarcode(typed);
+      if (!mounted) return;
+      if (owner != null && owner.id != m.id) {
+        await _checkOwner(m, typed, previous: m.barcode);
+        return;
+      }
+    }
     final price =
         priceFromInput(
           _price.text,

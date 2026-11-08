@@ -33,7 +33,20 @@ class _Store extends MedicineStore {
   }
 
   @override
-  Future<void> delete(Medicine medicine) async => deleted.add(medicine.id);
+  Future<void> delete(Medicine medicine) async {
+    deleted.add(medicine.id);
+    all.removeWhere((m) => m.id == medicine.id);
+  }
+
+  @override
+  Future<Medicine?> findByBarcode(String barcode) async {
+    // 13 و14 خانة رمز واحد — كما يطابق المخزن الحقيقي (lookupVariants)
+    final code = barcode.trim().padLeft(14, '0');
+    for (final m in all) {
+      if (m.barcode.isNotEmpty && m.barcode.padLeft(14, '0') == code) return m;
+    }
+    return null;
+  }
 
   @override
   Future<void> mergeDuplicates(Medicine keeper, List<Medicine> losers) async {
@@ -187,7 +200,8 @@ void main() {
     expect(store.deleted, ['blank']);
   });
 
-  testWidgets('تعارض الباركود يُظهر رسالة ولا يتقدّم', (tester) async {
+  // شبكة أمان: تعارض لم يكشفه الفحص المسبق (من الهاتف الآخر مثلاً)
+  testWidgets('تعارض الباركود عند الحفظ يُظهر رسالة ولا يتقدّم', (tester) async {
     store.conflict = true;
     await open(tester);
     await tester.enterText(find.byKey(const Key('completePrice')), '100');
@@ -195,5 +209,73 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('مسجّل لمادة أخرى'), findsOneWidget);
     expect(find.text('مادة 1 من 3'), findsOneWidget);
+  });
+
+  group('باركود مادة أخرى: التنبيه بزر «حذف المرتبط»', () {
+    final owner = _m(
+      'own',
+      'حب انفلونزا',
+      price: 3600,
+      qty: 10,
+      barcode: '6221051011317',
+    );
+
+    setUp(() => store.all.add(owner));
+
+    String barcodeText(WidgetTester tester) => tester
+        .widget<TextField>(find.byKey(const Key('completeBarcode')))
+        .controller!
+        .text;
+
+    Future<void> scanOwner(WidgetTester tester) async {
+      await open(tester, scan: () async => owner.barcode);
+      await tester.tap(find.byKey(const Key('completeScan')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('المسح يُظهر التنبيه فوراً', (tester) async {
+      await scanOwner(tester);
+      expect(find.text('⚠️ الباركود مسجَّل لمادة أخرى'), findsOneWidget);
+      expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+    });
+
+    testWidgets('«حسناً» يعيد الباركود السابق', (tester) async {
+      await scanOwner(tester);
+      await tester.tap(find.text('حسناً'));
+      await tester.pumpAndSettle();
+      expect(barcodeText(tester), '04009932923933');
+      expect(store.deleted, isEmpty);
+    });
+
+    testWidgets('حذف المرتبط يُبقي الباركود، ثم الحفظ يتقدّم', (tester) async {
+      await scanOwner(tester);
+      await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+      await tester.pumpAndSettle();
+      expect(find.text('حذف الدواء المرتبط؟'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('confirmDeleteOwner')));
+      await tester.pumpAndSettle();
+      expect(store.deleted, ['own']);
+      expect(barcodeText(tester), '0${owner.barcode}'); // مُطبَّع إلى 14 خانة
+      expect(store.saved, isEmpty, reason: 'لا حفظ تلقائي');
+
+      await tester.enterText(find.byKey(const Key('completePrice')), '100');
+      await tester.tap(find.byKey(const Key('completeSaveNext')));
+      await tester.pumpAndSettle();
+      expect(store.saved.single.barcode, '0${owner.barcode}');
+      expect(find.text('مادة 2 من 3'), findsOneWidget);
+    });
+
+    testWidgets('الكتابة ثم الحفظ تُظهر التنبيه ولا تحفظ', (tester) async {
+      await open(tester);
+      await tester.enterText(
+        find.byKey(const Key('completeBarcode')),
+        owner.barcode,
+      );
+      await tester.enterText(find.byKey(const Key('completePrice')), '100');
+      await tester.tap(find.byKey(const Key('completeSaveNext')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+      expect(store.saved, isEmpty);
+    });
   });
 }

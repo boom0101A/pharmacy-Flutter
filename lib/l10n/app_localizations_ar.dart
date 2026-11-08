@@ -585,6 +585,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get formDeleteOwnerTitle => 'حذف الدواء المرتبط؟';
 
   @override
+  String get formDeleteOwnerTitleSupply => 'حذف المستلزم المرتبط؟';
+
+  @override
   String formDeleteOwnerBody(
     String name,
     String barcode,
@@ -596,7 +599,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String formOwnerDeleted(String name) {
-    return '🗑️ حُذف «$name» — اضغط حفظ لربط الباركود بهذا الدواء';
+    return '🗑️ حُذف «$name» — اضغط حفظ لربط الباركود بهذه المادة';
   }
 
   @override

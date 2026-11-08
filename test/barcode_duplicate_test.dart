@@ -480,6 +480,24 @@ void main() {
         expect(find.byKey(const Key('confirmDeleteOwner')), findsOneWidget);
       });
 
+      testWidgets('مالك مستلزم: العنوان «حذف المستلزم المرتبط؟»', (
+        tester,
+      ) async {
+        useTallSurface(tester);
+        final supply = existing.copyWith(type: ItemType.supply);
+        store.all.addAll([supply, current]);
+        store.byBarcode[supply.barcode] = supply;
+        await tester.pumpWidget(
+          host(MedicineFormScreen(store: store, existing: current)),
+        );
+        await tester.pump();
+        await typeTakenBarcode(tester);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        expect(find.text('حذف المستلزم المرتبط؟'), findsOneWidget);
+        expect(find.text('حذف الدواء المرتبط؟'), findsNothing);
+      });
+
       testWidgets('تعديل: «إلغاء» في التأكيد لا يحذف ولا يحفظ', (tester) async {
         await openEditing(tester);
         await typeTakenBarcode(tester);
