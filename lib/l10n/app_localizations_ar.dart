@@ -726,6 +726,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsTitle => '⚙️ الإعدادات';
 
   @override
+  String get settingsTooltip => 'الإعدادات';
+
+  @override
   String get settingsAlerts => 'تنبيهات الصلاحية والمخزون';
 
   @override

@@ -1301,6 +1301,12 @@ abstract class AppLocalizations {
   /// **'⚙️ الإعدادات'**
   String get settingsTitle;
 
+  /// No description provided for @settingsTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsTooltip;
+
   /// No description provided for @settingsAlerts.
   ///
   /// In ar, this message translates to:

@@ -78,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
     return IconButton(
       key: const Key('alertsBell'),
-      visualDensity: VisualDensity.compact,
+      // 48dp لا compact (40): أكثر زرّين يُضغطان في الترويسة — حد Android
       tooltip: context.l10n.alertsTooltip,
       onPressed: _openAlerts,
       icon: Badge(
@@ -658,7 +658,8 @@ class _HomeScreenState extends State<HomeScreen>
           const _SyncIndicator(),
           _alertsBell(),
           IconButton(
-            visualDensity: VisualDensity.compact,
+            key: const Key('settingsButton'),
+            tooltip: context.l10n.settingsTooltip,
             icon: const Icon(Icons.settings_rounded, size: 20),
             color: AppColors.textSecondary,
             onPressed: () => showSettingsSheet(context, store),

@@ -198,6 +198,7 @@
   "chipExpiry": "📅 Expiry: {date}",
   "chipBatch": "🏷️ Batch: {batch}",
   "settingsTitle": "⚙️ Settings",
+  "settingsTooltip": "Settings",
   "settingsAlerts": "Expiry and stock alerts",
   "settingsAlertsSub": "A daily notification at 9 AM if items are expired, expiring soon, or low/out of stock.",
   "settingsContribute": "Contribute to the shared dictionary",

@@ -226,6 +226,19 @@ void main() {
       expect(countLine(tester), '1 مستلزم');
     });
 
+    // أكثر زرّين يُضغطان في الترويسة: 48dp على الأقل (حد Android)، ولهما
+    // اسم يقرؤه قارئ الشاشة
+    testWidgets('الجرس والإعدادات بحجم لمس 48 واسم مقروء', (tester) async {
+      await tester.pumpWidget(_app(store));
+      await tester.pumpAndSettle();
+      for (final key in const [Key('alertsBell'), Key('settingsButton')]) {
+        final size = tester.getSize(find.byKey(key));
+        expect(size.width, greaterThanOrEqualTo(48), reason: '$key');
+        expect(size.height, greaterThanOrEqualTo(48), reason: '$key');
+      }
+      expect(find.byTooltip('الإعدادات'), findsOneWidget);
+    });
+
     // بطاقة العدد القديمة كانت بفواصل الآلاف — السطر الجديد كذلك
     testWidgets('العدد بفواصل الآلاف', (tester) async {
       store.seed([

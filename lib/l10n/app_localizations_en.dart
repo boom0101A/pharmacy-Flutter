@@ -759,6 +759,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => '⚙️ Settings';
 
   @override
+  String get settingsTooltip => 'Settings';
+
+  @override
   String get settingsAlerts => 'Expiry and stock alerts';
 
   @override

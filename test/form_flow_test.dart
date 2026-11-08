@@ -169,6 +169,23 @@ void main() {
     });
   });
 
+  // كان صندوق الصورة يعرض 💊 حتى للمستلزمات، والبطاقات تعرض 🩹
+  testWidgets('صورة المستلزم الفارغة 🩹 والدواء 💊', (tester) async {
+    useTallSurface(tester);
+    await tester.pumpWidget(
+      host(MedicineFormScreen(store: store, initialType: ItemType.supply)),
+    );
+    await tester.pump();
+    expect(find.text('🩹'), findsOneWidget);
+    expect(find.text('💊'), findsNothing);
+
+    await tester.tap(find.text('💊 دواء'));
+    await tester.pump();
+    expect(find.text('💊'), findsOneWidget);
+    // زر الماسح بجانب الخانة له اسم يقرؤه قارئ الشاشة
+    expect(find.byTooltip('مسح باركود'), findsOneWidget);
+  });
+
   group('نوع المادة (الشكل الصيدلاني) — للأدوية فقط، والشركة للقسمين', () {
     Finder companyField() => find.byKey(const Key('companyField'));
 

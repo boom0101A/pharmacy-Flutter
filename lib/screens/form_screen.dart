@@ -652,6 +652,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   GlassSquareButton(
                     filled: true,
                     onPressed: _scan,
+                    tooltip: context.l10n.scanBarcode,
                     icon: const Icon(Icons.qr_code_scanner_rounded, size: 26),
                   ),
                 ],
@@ -717,8 +718,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                     if (imagePath != null)
                       AdaptiveProductImage(path: imagePath)
                     else
-                      const Center(
-                        child: Text('💊', style: TextStyle(fontSize: 48)),
+                      // كالبطاقات: 🩹 للمستلزم لا 💊 دائماً
+                      Center(
+                        child: Text(
+                          _isSupply ? '🩹' : '💊',
+                          style: const TextStyle(fontSize: 48),
+                        ),
                       ),
                     if (imagePath != null)
                       Positioned(
