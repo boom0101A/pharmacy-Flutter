@@ -357,6 +357,36 @@ void main() {
         expect(store.saved.single.barcode, existing.barcode);
       });
 
+      // بيانات قديمة قد تحمل الباركود بصيغتين (13 و14 خانة) لمادتين — كان
+      // حذف الأولى يعيد البحث فيجد الثانية فيُرجع الخانة بصمت بلا تفسير
+      testWidgets('مالكان بصيغتين: حذف الأول يُبقي الباركود، والحفظ ينبّه '
+          'للثاني', (tester) async {
+        const twin = Medicine(
+          id: 'old2',
+          barcode: '01234567890123',
+          name: 'باراسيتامول قديم',
+          price: 400,
+          quantity: 3,
+          createdAt: 0,
+          updatedAt: 0,
+        );
+        store.all.add(twin);
+        store.byBarcode[twin.barcode] = twin;
+        await open(tester, editing: current);
+        await scan(tester);
+        await tester.tap(find.byKey(const Key('deleteBarcodeOwner')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirmDeleteOwner')));
+        await tester.pumpAndSettle();
+        expect(store.deleted.length, 1);
+        expect(barcodeText(tester), existing.barcode, reason: 'لا رجوع صامت');
+
+        await tester.tap(find.byIcon(Icons.check_rounded));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('deleteBarcodeOwner')), findsOneWidget);
+        expect(store.saved, isEmpty);
+      });
+
       testWidgets('إضافة + مسح: ثلاثة أزرار، و«إلغاء» يُفرغ الخانة', (
         tester,
       ) async {

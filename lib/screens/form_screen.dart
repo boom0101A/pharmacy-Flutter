@@ -242,13 +242,12 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     if (_target != null) {
       final delete = await showBarcodeOwnerDialog(context, owner);
       if (!mounted) return false;
-      if (delete == true) {
-        await deleteBarcodeOwner(context, widget.store, owner);
-        // الحذف أُلغي من التأكيد أو فشل: الباركود ما زال لغيرها
-        if (!mounted) return false;
-        if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
-          return true;
-        }
+      // حُذفت فعلاً ← الباركود يبقى. لا إعادة بحث هنا: بيانات قديمة قد تحمل
+      // الباركود نفسه بصيغة أخرى لمادة ثانية، فكان يُرجع الخانة بصمت؛ الآن
+      // «حفظ» التالي يُظهر تنبيه تلك المادة بزر حذفها
+      if (delete == true &&
+          await deleteBarcodeOwner(context, widget.store, owner)) {
+        return true;
       }
     } else {
       final choice = await _confirmDuplicateBarcode(owner);
@@ -258,9 +257,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           setState(() => _adoptExisting(owner));
           return true;
         case _BarcodeChoice.deleteOwner:
-          await deleteBarcodeOwner(context, widget.store, owner);
-          if (!mounted) return false;
-          if (await widget.store.findByBarcode(_barcode.text.trim()) == null) {
+          if (await deleteBarcodeOwner(context, widget.store, owner)) {
             return true;
           }
         case null:
