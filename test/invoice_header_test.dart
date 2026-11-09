@@ -120,6 +120,25 @@ void main() {
     expect(find.textContaining('المجموعان مختلفان'), findsOneWidget);
   });
 
+  // «📦 بالكرتون» بسعر «للعلبة»: مجموع السطر = الكراتين × العدد × السعر.
+  // كان يُحسب الكراتين × السعر فيظهر «المجموعان مختلفان» لفاتورة سليمة
+  testWidgets('كرتون بسعر للعلبة: مجموع الأسطر يطابق المطبوع', (tester) async {
+    await scan(
+      tester,
+      InvoiceResult.success(
+        [InvoiceLine(name: 'Adol', price: 176, quantity: 12)],
+        header: const InvoiceHeader(supplier: 'مذخر', total: 21120),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('packToggle')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('packSizeInput')), '10');
+    await tester.tap(find.text('للعلبة'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('المجموعان مختلفان'), findsNothing);
+    expect(find.textContaining('21,120'), findsWidgets);
+  });
+
   testWidgets('الحفظ يحفظ المواد وسجل الفاتورة بأسطره وصورته', (tester) async {
     await scan(tester, result);
     await tester.enterText(

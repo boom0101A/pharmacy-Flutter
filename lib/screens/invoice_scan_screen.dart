@@ -242,14 +242,16 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     fill(_total, total == null ? null : formatPriceInput(total));
   }
 
-  /// مجموع الأسطر كما عُدّلت (الكمية × السعر).
-  double get _linesTotal => _lines.fold(
-    0,
-    (s, l) =>
-        s +
+  /// مجموع الأسطر كما عُدّلت (الكمية × السعر) — كما يُحسب في الورقة.
+  /// كرتون بسعر «للعلبة»: الكراتين × العدد داخلها × السعر.
+  double get _linesTotal => _lines.fold(0, (s, l) {
+    final perUnitCarton = l.packed && !l.pricePerPack;
+    final multiplier = perUnitCarton ? (l.validPackSize ?? 1) : 1;
+    return s +
         (parseLocalizedNumber(l.price.text) ?? 0) *
-            ((parseLocalizedInt(l.quantity.text) ?? 0) - l.bonus),
-  );
+            ((parseLocalizedInt(l.quantity.text) ?? 0) - l.bonus) *
+            multiplier;
+  });
 
   /// حذف صفحة مع أسطرها — بنفس نمط [_removeLine] الآمن.
   void _removePage(_InvoicePage page) {

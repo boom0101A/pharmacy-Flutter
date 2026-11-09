@@ -492,10 +492,20 @@ Medicine mergeGroup(List<Medicine> group, String keeperId, DateTime now) {
         .map((m) => m.category),
   ]);
 
+  // العدد في الكرتون (الفاتورة الذكية): الباقية، وإلا الأحدث — لا يضيع بالدمج
+  final packSource = keeper.packSize != null
+      ? keeper
+      : byNewest.firstWhere(
+          (m) => m.packSize != null,
+          orElse: () => keeper,
+        );
+
   return keeper.copyWith(
     imagePath: image,
     company: company,
     category: category,
+    packSize: packSource.packSize,
+    packPriced: packSource.packPriced,
     quantity: group.fold<int>(0, (n, m) => n + m.quantity),
     price: price,
     expiryDate: expiry,

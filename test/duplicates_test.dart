@@ -361,6 +361,24 @@ void main() {
       ];
       expect(mergeGroup(withValid, 'a', now).barcode, '6285128013338');
     });
+
+    // العدد في الكرتون من الفاتورة الذكية لا يضيع إن كان على المحذوفة
+    test('العدد في الكرتون: الباقية، وإلا الأحدث', () {
+      final withPack = [
+        group[0],
+        group[1].copyWith(packSize: 10, packPriced: false, updatedAt: 300),
+        group[2],
+      ];
+      final r = mergeGroup(withPack, 'a', now);
+      expect(r.packSize, 10);
+      expect(r.packPriced, isFalse);
+
+      final keeperHas = [
+        group[0].copyWith(packSize: 6, updatedAt: 100),
+        withPack[1],
+      ];
+      expect(mergeGroup(keeperHas, 'a', now).packSize, 6);
+    });
   });
 
   group('mergeGroup والصور', () {
