@@ -338,9 +338,32 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                             ],
                           ),
                         ),
-                        Text(
-                          '${h.line.quantity} × ${formatPrice(h.line.price)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${h.line.quantity} × ${formatPrice(h.line.price)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            // بالكرتون: ما دخل الرف فعلاً وسعر العلبة
+                            if (h.line.packSize != null)
+                              Text(
+                                context.l10n.invPackNote(
+                                  h.line.packSize!,
+                                  formatPrice(h.line.unitsAdded),
+                                  formatMoney(
+                                    h.line.unitPrice,
+                                    iqdOnly: true,
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),

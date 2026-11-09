@@ -14,6 +14,7 @@ import '../util/number_parse.dart';
 import '../util/money.dart';
 import '../theme.dart';
 import '../widgets/glass.dart';
+import '../widgets/medicine_card.dart' show formatPrice;
 import '../widgets/smooth_route.dart';
 import 'invoices_screen.dart';
 import 'scanner_screen.dart';
@@ -203,14 +204,21 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
     final added = <_EditableLine>[];
     for (final l in result.lines) {
       final v = GeminiVision.validateLine(l);
-      added.add(
-        _EditableLine(
-          source: v.line,
-          issues: v.issues,
-          page: page,
-          type: _bulkType,
-        ),
+      final line = _EditableLine(
+        source: v.line,
+        issues: v.issues,
+        page: page,
+        type: _bulkType,
       );
+      // مادة سبق شراؤها بالكرتون: السطر مفعّل بالعدد والاختيار المحفوظين
+      final known = _existingMatchFor(line);
+      if (known?.packSize != null) {
+        line
+          ..packed = true
+          ..packSize.text = '${known!.packSize}'
+          ..pricePerPack = known.packPriced ?? true;
+      }
+      added.add(line);
     }
     setState(() {
       page.state = _PageState.done;
@@ -278,6 +286,11 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
   }
 
   Future<void> _save() async {
+    // عدد كرتون غير صالح يضرب الرصيد في رقم خاطئ — لا حفظ قبل تصحيحه
+    if (_lines.any((l) => l.name.text.trim().isNotEmpty && l.packInvalid)) {
+      setState(() => _error = context.l10n.scPackInvalid);
+      return;
+    }
     final drafts = <InvoiceLineDraft>[
       for (final line in _lines)
         if (line.name.text.trim().isNotEmpty)
@@ -292,6 +305,8 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             expiryDate: InvoiceLineToMedicine.parseExpiry(
               _orNull(line.expiry.text),
             ),
+            packSize: line.packed ? line.validPackSize : null,
+            pricePerPack: line.pricePerPack,
           ),
     ];
 
@@ -1053,6 +1068,7 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
                 ),
               ],
             ),
+            _packSection(line),
             const SizedBox(height: 6),
             Row(
               children: [
@@ -1103,6 +1119,104 @@ class _InvoiceScanScreenState extends State<InvoiceScanScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// «📦 بالكرتون»: العدد داخل الكرتون، والسعر للكرتون أو للعلبة، ومعاينة
+  /// فورية لما سيدخل المخزون. المعاينة تتبع الكمية والسعر والعدد حيّاً.
+  Widget _packSection(_EditableLine line) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CheckboxListTile(
+            key: const Key('packToggle'),
+            value: line.packed,
+            onChanged: (v) => setState(() => line.packed = v ?? false),
+            title: Text(
+              context.l10n.scPacked,
+              style: const TextStyle(fontSize: 13.5),
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            visualDensity: VisualDensity.compact,
+          ),
+          if (line.packed) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('packSizeInput'),
+                    controller: line.packSize,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.scPackSize,
+                      errorText:
+                          line.packSize.text.trim().isNotEmpty &&
+                              line.validPackSize == null
+                          ? context.l10n.scPackInvalid
+                          : null,
+                      errorMaxLines: 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SegmentedButton<bool>(
+                  key: const Key('packPriceMode'),
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  segments: [
+                    ButtonSegment(
+                      value: true,
+                      label: Text(context.l10n.scPricePerPack),
+                    ),
+                    ButtonSegment(
+                      value: false,
+                      label: Text(context.l10n.scPricePerUnit),
+                    ),
+                  ],
+                  selected: {line.pricePerPack},
+                  onSelectionChanged: (s) =>
+                      setState(() => line.pricePerPack = s.first),
+                ),
+              ],
+            ),
+            ListenableBuilder(
+              listenable: Listenable.merge([
+                line.quantity,
+                line.price,
+                line.packSize,
+              ]),
+              builder: (context, _) {
+                final size = line.validPackSize;
+                if (size == null) return const SizedBox.shrink();
+                final qty = parseLocalizedInt(line.quantity.text) ?? 0;
+                final price = parseLocalizedNumber(line.price.text) ?? 0;
+                final unit = line.pricePerPack ? price / size : price;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    context.l10n.scPackPreview(
+                      formatPrice(qty * size),
+                      formatMoney(unit),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1172,11 +1286,17 @@ class InvoiceLineDraft {
     this.category,
     this.company,
     this.expiryDate,
+    this.packSize,
+    this.pricePerPack = true,
   });
 
   final String name;
   final ItemType type;
+
+  /// كما في الورقة: سعر الكرتون أو العلبة (انظر [pricePerPack]).
   final double price;
+
+  /// كما في الورقة: عدد الكراتين إن كان [packSize] غير null.
   final int quantity;
   final String barcode;
   final String? category;
@@ -1184,6 +1304,19 @@ class InvoiceLineDraft {
 
   /// مللي ثانية، أو null إن لم تُقرأ صلاحية.
   final int? expiryDate;
+
+  /// «📦 بالكرتون»: العدد داخل الكرتون (≥ 2)، وnull = مفرد.
+  final int? packSize;
+
+  /// [price] سعر الكرتون فيُقسم على [packSize] — أو سعر العلبة أصلاً.
+  final bool pricePerPack;
+
+  /// العلب التي تدخل المخزون.
+  int get units => packSize == null ? quantity : quantity * packSize!;
+
+  /// سعر شراء العلبة الواحدة.
+  double get unitPrice =>
+      packSize != null && pricePerPack ? price / packSize! : price;
 }
 
 /// نتيجة حفظ فاتورة — تُستعمل لعرض ملخّص صادق للمستخدم بدل عدّاد مبهم لا
@@ -1243,9 +1376,17 @@ InvoiceSaveResult buildInvoiceSaveItems({
   final keyByCode = <String, String>{};
   final keyByName = <String, String>{};
 
+  // «📦 بالكرتون»: المخزون يُبنى بالعلب وسعر العلبة، والسجل بقيم الورقة.
+  // سطر دُمج مع غيره داخل الفاتورة يُسجَّل بالعلب (لا ورقة واحدة تمثّله).
+  final paperByKey = <String, InvoiceLineDraft>{};
+  final packByKey = <String, (int, bool)>{};
+
   for (final raw in drafts) {
     if (raw.name.trim().isEmpty) continue;
-    final d = InvoiceLineDraft(
+    final packSize = raw.packSize != null && raw.packSize! >= 2
+        ? raw.packSize
+        : null;
+    final paper = InvoiceLineDraft(
       name: raw.name,
       type: raw.type,
       price: raw.price < 0 ? 0 : raw.price,
@@ -1254,6 +1395,18 @@ InvoiceSaveResult buildInvoiceSaveItems({
       category: raw.category,
       company: raw.company,
       expiryDate: raw.expiryDate,
+      packSize: packSize,
+      pricePerPack: raw.pricePerPack,
+    );
+    final d = InvoiceLineDraft(
+      name: paper.name,
+      type: paper.type,
+      price: paper.unitPrice,
+      quantity: paper.units,
+      barcode: paper.barcode,
+      category: paper.category,
+      company: paper.company,
+      expiryDate: paper.expiryDate,
     );
     final code = Gs1Parser.canonicalKey(d.barcode);
     final nameKey = '${d.type.name}::${MedicineStore.normalizeName(d.name)}';
@@ -1275,11 +1428,15 @@ InvoiceSaveResult buildInvoiceSaveItems({
       // اسم مستعمل لسطر بباركود آخر — مفتاح مستقل لهذا المنتج المختلف
       final fresh = byKey.containsKey(nameKey) ? '$nameKey::$code' : nameKey;
       byKey[fresh] = d;
+      paperByKey[fresh] = paper;
+      if (packSize != null) packByKey[fresh] = (packSize, paper.pricePerPack);
       order.add(fresh);
       if (code != null) keyByCode[code] = fresh;
       keyByName.putIfAbsent(nameKey, () => fresh);
     } else {
       final k = key!;
+      paperByKey.remove(k);
+      if (packSize != null) packByKey[k] = (packSize, paper.pricePerPack);
       if (code != null) keyByCode[code] = k;
       keyByName.putIfAbsent(nameKey, () => k);
       byKey[k] = InvoiceLineDraft(
@@ -1320,11 +1477,16 @@ InvoiceSaveResult buildInvoiceSaveItems({
         store.findExistingByName(d.name, d.type, barcode: d.barcode);
     final ts = now.millisecondsSinceEpoch;
     final already = existing == null ? null : indexById[existing.id];
+    final paper = paperByKey[key];
+    final pack = packByKey[key];
     records.add(
       InvoiceRecordLine(
         name: d.name,
-        quantity: d.quantity,
-        price: d.price,
+        // كما في الورقة (12 × 1,764) — والسطر المدموج بالعلب
+        quantity: paper?.quantity ?? d.quantity,
+        price: paper?.price ?? d.price,
+        packSize: paper?.packSize,
+        pricePerPack: paper?.pricePerPack ?? true,
         medicineId:
             existing?.id ?? 'inv_${ts}_${now.microsecond}_${items.length}',
         merged: existing != null,
@@ -1336,6 +1498,8 @@ InvoiceSaveResult buildInvoiceSaveItems({
         price: d.price > 0 ? d.price : prev.price,
         quantity: prev.quantity + d.quantity,
         expiryDate: _earlier(prev.expiryDate, d.expiryDate),
+        packSize: pack?.$1,
+        packPriced: pack?.$2,
         updatedAt: ts,
       );
       mergedWithinInvoice++;
@@ -1357,6 +1521,9 @@ InvoiceSaveResult buildInvoiceSaveItems({
               : null,
           company: existing.company ?? d.company,
           expiryDate: expiry,
+          // يُتذكّر للفاتورة التالية؛ سطر مفرد هذه المرة لا يمسح المحفوظ
+          packSize: pack?.$1,
+          packPriced: pack?.$2,
           updatedAt: ts,
         ),
       );
@@ -1373,6 +1540,8 @@ InvoiceSaveResult buildInvoiceSaveItems({
           category: d.type == ItemType.medicine ? d.category : null,
           company: d.company,
           expiryDate: d.expiryDate,
+          packSize: pack?.$1,
+          packPriced: pack?.$2,
           createdAt: ts,
           updatedAt: ts,
         ),
@@ -1432,7 +1601,24 @@ class _EditableLine {
   final TextEditingController company;
   ItemType type;
 
+  /// «📦 بالكرتون»: الكمية كراتين، و[packSize] العدد داخل الكرتون.
+  bool packed = false;
+  final TextEditingController packSize = TextEditingController();
+
+  /// السعر المكتوب للكرتون (يُقسم) — أو للعلبة.
+  bool pricePerPack = true;
+
+  /// العدد داخل الكرتون إن كان صالحاً (2 فما فوق)، وإلا null.
+  int? get validPackSize {
+    final n = int.tryParse(packSize.text.trim());
+    return n != null && n >= 2 ? n : null;
+  }
+
+  /// مفعّل والعدد غير صالح — يمنع الحفظ.
+  bool get packInvalid => packed && validPackSize == null;
+
   void dispose() {
+    packSize.dispose();
     name.dispose();
     price.dispose();
     quantity.dispose();

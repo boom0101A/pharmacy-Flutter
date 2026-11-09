@@ -31,7 +31,7 @@ class MedicineDb {
   Database? _db;
 
   /// إصدار المخطط الحالي — يُصدَّر ليقارن به الاختبار.
-  static const schemaVersion = 10;
+  static const schemaVersion = 11;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -88,6 +88,11 @@ class MedicineDb {
         // حد تنبيه المخزون المنخفض الخاص بالمادة (null = الحد العام)
         await db.execute('ALTER TABLE $_table ADD COLUMN minQuantity INTEGER');
       }
+      if (oldVersion < 11) {
+        // العدد في الكرتون وآخر اختيار «السعر للكرتون» (الفاتورة الذكية)
+        await db.execute('ALTER TABLE $_table ADD COLUMN packSize INTEGER');
+        await db.execute('ALTER TABLE $_table ADD COLUMN packPriced INTEGER');
+      }
     },
     onCreate: (db, version) async {
       await db.execute('''
@@ -104,6 +109,8 @@ class MedicineDb {
             company TEXT,
             noBarcode INTEGER NOT NULL DEFAULT 0,
             minQuantity INTEGER,
+            packSize INTEGER,
+            packPriced INTEGER,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL
           )

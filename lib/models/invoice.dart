@@ -9,6 +9,8 @@ class InvoiceRecordLine {
     required this.price,
     this.medicineId,
     this.merged = false,
+    this.packSize,
+    this.pricePerPack = true,
   });
 
   final String name;
@@ -23,7 +25,23 @@ class InvoiceRecordLine {
   /// أُضيف لمادة موجودة لا مادة جديدة.
   final bool merged;
 
-  double get total => price * quantity;
+  /// السطر بالكرتون: [quantity] كراتين، وفي كل كرتون [packSize] علبة.
+  final int? packSize;
+
+  /// [price] سعر الكرتون (لا العلبة) — حين [packSize] غير null.
+  final bool pricePerPack;
+
+  /// مجموع السطر كما في الورقة.
+  double get total => packSize == null || pricePerPack
+      ? price * quantity
+      : price * quantity * packSize!;
+
+  /// العلب التي دخلت المخزون.
+  int get unitsAdded => packSize == null ? quantity : quantity * packSize!;
+
+  /// سعر شراء العلبة الواحدة.
+  double get unitPrice =>
+      packSize != null && pricePerPack ? price / packSize! : price;
 
   Map<String, Object?> toMap() => {
     'name': name,
@@ -31,6 +49,8 @@ class InvoiceRecordLine {
     'price': price,
     'medicineId': medicineId,
     'merged': merged,
+    if (packSize != null) 'packSize': packSize,
+    if (packSize != null) 'pricePerPack': pricePerPack,
   };
 
   factory InvoiceRecordLine.fromMap(Map<String, Object?> m) =>
@@ -40,6 +60,8 @@ class InvoiceRecordLine {
         price: (m['price'] as num?)?.toDouble() ?? 0,
         medicineId: m['medicineId'] as String?,
         merged: m['merged'] == true || m['merged'] == 1,
+        packSize: (m['packSize'] as num?)?.toInt(),
+        pricePerPack: m['pricePerPack'] != false && m['pricePerPack'] != 0,
       );
 }
 

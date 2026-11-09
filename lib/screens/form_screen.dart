@@ -72,6 +72,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
 
   /// حد التنبيه الخاص — فارغ = الحد العام للصيدلية.
   late final TextEditingController _minQty;
+  late final TextEditingController _packSize;
 
   /// الشكل الصيدلاني — خاص بالمستلزمات فقط.
   late final TextEditingController _category;
@@ -113,6 +114,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       text: m == null ? '' : m.quantity.toString(),
     );
     _minQty = TextEditingController(text: m?.minQuantity?.toString() ?? '');
+    _packSize = TextEditingController(text: m?.packSize?.toString() ?? '');
     _category = TextEditingController(text: m?.category ?? '');
     _company = TextEditingController(text: m?.company ?? '');
     _imageFileName = m?.imagePath;
@@ -132,6 +134,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _price.dispose();
     _quantity.dispose();
     _minQty.dispose();
+    _packSize.dispose();
     _category.dispose();
     _company.dispose();
     super.dispose();
@@ -141,6 +144,16 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     final v = parseLocalizedInt(_minQty.text);
     return v == null || v < 1 ? null : v;
   }
+
+  /// العدد في الكرتون (2 فما فوق)؛ الفارغ = مفردة.
+  int? _packSizeOrNull() {
+    final v = parseLocalizedInt(_packSize.text);
+    return v == null || v < 2 ? null : v;
+  }
+
+  /// مكتوب لكنه غير صالح (1 أو نص) — يُرفض بدل أن يُمسح بصمت.
+  bool get _packSizeInvalid =>
+      _packSize.text.trim().isNotEmpty && _packSizeOrNull() == null;
 
   void _toast(String message, {Color? color}) {
     if (!mounted) return;
@@ -274,6 +287,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
     _target = m;
     _barcode.text = m.barcode;
     _name.text = m.name;
+    _packSize.text = m.packSize?.toString() ?? '';
     _price.text = priceInputText(_priceSource = m.price);
     _quantity.text = m.quantity.toString();
     _imageFileName = m.imagePath;
@@ -390,6 +404,10 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
       _toast(context.l10n.formInvalidQty, color: AppColors.danger);
       return;
     }
+    if (_packSizeInvalid) {
+      setState(() {}); // يُظهر الخطأ تحت الخانة
+      return;
+    }
 
     final typedBarcode = _barcode.text.trim();
 
@@ -469,6 +487,8 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
           minQuantity: _minQtyOrNull(),
           clearMinQuantity: _minQtyOrNull() == null,
+          packSize: _packSizeOrNull(),
+          clearPackSize: _packSizeOrNull() == null,
           updatedAt: now,
         ) ??
         Medicine(
@@ -484,6 +504,7 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
           company: _orNull(_company),
           noBarcode: _barcode.text.trim().isEmpty && _noBarcode,
           minQuantity: _minQtyOrNull(),
+          packSize: _packSizeOrNull(),
           createdAt: now,
           updatedAt: now,
         );
@@ -886,6 +907,22 @@ class _MedicineFormScreenState extends State<MedicineFormScreen> {
                   hintText: context.l10n.formMinQtyHint(
                     PharmacyPrefs.instance.lowStockDefault,
                   ),
+                ),
+              ),
+
+              // العدد في الكرتون — تملؤه الفاتورة الذكية ويُصحَّح هنا
+              const SizedBox(height: 16),
+              _Label(context.l10n.formPackSize),
+              TextField(
+                key: const Key('packSizeField'),
+                controller: _packSize,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: context.l10n.formPackSizeHint,
+                  errorText: _packSizeInvalid
+                      ? context.l10n.formPackSizeInvalid
+                      : null,
                 ),
               ),
 

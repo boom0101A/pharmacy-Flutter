@@ -375,13 +375,31 @@ class InvoiceDetailScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${l.quantity} × ${formatPrice(l.price)} = '
-                                  '${formatMoney(l.total, iqdOnly: true)}',
+                                  // كما في الورقة؛ «للعلبة» يُظهر العدد داخل
+                                  // الكرتون كي يطابق المجموع الضرب المكتوب
+                                  l.packSize != null && !l.pricePerPack
+                                      ? '${l.quantity} × ${l.packSize} × '
+                                            '${formatPrice(l.price)} = '
+                                            '${formatMoney(l.total, iqdOnly: true)}'
+                                      : '${l.quantity} × ${formatPrice(l.price)} = '
+                                            '${formatMoney(l.total, iqdOnly: true)}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
+                                if (l.packSize != null)
+                                  Text(
+                                    context.l10n.invPackNote(
+                                      l.packSize!,
+                                      formatPrice(l.unitsAdded),
+                                      formatMoney(l.unitPrice, iqdOnly: true),
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),

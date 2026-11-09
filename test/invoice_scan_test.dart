@@ -37,6 +37,7 @@ InvoiceLineDraft _draft(
 );
 
 void main() {
+  cartonTests();
   final now = DateTime(2026, 1, 1, 9);
 
   group('buildInvoiceSaveItems — دمج التكرار داخل الفاتورة نفسها', () {
@@ -518,6 +519,126 @@ void main() {
       );
       expect(r.items.single.id, 'st');
       expect(r.items.single.quantity, 15);
+    });
+  });
+}
+
+/// «📦 بالكرتون»: الفاتورة تذكر الكراتين وسعرها، والمخزون يحتاج العلب وسعر
+/// العلبة. السجل يبقى بقيم الورقة (12 × 1,764) كي تُراجَع مع المجهّز.
+void cartonTests() {
+  final now = DateTime(2026, 1, 1, 9);
+
+  InvoiceLineDraft carton({
+    int quantity = 12,
+    double price = 1764,
+    int? packSize = 10,
+    bool pricePerPack = true,
+    String name = 'Adol 15ml',
+  }) => InvoiceLineDraft(
+    name: name,
+    type: ItemType.medicine,
+    price: price,
+    quantity: quantity,
+    packSize: packSize,
+    pricePerPack: pricePerPack,
+  );
+
+  group('📦 بالكرتون', () {
+    test('السعر للكرتون: 12 كرتون × 10 = 120 علبة بسعر 176.4', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [carton()],
+        store: _TestStore(),
+        now: now,
+      );
+      final m = r.items.single;
+      expect(m.quantity, 120);
+      expect(m.price, closeTo(176.4, 1e-9));
+      expect(m.packSize, 10);
+      expect(m.packPriced, isTrue);
+      // السجل كما في الورقة، والمجموع نفسه
+      final rec = r.records.single;
+      expect(rec.quantity, 12);
+      expect(rec.price, 1764);
+      expect(rec.packSize, 10);
+      expect(rec.total, 21168);
+      expect(rec.unitsAdded, 120);
+      expect(rec.unitPrice, closeTo(176.4, 1e-9));
+    });
+
+    test('السعر للعلبة: السعر كما هو والكمية تُضرب', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [carton(price: 176, pricePerPack: false)],
+        store: _TestStore(),
+        now: now,
+      );
+      final m = r.items.single;
+      expect(m.quantity, 120);
+      expect(m.price, 176);
+      expect(m.packPriced, isFalse);
+      expect(r.records.single.total, 12 * 10 * 176);
+    });
+
+    test('مادة موجودة برصيد 36 → 156 بسعر العلبة', () {
+      final store = _TestStore()
+        ..seed([
+          const Medicine(
+            id: 'adol',
+            barcode: '',
+            name: 'Adol 15ml',
+            price: 150,
+            quantity: 36,
+            createdAt: 0,
+            updatedAt: 0,
+          ),
+        ]);
+      final r = buildInvoiceSaveItems(
+        drafts: [carton()],
+        store: store,
+        now: now,
+      );
+      final m = r.items.single;
+      expect(m.id, 'adol');
+      expect(m.quantity, 156);
+      expect(m.price, closeTo(176.4, 1e-9));
+      expect(m.packSize, 10);
+    });
+
+    test('سطران لنفس الدواء (كرتون + مفرد) يُجمعان علباً: 120 + 5', () {
+      final r = buildInvoiceSaveItems(
+        drafts: [
+          carton(),
+          carton(quantity: 5, price: 180, packSize: null),
+        ],
+        store: _TestStore(),
+        now: now,
+      );
+      expect(r.items.single.quantity, 125);
+    });
+
+    test('المفتاح مطفأ لمادة لها عدد محفوظ: لا يُمسح، والكمية كما هي', () {
+      final store = _TestStore()
+        ..seed([
+          const Medicine(
+            id: 'adol',
+            barcode: '',
+            name: 'Adol 15ml',
+            price: 150,
+            quantity: 36,
+            packSize: 10,
+            packPriced: true,
+            createdAt: 0,
+            updatedAt: 0,
+          ),
+        ]);
+      final r = buildInvoiceSaveItems(
+        drafts: [carton(quantity: 4, price: 180, packSize: null)],
+        store: store,
+        now: now,
+      );
+      final m = r.items.single;
+      expect(m.quantity, 40);
+      expect(m.price, 180);
+      expect(m.packSize, 10, reason: 'هذه المرة مفرد فقط — المحفوظ يبقى');
     });
   });
 }

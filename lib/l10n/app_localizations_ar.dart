@@ -1444,6 +1444,40 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get scPacked => '📦 بالكرتون';
+
+  @override
+  String get scPackSize => 'العدد داخل الكرتون';
+
+  @override
+  String get scPricePerPack => 'للكرتون';
+
+  @override
+  String get scPricePerUnit => 'للعلبة';
+
+  @override
+  String scPackPreview(String units, String price) {
+    return '← يُضاف $units علبة · $price للعلبة';
+  }
+
+  @override
+  String get scPackInvalid => 'اكتب عدداً صحيحاً (2 فما فوق) داخل الكرتون';
+
+  @override
+  String invPackNote(int n, String units, String price) {
+    return '📦 الكرتون = $n ← $units علبة · $price للعلبة';
+  }
+
+  @override
+  String get formPackSize => '📦 العدد في الكرتون (اختياري)';
+
+  @override
+  String get formPackSizeHint => 'يُستعمل في الفاتورة الذكية';
+
+  @override
+  String get formPackSizeInvalid => '2 فما فوق، أو اتركه فارغاً';
+
+  @override
   String get scExpiry => 'الصلاحية (مثل 2027-11)';
 
   @override

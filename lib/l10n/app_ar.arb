@@ -1118,6 +1118,39 @@
       }
     }
   },
+  "scPacked": "📦 بالكرتون",
+  "scPackSize": "العدد داخل الكرتون",
+  "scPricePerPack": "للكرتون",
+  "scPricePerUnit": "للعلبة",
+  "scPackPreview": "← يُضاف {units} علبة · {price} للعلبة",
+  "@scPackPreview": {
+    "placeholders": {
+      "units": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "scPackInvalid": "اكتب عدداً صحيحاً (2 فما فوق) داخل الكرتون",
+  "invPackNote": "📦 الكرتون = {n} ← {units} علبة · {price} للعلبة",
+  "@invPackNote": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "units": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "formPackSize": "📦 العدد في الكرتون (اختياري)",
+  "formPackSizeHint": "يُستعمل في الفاتورة الذكية",
+  "formPackSizeInvalid": "2 فما فوق، أو اتركه فارغاً",
   "scExpiry": "الصلاحية (مثل 2027-11)",
   "scBarcodeOpt": "الباركود (اختياري)",
   "scExisting": "🔁 موجودة مسبقاً («{name}») — الرصيد {qty}، سيُضاف الوارد إليه",

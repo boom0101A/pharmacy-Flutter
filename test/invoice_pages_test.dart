@@ -354,4 +354,81 @@ void main() {
       expect(find.textContaining('موجودة مسبقاً («Klamoks»)'), findsOneWidget);
     });
   });
+
+  group('📦 بالكرتون في مراجعة الفاتورة', () {
+    Future<void> withLine(WidgetTester tester) async {
+      results['page1.jpg'] = InvoiceResult.success([
+        InvoiceLine(name: 'Adol 15ml', price: 1764, quantity: 12),
+      ]);
+      await pump(tester);
+    }
+
+    testWidgets('المفتاح يُظهر العدد والمعاينة، والحفظ بالعلب', (
+      tester,
+    ) async {
+      await withLine(tester);
+      expect(find.byKey(const Key('packSizeInput')), findsNothing);
+      await tester.tap(find.byKey(const Key('packToggle')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('packSizeInput')), '10');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('يُضاف 120 علبة'), findsOneWidget);
+
+      await tester.tap(find.textContaining('حفظ ('));
+      await tester.pumpAndSettle();
+      final saved = store.saved!.single;
+      expect(saved.quantity, 120);
+      expect(saved.price, closeTo(176.4, 1e-9));
+      expect(saved.packSize, 10);
+    });
+
+    testWidgets('«للعلبة» لا يقسم السعر', (tester) async {
+      await withLine(tester);
+      await tester.tap(find.byKey(const Key('packToggle')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('packSizeInput')), '10');
+      await tester.tap(find.text('للعلبة'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('حفظ ('));
+      await tester.pumpAndSettle();
+      final saved = store.saved!.single;
+      expect(saved.quantity, 120);
+      expect(saved.price, 1764);
+      expect(saved.packPriced, isFalse);
+    });
+
+    testWidgets('مادة لها عدد محفوظ: السطر مفعّل بالعدد نفسه', (tester) async {
+      store.seed([
+        const Medicine(
+          id: 'adol',
+          barcode: '',
+          name: 'Adol 15ml',
+          price: 150,
+          quantity: 36,
+          type: ItemType.supply,
+          packSize: 10,
+          packPriced: true,
+          createdAt: 0,
+          updatedAt: 0,
+        ),
+      ]);
+      await withLine(tester);
+      final input = tester.widget<TextField>(
+        find.byKey(const Key('packSizeInput')),
+      );
+      expect(input.controller!.text, '10');
+      expect(find.textContaining('يُضاف 120 علبة'), findsOneWidget);
+    });
+
+    testWidgets('عدد غير صالح يمنع الحفظ برسالة', (tester) async {
+      await withLine(tester);
+      await tester.tap(find.byKey(const Key('packToggle')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('packSizeInput')), '1');
+      await tester.tap(find.textContaining('حفظ ('));
+      await tester.pumpAndSettle();
+      expect(store.saved, isNull);
+      expect(find.textContaining('2 فما فوق'), findsWidgets);
+    });
+  });
 }

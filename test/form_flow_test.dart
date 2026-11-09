@@ -486,6 +486,71 @@ void main() {
     expect(store.saved.single.minQuantity, isNull);
   });
 
+  // العدد في الكرتون: يُضبط ويُصحَّح خارج الفاتورة، ولا يغيّر الرصيد
+  testWidgets('العدد في الكرتون يُحفظ، ويُمسح، ولا يمس الكمية', (
+    tester,
+  ) async {
+    useTallSurface(tester);
+    const existing = Medicine(
+      id: 'm1',
+      barcode: '',
+      name: 'Adol',
+      price: 176.4,
+      quantity: 120,
+      packSize: 10,
+      packPriced: true,
+      createdAt: 1,
+      updatedAt: 1,
+    );
+    await tester.pumpWidget(
+      host(MedicineFormScreen(store: store, existing: existing)),
+    );
+    await tester.pump();
+    final field = find.byKey(const Key('packSizeField'));
+    expect(tester.widget<TextField>(field).controller!.text, '10');
+
+    await tester.enterText(field, '12');
+    await tester.pump();
+    await tapSave(tester);
+    expect(store.saved.last.packSize, 12);
+    expect(store.saved.last.quantity, 120);
+    expect(store.saved.last.packPriced, isTrue, reason: 'الاختيار يبقى');
+  });
+
+  testWidgets('مسح العدد في الكرتون يعيدها مفردة', (tester) async {
+    useTallSurface(tester);
+    const existing = Medicine(
+      id: 'm1',
+      barcode: '',
+      name: 'Adol',
+      price: 176.4,
+      quantity: 120,
+      packSize: 10,
+      createdAt: 1,
+      updatedAt: 1,
+    );
+    await tester.pumpWidget(
+      host(MedicineFormScreen(store: store, existing: existing)),
+    );
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('packSizeField')), '');
+    await tester.pump();
+    await tapSave(tester);
+    expect(store.saved.single.packSize, isNull);
+  });
+
+  testWidgets('عدد كرتون 1 يُرفض برسالة ولا يُحفظ', (tester) async {
+    useTallSurface(tester);
+    await tester.pumpWidget(host(MedicineFormScreen(store: store)));
+    await tester.pump();
+    await tester.enterText(nameField(), 'Adol');
+    await tester.enterText(find.byKey(const Key('packSizeField')), '1');
+    await tester.pump();
+    await tapSave(tester);
+    expect(store.saved, isEmpty);
+    expect(find.text('2 فما فوق، أو اتركه فارغاً'), findsOneWidget);
+  });
+
   group('حماية الأرقام السالبة (فحص أخير)', () {
     testWidgets('خانة السعر لا تقبل الإشارة السالبة، والكمية السالبة صفر', (
       tester,

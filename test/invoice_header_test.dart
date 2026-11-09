@@ -231,5 +231,41 @@ void main() {
       expect(invoices.all.map((i) => i.id), ['a']);
       expect(store.saved, isNull); // المخزون لم يُمس
     });
+
+    // السطر كما في الورقة (12 × 1,764) + ملاحظة التحويل إلى علب
+    testWidgets('سطر بالكرتون: قيم الورقة + ملاحظة العلب وسعر العلبة', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(420, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final date = DateTime(2026, 10, 1).millisecondsSinceEpoch;
+      invoices.seed([
+        Invoice(
+          id: 'c',
+          supplier: 'مذخر الكراتين',
+          dateMs: date,
+          lines: const [
+            InvoiceRecordLine(
+              name: 'Adol 15ml',
+              quantity: 12,
+              price: 1764,
+              packSize: 10,
+            ),
+          ],
+          createdAt: date,
+          updatedAt: date,
+        ),
+      ]);
+      await tester.pumpWidget(_app(InvoicesScreen(store: invoices)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('مذخر الكراتين'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('12 × 1,764 = 21,168'), findsOneWidget);
+      expect(
+        find.textContaining('📦 الكرتون = 10 ← 120 علبة · 176 د.ع للعلبة'),
+        findsOneWidget,
+      );
+    });
   });
 }

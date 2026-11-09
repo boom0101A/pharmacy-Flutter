@@ -1543,6 +1543,40 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get scPacked => '📦 By carton';
+
+  @override
+  String get scPackSize => 'Units per carton';
+
+  @override
+  String get scPricePerPack => 'Per carton';
+
+  @override
+  String get scPricePerUnit => 'Per unit';
+
+  @override
+  String scPackPreview(String units, String price) {
+    return '→ adds $units units · $price per unit';
+  }
+
+  @override
+  String get scPackInvalid => 'Enter a whole number (2 or more) per carton';
+
+  @override
+  String invPackNote(int n, String units, String price) {
+    return '📦 Carton = $n → $units units · $price per unit';
+  }
+
+  @override
+  String get formPackSize => '📦 Units per carton (optional)';
+
+  @override
+  String get formPackSizeHint => 'Used by the smart invoice';
+
+  @override
+  String get formPackSizeInvalid => '2 or more, or leave empty';
+
+  @override
   String get scExpiry => 'Expiry (e.g. 2027-11)';
 
   @override

@@ -52,6 +52,14 @@ class Medicine {
   /// null = الحد العام للصيدلية ([PharmacyPrefs.lowStockDefault]).
   final int? minQuantity;
 
+  /// العدد داخل الكرتون حين تُشترى المادة بالكرتون (الفاتورة الذكية تحوّل
+  /// الكراتين إلى علب). null = تُشترى مفردة.
+  final int? packSize;
+
+  /// آخر اختيار في الفاتورة: سعر الفاتورة للكرتون (يُقسم على [packSize]) لا
+  /// للعلبة. null = لم يُختر بعد (يُعامل كـ«للكرتون»).
+  final bool? packPriced;
+
   final int createdAt;
   final int updatedAt;
 
@@ -68,6 +76,8 @@ class Medicine {
     this.company,
     this.noBarcode = false,
     this.minQuantity,
+    this.packSize,
+    this.packPriced,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -146,6 +156,9 @@ class Medicine {
     bool? noBarcode,
     int? minQuantity,
     bool clearMinQuantity = false,
+    int? packSize,
+    bool clearPackSize = false,
+    bool? packPriced,
     int? updatedAt,
   }) {
     return Medicine(
@@ -161,6 +174,8 @@ class Medicine {
       company: clearCompany ? null : (company ?? this.company),
       noBarcode: noBarcode ?? this.noBarcode,
       minQuantity: clearMinQuantity ? null : (minQuantity ?? this.minQuantity),
+      packSize: clearPackSize ? null : (packSize ?? this.packSize),
+      packPriced: packPriced ?? this.packPriced,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
     );
@@ -179,6 +194,8 @@ class Medicine {
     'company': company,
     'noBarcode': noBarcode ? 1 : 0,
     'minQuantity': minQuantity,
+    'packSize': packSize,
+    'packPriced': packPriced == null ? null : (packPriced! ? 1 : 0),
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -203,6 +220,10 @@ class Medicine {
     minQuantity: map['minQuantity'] == null
         ? null
         : _asDouble(map['minQuantity']).round(),
+    packSize: map['packSize'] == null
+        ? null
+        : _asDouble(map['packSize']).round(),
+    packPriced: map['packPriced'] == null ? null : _asBool(map['packPriced']),
     createdAt: _asMillis(map['createdAt']),
     updatedAt: _asMillis(map['updatedAt']),
   );

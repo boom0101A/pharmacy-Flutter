@@ -2489,6 +2489,66 @@ abstract class AppLocalizations {
   /// **'+{n} مجاناً'**
   String scBonus(int n);
 
+  /// No description provided for @scPacked.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 بالكرتون'**
+  String get scPacked;
+
+  /// No description provided for @scPackSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'العدد داخل الكرتون'**
+  String get scPackSize;
+
+  /// No description provided for @scPricePerPack.
+  ///
+  /// In ar, this message translates to:
+  /// **'للكرتون'**
+  String get scPricePerPack;
+
+  /// No description provided for @scPricePerUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'للعلبة'**
+  String get scPricePerUnit;
+
+  /// No description provided for @scPackPreview.
+  ///
+  /// In ar, this message translates to:
+  /// **'← يُضاف {units} علبة · {price} للعلبة'**
+  String scPackPreview(String units, String price);
+
+  /// No description provided for @scPackInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب عدداً صحيحاً (2 فما فوق) داخل الكرتون'**
+  String get scPackInvalid;
+
+  /// No description provided for @invPackNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 الكرتون = {n} ← {units} علبة · {price} للعلبة'**
+  String invPackNote(int n, String units, String price);
+
+  /// No description provided for @formPackSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'📦 العدد في الكرتون (اختياري)'**
+  String get formPackSize;
+
+  /// No description provided for @formPackSizeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُستعمل في الفاتورة الذكية'**
+  String get formPackSizeHint;
+
+  /// No description provided for @formPackSizeInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'2 فما فوق، أو اتركه فارغاً'**
+  String get formPackSizeInvalid;
+
   /// No description provided for @scExpiry.
   ///
   /// In ar, this message translates to:
